@@ -9,7 +9,7 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/types"
 	"golang.org/x/image/bmp"
 )
 

@@ -26,8 +26,8 @@ add pages and add elements to the pages:
 package yours
 
 import (
-    "git.rrdc.de/lib/gopdf/builder"
-    "git.rrdc.de/lib/gopdf/types"
+    "github.com/raceresult/gopdf/builder"
+    "github.com/raceresult/gopdf/types"
 )
 
 func TestExample1(t *testing.T) {
@@ -35,11 +35,11 @@ func TestExample1(t *testing.T) {
     pb := builder.NewBuilder()
     
     // use a built-in standard fontm
-	f, err := pb.NewStandardFont(types.StandardFont_Helvetica, types.EncodingWinAnsi)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+    f, err := pb.NewStandardFont(types.StandardFont_Helvetica, types.EncodingWinAnsi)
+    if err != nil {
+        t.Error(err)
+        return
+    }
     
     // add first page
     p := pb.NewPage(builder.GetStandardPageSize(builder.PageSizeA4, false))
@@ -72,8 +72,8 @@ need to handover normal (UTF-8 encoded) Go strings.
 package yours
 
 import (
-    "git.rrdc.de/lib/gopdf/builder"
-    "git.rrdc.de/lib/gopdf/types"
+    "github.com/raceresult/gopdf/builder"
+    "github.com/raceresult/gopdf/types"
 )
 
 func TestExample2(t *testing.T) {

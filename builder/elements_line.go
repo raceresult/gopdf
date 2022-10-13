@@ -1,6 +1,6 @@
 package builder
 
-import "git.rrdc.de/lib/gopdf/pdf"
+import "github.com/raceresult/gopdf/pdf"
 
 // LineElement is used to add a line to a page
 type LineElement struct {

@@ -1,9 +1,9 @@
 package builder
 
 import (
-	"git.rrdc.de/lib/gopdf/pdf"
-	"git.rrdc.de/lib/gopdf/pdffile"
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/pdf"
+	"github.com/raceresult/gopdf/pdffile"
+	"github.com/raceresult/gopdf/types"
 )
 
 // Builder is the main object to build a PDF file

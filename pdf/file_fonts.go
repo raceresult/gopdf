@@ -3,8 +3,8 @@ package pdf
 import (
 	"bytes"
 
-	"git.rrdc.de/lib/gopdf/pdf/unitype"
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/pdf/unitype"
+	"github.com/raceresult/gopdf/types"
 )
 
 // NewStandardFont adds and returns a new standard font (expected to be available on all pdf consuming systems)

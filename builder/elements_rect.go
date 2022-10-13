@@ -1,6 +1,6 @@
 package builder
 
-import "git.rrdc.de/lib/gopdf/pdf"
+import "github.com/raceresult/gopdf/pdf"
 
 // RectElement is used to add a rectangle to a page
 type RectElement struct {

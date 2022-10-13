@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"strconv"
 
-	"git.rrdc.de/lib/gopdf/pdffile"
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/pdffile"
+	"github.com/raceresult/gopdf/types"
 )
 
 // Page holds all information about a pdf page and the commands that will be put in the content stream

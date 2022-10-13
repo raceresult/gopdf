@@ -1,6 +1,6 @@
 package pdf
 
-import "git.rrdc.de/lib/gopdf/types"
+import "github.com/raceresult/gopdf/types"
 
 // PDF Reference 1.4, Table 5.5 Text-positioning operators
 

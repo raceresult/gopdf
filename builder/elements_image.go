@@ -1,7 +1,7 @@
 package builder
 
 import (
-	"git.rrdc.de/lib/gopdf/pdf"
+	"github.com/raceresult/gopdf/pdf"
 )
 
 // ImageElement is used to add an image to a page

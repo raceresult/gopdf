@@ -1,6 +1,6 @@
 package pdf
 
-import "git.rrdc.de/lib/gopdf/types"
+import "github.com/raceresult/gopdf/types"
 
 // graphicsState keeps track internally of the graphics state when add PDF operators, so that commands that would not
 // change the current state can be skipped

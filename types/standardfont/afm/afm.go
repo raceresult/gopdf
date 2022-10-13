@@ -11,7 +11,7 @@
 package afm // import "star-tex.org/x/tex/font/afm"
 
 import (
-	"git.rrdc.de/lib/gopdf/types/standardfont/fixed"
+	"github.com/raceresult/gopdf/types/standardfont/fixed"
 )
 
 type trackKern struct {

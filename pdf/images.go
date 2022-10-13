@@ -1,6 +1,6 @@
 package pdf
 
-import "git.rrdc.de/lib/gopdf/types"
+import "github.com/raceresult/gopdf/types"
 
 // Image holds both the Image object and the reference to it
 type Image struct {

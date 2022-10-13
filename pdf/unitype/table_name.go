@@ -11,7 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"git.rrdc.de/lib/gopdf/pdf/unitype/internal/strutils"
+	"github.com/raceresult/gopdf/pdf/unitype/internal/strutils"
 
 	"golang.org/x/text/encoding/charmap"
 )

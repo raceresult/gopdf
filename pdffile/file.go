@@ -3,7 +3,7 @@ package pdffile
 import (
 	"io"
 
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/types"
 )
 
 const DefaultVersion = 1.4

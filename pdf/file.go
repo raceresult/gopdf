@@ -8,8 +8,8 @@ import (
 	"io"
 	"time"
 
-	"git.rrdc.de/lib/gopdf/pdffile"
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/pdffile"
+	"github.com/raceresult/gopdf/types"
 
 	_ "golang.org/x/image/bmp"
 )

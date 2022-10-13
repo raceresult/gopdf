@@ -1,6 +1,6 @@
 package builder
 
-import "git.rrdc.de/lib/gopdf/pdf"
+import "github.com/raceresult/gopdf/pdf"
 
 // Color is the interface any type of color needs to fulfill
 type Color interface {

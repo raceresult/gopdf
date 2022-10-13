@@ -1,6 +1,6 @@
 package builder
 
-import "git.rrdc.de/lib/gopdf/pdf"
+import "github.com/raceresult/gopdf/pdf"
 
 // ImageBoxElement is used to add an image box to a page
 type ImageBoxElement struct {

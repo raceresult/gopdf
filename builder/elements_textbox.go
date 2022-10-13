@@ -3,9 +3,9 @@ package builder
 import (
 	"strings"
 
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/types"
 
-	"git.rrdc.de/lib/gopdf/pdf"
+	"github.com/raceresult/gopdf/pdf"
 )
 
 type TextBoxElement struct {

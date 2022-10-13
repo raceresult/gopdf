@@ -1,9 +1,9 @@
 package pdf
 
 import (
-	"git.rrdc.de/lib/gopdf/pdf/unitype"
-	"git.rrdc.de/lib/gopdf/types"
-	"git.rrdc.de/lib/gopdf/types/standardfont/afm"
+	"github.com/raceresult/gopdf/pdf/unitype"
+	"github.com/raceresult/gopdf/types"
+	"github.com/raceresult/gopdf/types/standardfont/afm"
 	"golang.org/x/text/encoding/unicode"
 )
 

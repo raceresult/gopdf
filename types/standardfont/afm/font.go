@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"git.rrdc.de/lib/gopdf/types/standardfont/fixed"
+	"github.com/raceresult/gopdf/types/standardfont/fixed"
 )
 
 type Direction struct {

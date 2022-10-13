@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"git.rrdc.de/lib/gopdf/builder"
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/builder"
+	"github.com/raceresult/gopdf/types"
 )
 
 func TestExample1(t *testing.T) {

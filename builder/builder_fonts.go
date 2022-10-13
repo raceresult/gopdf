@@ -1,8 +1,8 @@
 package builder
 
 import (
-	"git.rrdc.de/lib/gopdf/pdf"
-	"git.rrdc.de/lib/gopdf/types"
+	"github.com/raceresult/gopdf/pdf"
+	"github.com/raceresult/gopdf/types"
 )
 
 // NewStandardFont adds a new standard font (expected to be available in all PDF consuming systems) to the pdf

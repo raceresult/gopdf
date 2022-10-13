@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"embed"
 
-	"git.rrdc.de/lib/gopdf/types/standardfont/afm"
+	"github.com/raceresult/gopdf/types/standardfont/afm"
 )
 
 // PDF Reference 1.4, Table 5.8 Entries in a font dictionary
