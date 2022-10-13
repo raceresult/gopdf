@@ -54,7 +54,7 @@ func (q *Page) AddProcSets(pss ...types.ProcedureSet) {
 	}
 }
 
-// AddFont adds a font to the list of resources of the page (unless already list) and return the font name
+// AddFont adds a font to the list of resources of the page (unless already list ed) and return the font name
 func (q *Page) AddFont(f FontHandler) types.Name {
 	// create font Dictionary if not done yet
 	if q.Data.Resources.Font == nil {
@@ -75,7 +75,7 @@ func (q *Page) AddFont(f FontHandler) types.Name {
 	return n
 }
 
-// AddXObject adds an XObject to the list of resources of the page (unless already list) and return the resource name
+// AddXObject adds an XObject to the list of resources of the page (unless already listed) and return the resource name
 func (q *Page) AddXObject(obj types.Reference) types.Name {
 	// create XObject Dictionary if not done yet
 	if q.Data.Resources.XObject == nil {
