@@ -45,3 +45,8 @@ func (q *Builder) NewPage(size PageSize) *Page {
 	q.pages = append(q.pages, p)
 	return p
 }
+
+// PageCount returns the number of pages already added
+func (q *Builder) PageCount() int {
+	return len(q.pages)
+}
