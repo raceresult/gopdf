@@ -133,6 +133,24 @@ func (q *TextBoxElement) wrappedText() []string {
 				currLine += " "
 				w += spaceWidth
 			}
+
+			// break word?
+			for wordWidth > q.Width.Pt() {
+				var wordPart string
+				var wordPartWidth float64
+				for _, c := range word {
+					charWidth := q.Font.GetWidth(string(c), q.FontSize)
+					if len(wordPart) > 0 && wordPartWidth+charWidth > q.Width.Pt() {
+						res = append(res, wordPart)
+						word = word[len(wordPart):]
+						wordWidth = q.Font.GetWidth(word, q.FontSize)
+						break
+					}
+					wordPart += string(c)
+					wordPartWidth += charWidth
+				}
+			}
+
 			currLine += word
 			w += wordWidth
 		}

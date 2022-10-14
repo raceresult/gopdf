@@ -2,7 +2,7 @@ package pdf
 
 import "github.com/raceresult/gopdf/types"
 
-// graphicsState keeps track internally of the graphics state when add PDF operators, so that commands that would not
+// graphicsState keeps track internally of the graphics state when adding PDF operators, so that commands that would not
 // change the current state can be skipped
 type graphicsState struct {
 	StrokingColor    graphicsStateColor
