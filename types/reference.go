@@ -12,3 +12,10 @@ type Reference struct {
 func (q Reference) ToRawBytes() []byte {
 	return []byte(strconv.Itoa(q.Number) + " " + strconv.Itoa(q.Generation) + " R")
 }
+
+func (q Reference) Copy(copyRef func(reference Reference) Reference) Object {
+	if q.Number == 0 {
+		return q
+	}
+	return copyRef(q)
+}

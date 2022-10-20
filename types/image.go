@@ -2,12 +2,13 @@ package types
 
 import (
 	"bytes"
+	"errors"
 )
 
 // PDF Reference 1.4, Table 4.35 Additional entries specific to an image dictionary
 
 type Image struct {
-	Stream
+	Stream StreamObject
 
 	// (Optional) The type of PDF object that this dictionary describes; if
 	// present, must be XObject for an image XObject.
@@ -15,7 +16,7 @@ type Image struct {
 
 	// (Required) The type of XObject that this dictionary describes; must be
 	// Image for an image XObject.
-	//Subtype  types.Name
+	// Subtype  types.Name
 
 	// (Required) The width of the image, in samples.
 	Width Int
@@ -119,10 +120,8 @@ type Image struct {
 }
 
 func (q Image) ToRawBytes() []byte {
-	q.Data = bytes.TrimSpace(q.Data)
-
 	sb := bytes.Buffer{}
-	d := q.Stream.createDict()
+	d := q.Stream.Dictionary.createDict()
 	d["Type"] = Name("XObject")
 	d["Subtype"] = Name("Image")
 	d["Width"] = q.Width
@@ -170,9 +169,198 @@ func (q Image) ToRawBytes() []byte {
 	sb.Write(d.ToRawBytes())
 
 	sb.WriteString("stream\n")
-	sb.Write(q.Data)
+	sb.Write(q.Stream.Stream)
 	sb.WriteString("\n")
 	sb.WriteString("endstream\n")
 
 	return sb.Bytes()
+}
+
+func (q *Image) Read(dict Dictionary) error {
+	// Type
+	v, ok := dict["Type"]
+	if !ok {
+		return errors.New("XObject missing Type")
+	}
+	dtype, ok := v.(Name)
+	if !ok {
+		return errors.New("XObject field Type invalid")
+	}
+	if dtype != "XObject" {
+		return errors.New("unexpected value in XObject field Type")
+	}
+
+	// Subtype
+	v, ok = dict["Subtype"]
+	if !ok {
+		return errors.New("XObject field Subtype missing")
+	}
+	vt, ok := v.(Name)
+	if !ok {
+		return errors.New("XObject field SubType invalid")
+	}
+	if vt != "Image" {
+		return errors.New("XObject field SubType invalid")
+	}
+
+	// general stream dictionary
+	if err := q.Stream.Dictionary.Read(dict); err != nil {
+		return err
+	}
+
+	// Width
+	v, ok = dict["Width"]
+	if !ok {
+		return errors.New("XObject field Width missing")
+	}
+	q.Width, ok = v.(Int)
+	if !ok {
+		return errors.New("XObject field Width invalid")
+	}
+
+	// Height
+	v, ok = dict["Height"]
+	if !ok {
+		return errors.New("XObject field Height missing")
+	}
+	q.Height, ok = v.(Int)
+	if !ok {
+		return errors.New("XObject field Height invalid")
+	}
+
+	// ColorSpace
+	v, ok = dict["ColorSpace"]
+	if ok {
+		q.ColorSpace = v
+	}
+
+	// BitsPerComponent
+	v, ok = dict["BitsPerComponent"]
+	if ok {
+		q.BitsPerComponent, ok = v.(Int)
+		if !ok {
+			return errors.New("XObject field BitsPerComponent invalid")
+		}
+	}
+
+	// Intent
+	v, ok = dict["Intent"]
+	if ok {
+		q.Intent, ok = v.(String)
+		if !ok {
+			return errors.New("XObject field Intent invalid")
+		}
+	}
+
+	// ImageMask
+	v, ok = dict["ImageMask"]
+	if ok {
+		q.ImageMask, ok = v.(Boolean)
+		if !ok {
+			return errors.New("XObject field ImageMask invalid")
+		}
+	}
+
+	// Mask
+	v, ok = dict["Mask"]
+	if ok {
+		q.Mask = v
+	}
+
+	// SMask
+	v, ok = dict["SMask"]
+	if ok {
+		q.SMask = v
+	}
+
+	// Decode
+	v, ok = dict["Decode"]
+	if ok {
+		q.Decode, ok = v.(Array)
+		if !ok {
+			return errors.New("XObject field Decode invalid")
+		}
+	}
+
+	// Interpolate
+	v, ok = dict["Interpolate"]
+	if ok {
+		q.Interpolate, ok = v.(Boolean)
+		if !ok {
+			return errors.New("XObject field Interpolate invalid")
+		}
+	}
+
+	// Alternates
+	v, ok = dict["Alternates"]
+	if ok {
+		q.Alternates, ok = v.(Array)
+		if !ok {
+			return errors.New("XObject field Alternates invalid")
+		}
+	}
+
+	// Name
+	v, ok = dict["Name"]
+	if ok {
+		q.Name, ok = v.(Name)
+		if !ok {
+			return errors.New("XObject field Name invalid")
+		}
+	}
+
+	// StructParent
+	v, ok = dict["StructParent"]
+	if ok {
+		q.StructParent, ok = v.(Int)
+		if !ok {
+			return errors.New("XObject field StructParent invalid")
+		}
+	}
+
+	// ID
+	v, ok = dict["ID"]
+	if ok {
+		q.ID, ok = v.(String)
+		if !ok {
+			return errors.New("XObject field ID invalid")
+		}
+	}
+
+	// OPI
+	v, ok = dict["OPI"]
+	if ok {
+		q.OPI = v
+	}
+
+	// Metadata
+	v, ok = dict["Metadata"]
+	if ok {
+		q.Metadata = v
+	}
+
+	// return without error
+	return nil
+}
+
+func (q Image) Copy(copyRef func(reference Reference) Reference) Object {
+	return Image{
+		Stream:           q.Stream.Copy(copyRef).(StreamObject),
+		Width:            q.Width.Copy(copyRef).(Int),
+		Height:           q.Height.Copy(copyRef).(Int),
+		ColorSpace:       Copy(q.ColorSpace, copyRef),
+		BitsPerComponent: q.BitsPerComponent.Copy(copyRef).(Int),
+		Intent:           q.Intent.Copy(copyRef).(String),
+		ImageMask:        q.ImageMask.Copy(copyRef).(Boolean),
+		Mask:             Copy(q.Mask, copyRef),
+		SMask:            Copy(q.SMask, copyRef),
+		Decode:           q.Decode.Copy(copyRef).(Array),
+		Interpolate:      q.Interpolate.Copy(copyRef).(Boolean),
+		Alternates:       q.Alternates.Copy(copyRef).(Array),
+		Name:             q.Name.Copy(copyRef).(Name),
+		StructParent:     q.StructParent.Copy(copyRef).(Int),
+		ID:               q.ID.Copy(copyRef).(String),
+		OPI:              Copy(q.OPI, copyRef),
+		Metadata:         Copy(q.Metadata, copyRef),
+	}
 }

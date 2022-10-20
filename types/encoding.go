@@ -36,3 +36,7 @@ func (q Encoding) Encode(s string) string {
 		return s
 	}
 }
+
+func (q Encoding) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

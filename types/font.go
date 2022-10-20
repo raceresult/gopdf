@@ -1,10 +1,7 @@
 package types
 
 import (
-	"bytes"
-	"embed"
-
-	"github.com/raceresult/gopdf/types/standardfont/afm"
+	"errors"
 )
 
 // PDF Reference 1.4, Table 5.8 Entries in a font dictionary
@@ -66,7 +63,7 @@ type Font struct {
 
 	// (Optional; PDF 1.2) A stream containing a CMap file that maps character
 	// codes to Unicode values (see Section 5.9, “ToUnicode CMaps”).
-	ToUnicode *Stream
+	ToUnicode Object
 }
 
 func (q Font) ToRawBytes() []byte {
@@ -91,39 +88,129 @@ func (q Font) ToRawBytes() []byte {
 	return d.ToRawBytes()
 }
 
-type StandardFont struct {
+func (q *Font) Read(dict Dictionary) error {
 	// Type
-	// Subtype   FontSubType  // Required
-	BaseFont StandardFontName // Required
-	Encoding Encoding         // Name or dictionary, Optional
+	v, ok := dict["Type"]
+	if !ok {
+		return errors.New("font missing Type")
+	}
+	dtype, ok := v.(Name)
+	if !ok {
+		return errors.New("font field Type invalid")
+	}
+	if dtype != "Font" {
+		return errors.New("unexpected value in font field Type")
+	}
+
+	// Subtype
+	v, ok = dict["Subtype"]
+	if !ok {
+		return errors.New("font field Subtype missing")
+	}
+	q.Subtype, ok = v.(FontSubType)
+	if !ok {
+		n, ok := v.(Name)
+		if !ok {
+			return errors.New("font field Pages invalid")
+		}
+		q.Subtype = FontSubType(n)
+	}
+
+	// Name
+	v, ok = dict["Name"]
+	if ok {
+		q.Name, ok = v.(Name)
+		if !ok {
+			return errors.New("font field Name invalid")
+		}
+	}
+
+	// BaseFont
+	v, ok = dict["BaseFont"]
+	if !ok {
+		return errors.New("font field BaseFont missing")
+	}
+	q.BaseFont, ok = v.(Name)
+	if !ok {
+		return errors.New("font field Pages invalid")
+	}
+
+	// FirstChar
+	v, ok = dict["FirstChar"]
+	if ok {
+		return errors.New("font field FirstChar missing")
+	}
+	q.FirstChar, ok = v.(Int)
+	if !ok {
+		return errors.New("font field FirstChar invalid")
+	}
+
+	// LastChar
+	v, ok = dict["LastChar"]
+	if !ok {
+		return errors.New("font field LastChar missing")
+	}
+	q.LastChar, ok = v.(Int)
+	if !ok {
+		return errors.New("font field LastChar invalid")
+	}
+
+	// Widths
+	v, ok = dict["Widths"]
+	if !ok {
+		return errors.New("font field Widths missing")
+	}
+	q.Widths, ok = v.(Array)
+	if !ok {
+		return errors.New("font field Widths invalid")
+	}
+
+	// FontDescriptor
+	v, ok = dict["FontDescriptor"]
+	if !ok {
+		return errors.New("font field FontDescriptor missing")
+	}
+	q.FontDescriptor, ok = v.(Reference)
+	if !ok {
+		return errors.New("font field FontDescriptor invalid")
+	}
+
+	// Encoding
+	v, ok = dict["Encoding"]
+	if ok {
+		q.Encoding, ok = v.(Encoding)
+		if !ok {
+			n, ok := v.(Name)
+			if !ok {
+				return errors.New("font field Encoding invalid")
+			}
+			q.Encoding = Encoding(n)
+		}
+	}
+
+	// ToUnicode
+	v, ok = dict["ToUnicode"]
+	if ok {
+		q.ToUnicode, ok = v.(Reference)
+		if !ok {
+			return errors.New("font field ToUnicode invalid")
+		}
+	}
+
+	// return without error
+	return nil
 }
 
-func (q StandardFont) ToRawBytes() []byte {
-	d := Dictionary{
-		"Type":     Name("Font"),
-		"Subtype":  FontSub_Type1,
-		"BaseFont": q.BaseFont,
+func (q Font) Copy(copyRef func(reference Reference) Reference) Object {
+	return Font{
+		Subtype:        q.Subtype.Copy(copyRef).(FontSubType),
+		Name:           q.Name.Copy(copyRef).(Name),
+		BaseFont:       q.BaseFont.Copy(copyRef).(Name),
+		FirstChar:      q.FirstChar.Copy(copyRef).(Int),
+		LastChar:       q.LastChar.Copy(copyRef).(Int),
+		Widths:         q.Widths.Copy(copyRef).(Array),
+		FontDescriptor: q.FontDescriptor.Copy(copyRef).(Reference),
+		Encoding:       q.Encoding.Copy(copyRef).(Encoding),
+		ToUnicode:      Copy(q.ToUnicode, copyRef),
 	}
-	if q.Encoding != "" {
-		d["Encoding"] = q.Encoding
-	}
-	return d.ToRawBytes()
-}
-
-var (
-	//go:embed standardfont/core14
-	afmFiles embed.FS
-)
-
-// Metrics returns font metrics from the embedded afm files
-func (q StandardFont) Metrics() (*afm.Font, error) {
-	bts, err := afmFiles.ReadFile("standardfont/core14/" + string(q.BaseFont) + ".afm")
-	if err != nil {
-		return nil, err
-	}
-	m, err := afm.Parse(bytes.NewReader(bts))
-	if err != nil {
-		return nil, err
-	}
-	return &m, nil
 }

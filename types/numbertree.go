@@ -34,3 +34,11 @@ func (q NumberTree) ToRawBytes() []byte {
 	}
 	return d.ToRawBytes()
 }
+
+func (q NumberTree) Copy(copyRef func(reference Reference) Reference) Object {
+	return NumberTree{
+		Kids:   q.Kids.Copy(copyRef).(Array),
+		Names:  q.Names.Copy(copyRef).(Array),
+		Limits: q.Limits.Copy(copyRef).(Array),
+	}
+}

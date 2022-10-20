@@ -38,12 +38,11 @@ func (q *File) NewTrueTypeFont(ttf []byte, encoding types.Encoding, embed bool) 
 	// embed font
 	var fontFileRef types.Reference
 	if embed {
-		fontFileRef = q.creator.AddObject(types.StreamFont{
-			Stream: types.Stream{
-				Data: ttf,
-			},
-			Length1: types.Int(len(ttf)),
-		})
+		ttfStream, err := types.NewStream(ttf)
+		if err != nil {
+			return nil, err
+		}
+		fontFileRef = q.creator.AddObject(ttfStream)
 	}
 
 	// create font descriptor
@@ -184,12 +183,12 @@ func (q *File) NewCompositeFont(ttf []byte) (*CompositeFont, error) {
 		if err := newFont.Write(&bts); err != nil {
 			return err
 		}
-		fd.FontFile2 = q.creator.AddObject(types.StreamFont{
-			Stream: types.Stream{
-				Data: bts.Bytes(),
-			},
-			Length1: types.Int(bts.Len()),
-		})
+		fileStream, err := types.NewStream(bts.Bytes())
+		if err != nil {
+			return err
+		}
+
+		fd.FontFile2 = q.creator.AddObject(fileStream)
 
 		// build widths and cidToGID arrays
 		cidToGID := make([]byte, maxRune*2+5)
@@ -202,7 +201,11 @@ func (q *File) NewCompositeFont(ttf []byte) (*CompositeFont, error) {
 			w := font.GetGlyphAdvance(pos)
 			widths = append(widths, types.Int(r), types.Int(r), types.Int(w))
 		}
-		cid.CIDToGIDMap = q.creator.AddObject(types.Stream{Data: cidToGID})
+		cidToGIDStream, err := types.NewStream(cidToGID)
+		if err != nil {
+			return err
+		}
+		cid.CIDToGIDMap = q.creator.AddObject(cidToGIDStream)
 		cid.W = widths
 		return nil
 	}
@@ -225,7 +228,8 @@ func (q *File) getCIDSystemInfo() types.Reference {
 // copied from fpdf.php
 func (q *File) getToUnicode() types.Reference {
 	if q.toUnicode.Number == 0 {
-		q.toUnicode = q.creator.AddObject(types.Stream{Data: []byte("/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n/CIDSystemInfo\n<</Registry (Adobe)\n/Ordering (UCS)\n/Supplement 0\n>> def\n/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n1 beginbfrange\n<0000> <FFFF> <0000>\nendbfrange\nendcmap\nCMapName currentdict /CMap defineresource pop\nend\nend")})
+		stream, _ := types.NewStream([]byte("/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n/CIDSystemInfo\n<</Registry (Adobe)\n/Ordering (UCS)\n/Supplement 0\n>> def\n/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n1 beginbfrange\n<0000> <FFFF> <0000>\nendbfrange\nendcmap\nCMapName currentdict /CMap defineresource pop\nend\nend"))
+		q.toUnicode = q.creator.AddObject(stream)
 	}
 	return q.toUnicode
 }

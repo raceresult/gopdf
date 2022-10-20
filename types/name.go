@@ -22,3 +22,7 @@ func (q Name) ToRawBytes() []byte {
 
 	return []byte(s)
 }
+
+func (q Name) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

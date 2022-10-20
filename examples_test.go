@@ -5,6 +5,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/raceresult/gopdf/extractor"
+
+	"github.com/raceresult/gopdf/pdf"
+
+	"github.com/raceresult/gopdf/pdffile"
+
 	"github.com/raceresult/gopdf/builder"
 	"github.com/raceresult/gopdf/types"
 )
@@ -79,8 +85,8 @@ func TestExample2(t *testing.T) {
 		Width:     builder.MM(50),
 		Height:    builder.MM(30),
 		LineWidth: builder.MM(3),
-		LineColor: builder.ColorRGB{0, 255, 0},
-		FillColor: builder.ColorRGB{255, 0, 255},
+		LineColor: builder.NewColorRGB(0, 255, 0),
+		FillColor: builder.NewColorRGB(255, 0, 255),
 	})
 
 	// add composite font
@@ -102,8 +108,8 @@ func TestExample2(t *testing.T) {
 		FontSize:     36,
 		X:            builder.MM(20),
 		Y:            builder.MM(100),
-		Color:        builder.ColorRGB{200, 200, 200},
-		OutlineColor: builder.ColorRGB{10, 20, 10},
+		Color:        builder.NewColorRGB(200, 200, 200),
+		OutlineColor: builder.NewColorRGB(10, 20, 10),
 		RenderMode:   types.RenderingModeFillAndStroke,
 		OutlineWidth: builder.MM(0.5),
 	})
@@ -115,6 +121,60 @@ func TestExample2(t *testing.T) {
 		return
 	}
 	err = ioutil.WriteFile("example2.pdf", bts, os.ModePerm)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestRead(t *testing.T) {
+	//bts, err := ioutil.ReadFile("C:\\users\\soenke\\downloads\\02_Bib A5 with Transponder.pdf")
+	bts, err := ioutil.ReadFile("C:\\users\\soenke\\downloads\\108582.pdf")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	f, err := pdffile.ReadFile(bts)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	ex := extractor.NewExtractor(f)
+	allPages, err := ex.GetAllPages()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	newPDF := pdf.NewFile()
+
+	p := allPages[1]
+	newPage := newPDF.NewPage(float64(p.MediaBox.URY), float64(p.MediaBox.URX))
+	cp, err := newPDF.NewCapturedPage(p, f)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	newPage.AddCapturedPage(cp)
+
+	p = allPages[0]
+	newPage = newPDF.NewPage(float64(p.MediaBox.URX), float64(p.MediaBox.URY))
+	cp, err = newPDF.NewCapturedPage(p, f)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	newPage.AddCapturedPage(cp)
+
+	// output
+	bts, err = newPDF.Write()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = ioutil.WriteFile("exampleRead.pdf", bts, os.ModePerm)
 	if err != nil {
 		t.Error(err)
 		return

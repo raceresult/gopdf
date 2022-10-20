@@ -23,3 +23,7 @@ const (
 func (q ColorSpaceFamily) ToRawBytes() []byte {
 	return Name(q).ToRawBytes()
 }
+
+func (q ColorSpaceFamily) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

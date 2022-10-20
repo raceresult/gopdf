@@ -18,3 +18,11 @@ func (q Dictionary) ToRawBytes() []byte {
 	sb.WriteString(">>\n")
 	return sb.Bytes()
 }
+
+func (q Dictionary) Copy(copyRef func(reference Reference) Reference) Object {
+	c := make(Dictionary, len(q))
+	for i, a := range q {
+		c[i] = Copy(a, copyRef)
+	}
+	return c
+}

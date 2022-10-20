@@ -30,7 +30,7 @@ func NewBuilder() *Builder {
 func (q *Builder) Build() ([]byte, error) {
 	q.file.Version = q.Version
 	q.file.Info = q.Info
-	q.file.ID = q.ID
+	q.file.ID = [2]types.String{types.String(q.ID[0]), types.String(q.ID[1])}
 	q.file.CompressStreams = q.CompressStreams
 
 	for _, p := range q.pages {

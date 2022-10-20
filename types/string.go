@@ -23,3 +23,7 @@ func (q String) ToRawBytes() []byte {
 	s := replace.Replace(string(q))
 	return []byte("(" + s + ")")
 }
+
+func (q String) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

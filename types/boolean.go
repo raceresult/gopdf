@@ -10,3 +10,7 @@ func (q Boolean) ToRawBytes() []byte {
 	}
 	return []byte("false")
 }
+
+func (q Boolean) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

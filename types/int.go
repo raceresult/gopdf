@@ -9,3 +9,7 @@ type Int int
 func (q Int) ToRawBytes() []byte {
 	return []byte(strconv.Itoa(int(q)))
 }
+
+func (q Int) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

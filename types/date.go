@@ -15,3 +15,7 @@ func (q Date) ToRawBytes() []byte {
 	s = String("D:" + time.Time(q).Format("20060102150405-07'00'"))
 	return s.ToRawBytes()
 }
+
+func (q Date) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

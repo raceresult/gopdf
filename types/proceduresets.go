@@ -15,3 +15,7 @@ const (
 func (q ProcedureSet) ToRawBytes() []byte {
 	return Name(q).ToRawBytes()
 }
+
+func (q ProcedureSet) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

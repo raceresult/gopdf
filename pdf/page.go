@@ -14,7 +14,7 @@ type Page struct {
 	Data types.Page
 
 	// list of commands/operators already added to the page
-	commands [][]byte
+	contents []interface{}
 
 	// we need a reference to the current font for character encoding
 	currFont FontHandler
@@ -39,9 +39,14 @@ func newPage(width, height float64, parent types.Reference) *Page {
 
 // AddProcSets adds ProcedureSets to the page resources unless already listed
 func (q *Page) AddProcSets(pss ...types.ProcedureSet) {
+	var d types.Array
+	if q.Data.Resources.ProcSet != nil {
+		d = q.Data.Resources.ProcSet.(types.Array)
+	}
+
 	for _, ps := range pss {
 		var found bool
-		for _, ex := range q.Data.Resources.ProcSet {
+		for _, ex := range d {
 			if ex == ps {
 				found = true
 				break
@@ -50,48 +55,57 @@ func (q *Page) AddProcSets(pss ...types.ProcedureSet) {
 		if found {
 			continue
 		}
-		q.Data.Resources.ProcSet = append(q.Data.Resources.ProcSet, ps)
+		d = append(d, ps)
 	}
+	q.Data.Resources.ProcSet = d
 }
 
 // AddFont adds a font to the list of resources of the page (unless already list ed) and return the font name
 func (q *Page) AddFont(f FontHandler) types.Name {
 	// create font Dictionary if not done yet
-	if q.Data.Resources.Font == nil {
-		q.Data.Resources.Font = types.Dictionary{}
+	var d types.Dictionary
+	if q.Data.Resources.Font != nil {
+		d = q.Data.Resources.Font.(types.Dictionary)
+	} else {
+		d = make(types.Dictionary)
 	}
 
 	// check if already listed
 	ref := f.Reference()
-	for k, v := range q.Data.Resources.Font {
+	for k, v := range d {
 		if v == ref {
 			return k
 		}
 	}
 
 	// create new name and add
-	n := types.Name("F" + strconv.Itoa(len(q.Data.Resources.Font)+1))
-	q.Data.Resources.Font[n] = ref
+	n := types.Name("F" + strconv.Itoa(len(d)+1))
+	d[n] = ref
+	q.Data.Resources.Font = d
 	return n
 }
 
 // AddXObject adds an XObject to the list of resources of the page (unless already listed) and return the resource name
 func (q *Page) AddXObject(obj types.Reference) types.Name {
 	// create XObject Dictionary if not done yet
-	if q.Data.Resources.XObject == nil {
-		q.Data.Resources.XObject = types.Dictionary{}
+	var d types.Dictionary
+	if q.Data.Resources.XObject != nil {
+		d = q.Data.Resources.XObject.(types.Dictionary)
+	} else {
+		d = make(types.Dictionary)
 	}
 
 	// check if already listed
-	for k, v := range q.Data.Resources.XObject {
+	for k, v := range d {
 		if v == obj {
 			return k
 		}
 	}
 
 	// create new name and add
-	n := types.Name("img" + strconv.Itoa(len(q.Data.Resources.XObject)+1))
-	q.Data.Resources.XObject[n] = obj
+	n := types.Name("img" + strconv.Itoa(len(d)+1))
+	d[n] = obj
+	q.Data.Resources.XObject = d
 	return n
 }
 
@@ -102,7 +116,111 @@ func (q *Page) AddCommand(operator string, args ...types.Object) {
 		arr = append(arr, v.ToRawBytes())
 	}
 	arr = append(arr, []byte(operator))
-	q.commands = append(q.commands, bytes.Join(arr, []byte{' '}))
+	q.contents = append(q.contents, bytes.Join(arr, []byte{' '}))
+}
+
+// AddCapturedPage adds the content of a captured page to this page
+func (q *Page) AddCapturedPage(cp *CapturedPage) {
+	// ExtGState
+	if cp.Resources.ExtGState != nil {
+		d, ok := q.Data.Resources.ExtGState.(types.Dictionary)
+		if !ok {
+			d = make(types.Dictionary)
+		}
+		for k, v := range cp.Resources.ExtGState {
+			d[k] = v
+		}
+		q.Data.Resources.ExtGState = d
+	}
+
+	// ColorSpace
+	if cp.Resources.ColorSpace != nil {
+		d, ok := q.Data.Resources.ColorSpace.(types.Dictionary)
+		if !ok {
+			d = make(types.Dictionary)
+		}
+		for k, v := range cp.Resources.ColorSpace {
+			d[k] = v
+		}
+		q.Data.Resources.ColorSpace = d
+	}
+
+	// Pattern
+	if cp.Resources.Pattern != nil {
+		d, ok := q.Data.Resources.Pattern.(types.Dictionary)
+		if !ok {
+			d = make(types.Dictionary)
+		}
+		for k, v := range cp.Resources.Pattern {
+			d[k] = v
+		}
+		q.Data.Resources.Pattern = d
+	}
+
+	// Shading
+	if cp.Resources.Shading != nil {
+		d, ok := q.Data.Resources.Shading.(types.Dictionary)
+		if !ok {
+			d = make(types.Dictionary)
+		}
+		for k, v := range cp.Resources.Shading {
+			d[k] = v
+		}
+		q.Data.Resources.Shading = d
+	}
+
+	// xObjects
+	if cp.Resources.XObject != nil {
+		d, ok := q.Data.Resources.XObject.(types.Dictionary)
+		if !ok {
+			d = make(types.Dictionary)
+		}
+		for k, v := range cp.Resources.XObject {
+			d[k] = v
+		}
+		q.Data.Resources.XObject = d
+	}
+
+	// fonts
+	if cp.Resources.Font != nil {
+		d, ok := q.Data.Resources.Font.(types.Dictionary)
+		if !ok {
+			d = make(types.Dictionary)
+		}
+		for k, v := range cp.Resources.Font {
+			d[k] = v
+		}
+		q.Data.Resources.Font = d
+	}
+
+	// ProcSet
+	if cp.Resources.ProcSet != nil {
+		d, ok := q.Data.Resources.ProcSet.(types.Array)
+		if !ok {
+			d = make(types.Array, 0)
+		}
+		for k, v := range cp.Resources.ProcSet {
+			d[k] = v
+		}
+		q.Data.Resources.ProcSet = d
+	}
+
+	// Properties
+	if cp.Resources.Properties != nil {
+		d, ok := q.Data.Resources.Properties.(types.Dictionary)
+		if !ok {
+			d = make(types.Dictionary)
+		}
+		for k, v := range cp.Resources.Properties {
+			d[k] = v
+		}
+		q.Data.Resources.Properties = d
+	}
+
+	// stream
+	for _, c := range cp.Contents {
+		q.contents = append(q.contents, c)
+	}
 }
 
 // create is called when building the pdf file. It is supposed to add all objects to the creator and return a
@@ -114,14 +232,42 @@ func (q *Page) create(creator *pdffile.File, compress bool) (types.Reference, er
 		filter = types.Filter_FlateDecode
 	}
 
-	// create content stream
-	stream, err := types.NewStream(bytes.Join(q.commands, []byte{'\n'}), filter)
-	if err != nil {
+	// Contents can be a mixture of byte slices and references to existing content streams (when adding page from other document).
+	// We need to join existing byte parts
+	var allRefs types.Array
+	var currBytes [][]byte
+	flushBytes := func() error {
+		if len(currBytes) == 0 {
+			return nil
+		}
+		stream, err := types.NewStream(bytes.Join(currBytes, []byte{'\n'}), filter)
+		if err != nil {
+			return err
+		}
+		allRefs = append(allRefs, creator.AddObject(stream))
+		currBytes = nil
+		return nil
+	}
+	for _, c := range q.contents {
+		switch v := c.(type) {
+		case []byte:
+			currBytes = append(currBytes, v)
+		case types.Reference:
+			if err := flushBytes(); err != nil {
+				return types.Reference{}, err
+			}
+			allRefs = append(allRefs, v)
+		}
+	}
+	if err := flushBytes(); err != nil {
 		return types.Reference{}, err
 	}
-	streamRef := creator.AddObject(stream)
 
 	// create page object and return reference to it
-	q.Data.Contents = &streamRef
+	if len(allRefs) == 1 {
+		q.Data.Contents = allRefs[0]
+	} else {
+		q.Data.Contents = allRefs
+	}
 	return creator.AddObject(q.Data), nil
 }

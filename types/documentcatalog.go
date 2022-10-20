@@ -1,5 +1,7 @@
 package types
 
+import "errors"
+
 // PDF Reference 1.4, Table 3.16 Entries in the catalog dictionary
 
 type DocumentCatalog struct {
@@ -201,4 +203,224 @@ func (q DocumentCatalog) ToRawBytes() []byte {
 	}
 
 	return d.ToRawBytes()
+}
+
+func (q *DocumentCatalog) Read(dict Dictionary) error {
+	// Type
+	v, ok := dict["Type"]
+	if !ok {
+		return errors.New("catalog missing Type")
+	}
+	dtype, ok := v.(Name)
+	if !ok {
+		return errors.New("catalog field Type invalid")
+	}
+	if dtype != "Catalog" {
+		return errors.New("unexpected value in catalog field Type")
+	}
+
+	// Pages
+	v, ok = dict["Pages"]
+	if !ok {
+		return errors.New("catalog field Pages missing")
+	}
+	pages, ok := v.(Reference)
+	if !ok {
+		return errors.New("catalog field Pages invalid")
+	}
+	q.Pages = pages
+
+	// Version
+	v, ok = dict["Version"]
+	if ok {
+		vt, ok := v.(Name)
+		if !ok {
+			return errors.New("unexpected value type in catalog field Value")
+		}
+		q.Version = vt
+	}
+
+	// PageLabels
+	v, ok = dict["PageLabels"]
+	if ok {
+		vt, ok := v.(Name)
+		if !ok {
+			return errors.New("unexpected value type in catalog field PageLabels")
+		}
+		q.PageLabels = vt
+	}
+
+	// Names
+	v, ok = dict["Names"]
+	if ok {
+		vt, ok := v.(Name)
+		if !ok {
+			return errors.New("unexpected value type in catalog field Names")
+		}
+		q.Names = vt
+	}
+
+	// Dests
+	v, ok = dict["Dests"]
+	if ok {
+		vt, ok := v.(Reference)
+		if !ok {
+			return errors.New("unexpected value type in catalog field Dests")
+		}
+		q.Dests = vt
+	}
+
+	// ViewerPreferences
+	v, ok = dict["ViewerPreferences"]
+	if ok {
+		vt, ok := v.(Name)
+		if !ok {
+			return errors.New("unexpected value type in catalog field ViewerPreferences")
+		}
+		q.ViewerPreferences = vt
+	}
+
+	// PageLayout
+	v, ok = dict["PageLayout"]
+	if ok {
+		vt, ok := v.(Name)
+		if !ok {
+			return errors.New("unexpected value type in catalog field PageLayout")
+		}
+		q.PageLayout = vt
+	}
+
+	// PageMode
+	v, ok = dict["PageMode"]
+	if ok {
+		vt, ok := v.(Name)
+		if !ok {
+			return errors.New("unexpected value type in catalog field PageMode")
+		}
+		q.PageMode = vt
+	}
+
+	// Version
+	v, ok = dict["Outlines"]
+	if ok {
+		vt, ok := v.(Reference)
+		if !ok {
+			return errors.New("unexpected value type in catalog field Outlines")
+		}
+		q.Outlines = vt
+	}
+
+	// Threads
+	v, ok = dict["Threads"]
+	if ok {
+		vt, ok := v.(Array)
+		if !ok {
+			return errors.New("unexpected value type in catalog field Threads")
+		}
+		q.Threads = vt
+	}
+
+	// OpenAction
+	v, ok = dict["OpenAction"]
+	if ok {
+		vt, ok := v.(Array)
+		if !ok {
+			return errors.New("unexpected value type in catalog field OpenAction")
+		}
+		q.OpenAction = vt
+	}
+
+	// AdditionalActions
+	v, ok = dict["AdditionalActions"]
+	if ok {
+		q.AdditionalActions = v
+	}
+
+	// URI
+	v, ok = dict["URI"]
+	if ok {
+		q.URI = v
+	}
+
+	// AcroForm
+	v, ok = dict["AcroForm"]
+	if ok {
+		q.AcroForm = v
+	}
+
+	// Metadata
+	v, ok = dict["Metadata"]
+	if ok {
+		vt, ok := v.(Reference)
+		if !ok {
+			return errors.New("unexpected value type in catalog field Metadata")
+		}
+		q.Metadata = vt
+	}
+
+	// StructTreeRoot
+	v, ok = dict["StructTreeRoot"]
+	if ok {
+		q.StructTreeRoot = v
+	}
+
+	// MarkInfo
+	v, ok = dict["MarkInfo"]
+	if ok {
+		q.MarkInfo = v
+	}
+
+	// Lang
+	v, ok = dict["Lang"]
+	if ok {
+		vt, ok := v.(TextString)
+		if !ok {
+			return errors.New("unexpected value type in catalog field Lang")
+		}
+		q.Lang = vt
+	}
+
+	// SpiderInfo
+	v, ok = dict["SpiderInfo"]
+	if ok {
+		q.SpiderInfo = v
+	}
+
+	// OutputIntents
+	v, ok = dict["OutputIntents"]
+	if ok {
+		vt, ok := v.(Array)
+		if !ok {
+			return errors.New("unexpected value type in catalog field OutputIntents")
+		}
+		q.OutputIntents = vt
+	}
+
+	// return without error
+	return nil
+}
+
+func (q DocumentCatalog) Copy(copyRef func(reference Reference) Reference) Object {
+	return DocumentCatalog{
+		Version:           q.Version.Copy(copyRef).(Name),
+		Pages:             q.Pages.Copy(copyRef).(Reference),
+		PageLabels:        Copy(q.PageLabels, copyRef),
+		Names:             Copy(q.Names, copyRef),
+		Dests:             q.Dests.Copy(copyRef).(Reference),
+		ViewerPreferences: Copy(q.ViewerPreferences, copyRef),
+		PageLayout:        q.PageLayout.Copy(copyRef).(Name),
+		PageMode:          q.PageMode.Copy(copyRef).(Name),
+		Outlines:          q.Outlines.Copy(copyRef).(Reference),
+		Threads:           q.Threads.Copy(copyRef).(Array),
+		OpenAction:        q.OpenAction.Copy(copyRef).(Array),
+		AdditionalActions: Copy(q.AdditionalActions, copyRef),
+		URI:               Copy(q.URI, copyRef).(Array),
+		AcroForm:          Copy(q.AcroForm, copyRef),
+		Metadata:          q.Metadata.Copy(copyRef).(Reference),
+		StructTreeRoot:    Copy(q.StructTreeRoot, copyRef),
+		MarkInfo:          Copy(q.MarkInfo, copyRef),
+		Lang:              q.Lang.Copy(copyRef).(TextString),
+		SpiderInfo:        Copy(q.SpiderInfo, copyRef),
+		OutputIntents:     q.OutputIntents.Copy(copyRef).(Array),
+	}
 }

@@ -16,7 +16,7 @@ import (
 
 // File is the main object to create a pdf file
 type File struct {
-	ID              [2]string
+	ID              [2]types.String
 	Info            types.InformationDictionary
 	Pages           []*Page
 	CompressStreams bool
@@ -28,6 +28,7 @@ type File struct {
 	catalog       types.DocumentCatalog
 	pageTree      types.PageTreeNode
 	creator       *pdffile.File
+	copiedObjects map[*pdffile.File]map[types.Reference]types.Reference
 }
 
 // NewFile creates a new File object

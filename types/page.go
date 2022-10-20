@@ -1,5 +1,7 @@
 package types
 
+import "errors"
+
 // PDF Reference 1.4, Table 3.18 Entries in a page object
 
 type Page struct {
@@ -221,4 +223,281 @@ func (q Page) ToRawBytes() []byte {
 	}
 
 	return d.ToRawBytes()
+}
+
+func (q *Page) Read(dict Dictionary) error {
+	// Type
+	v, ok := dict["Type"]
+	if !ok {
+		return errors.New("page missing Type")
+	}
+	dtype, ok := v.(Name)
+	if !ok {
+		return errors.New("page field Type invalid")
+	}
+	if dtype != "Page" {
+		return errors.New("unexpected value in page field Type")
+	}
+
+	// Parent
+	v, ok = dict["Parent"]
+	if !ok {
+		return errors.New("page field Parent missing")
+	}
+	q.Parent, ok = v.(Reference)
+	if !ok {
+		return errors.New("page field Parent invalid")
+	}
+
+	// LastModified
+	v, ok = dict["LastModified"]
+	if ok {
+		q.LastModified, ok = v.(Date)
+		if !ok {
+			return errors.New("page field LastModified invalid")
+		}
+	}
+
+	// Resources
+	v, ok = dict["Resources"]
+	if !ok {
+		return errors.New("page field Resource missing")
+	}
+	q.Resources, ok = v.(ResourceDictionary)
+	if !ok {
+		r, ok := v.(Dictionary)
+		if !ok {
+			return errors.New("page field Resources invalid")
+		}
+		var rd ResourceDictionary
+		if err := rd.Read(r); err != nil {
+			return err
+		}
+		q.Resources = rd
+	}
+
+	// MediaBox
+	v, ok = dict["MediaBox"]
+	if !ok {
+		return errors.New("page field MediaBox missing")
+	}
+	q.MediaBox, ok = v.(Rectangle)
+	if !ok {
+		va, ok := v.(Array)
+		if !ok {
+			return errors.New("page field MediaBox invalid")
+		}
+		if err := q.MediaBox.Read(va); err != nil {
+			return err
+		}
+	}
+
+	// CropBox
+	v, ok = dict["CropBox"]
+	if ok {
+		r, ok := v.(Rectangle)
+		if ok {
+			q.CropBox = &r
+		} else {
+			va, ok := v.(Array)
+			if !ok {
+				return errors.New("page field CropBox invalid")
+			}
+			q.CropBox = &Rectangle{}
+			if err := q.CropBox.Read(va); err != nil {
+				return err
+			}
+		}
+	}
+
+	// BleedBox
+	v, ok = dict["BleedBox"]
+	if ok {
+		r, ok := v.(Rectangle)
+		if ok {
+			q.BleedBox = &r
+		} else {
+			va, ok := v.(Array)
+			if !ok {
+				return errors.New("page field BleedBox invalid")
+			}
+			q.BleedBox = &Rectangle{}
+			if err := q.BleedBox.Read(va); err != nil {
+				return err
+			}
+		}
+	}
+
+	// TrimBox
+	v, ok = dict["TrimBox"]
+	if ok {
+		r, ok := v.(Rectangle)
+		if ok {
+			q.TrimBox = &r
+		} else {
+			va, ok := v.(Array)
+			if !ok {
+				return errors.New("page field TrimBox invalid")
+			}
+			q.TrimBox = &Rectangle{}
+			if err := q.TrimBox.Read(va); err != nil {
+				return err
+			}
+		}
+	}
+
+	// ArtBox
+	v, ok = dict["ArtBox"]
+	if ok {
+		r, ok := v.(Rectangle)
+		if ok {
+			q.ArtBox = &r
+		} else {
+			va, ok := v.(Array)
+			if !ok {
+				return errors.New("page field ArtBox invalid")
+			}
+			q.ArtBox = &Rectangle{}
+			if err := q.ArtBox.Read(va); err != nil {
+				return err
+			}
+		}
+	}
+
+	// BoxColorInfo
+	v, ok = dict["BoxColorInfo"]
+	if ok {
+		q.BoxColorInfo = v
+	}
+
+	// Contents
+	v, ok = dict["Contents"]
+	if ok {
+		q.Contents = v
+	}
+
+	// Rotate
+	v, ok = dict["Rotate"]
+	if ok {
+		q.Rotate, ok = v.(Int)
+		if !ok {
+			return errors.New("page field Rotate invalid")
+		}
+	}
+
+	// Group
+	v, ok = dict["Group"]
+	if ok {
+		q.Group = v
+	}
+
+	// Thumb
+	v, ok = dict["Thumb"]
+	if ok {
+		q.Thumb = v
+	}
+
+	// B
+	v, ok = dict["B"]
+	if ok {
+		q.B, ok = v.(Array)
+		if !ok {
+			return errors.New("page field B invalid")
+		}
+	}
+
+	// B
+	v, ok = dict["B"]
+	if ok {
+		q.B, ok = v.(Array)
+		if !ok {
+			return errors.New("page field B invalid")
+		}
+	}
+
+	// Dur
+	v, ok = dict["Dur"]
+	if ok {
+		q.Dur, ok = v.(Number)
+		if !ok {
+			dur, ok := v.(Int)
+			if !ok {
+				return errors.New("page field Dur invalid")
+			}
+			q.Dur = Number(dur)
+		}
+	}
+
+	// Trans
+	v, ok = dict["Trans"]
+	if ok {
+		q.Trans = v
+	}
+
+	// Annots
+	v, ok = dict["Annots"]
+	if ok {
+		q.Annots, ok = v.(Array)
+		if !ok {
+			return errors.New("page field Annots invalid")
+		}
+	}
+
+	// AA
+	v, ok = dict["AA"]
+	if ok {
+		q.AA = v
+	}
+
+	// Metadata
+	v, ok = dict["Metadata"]
+	if ok {
+		q.Metadata = v
+	}
+
+	// PieceInfo
+	v, ok = dict["PieceInfo"]
+	if ok {
+		q.PieceInfo = v
+	}
+
+	// StructParents
+	v, ok = dict["StructParents"]
+	if ok {
+		q.StructParents, ok = v.(Int)
+		if !ok {
+			return errors.New("page field StructParents invalid")
+		}
+	}
+
+	// ID
+	v, ok = dict["ID"]
+	if ok {
+		q.ID, ok = v.(String)
+		if !ok {
+			return errors.New("page field ID invalid")
+		}
+	}
+
+	// PZ
+	v, ok = dict["PZ"]
+	if ok {
+		q.PZ, ok = v.(Number)
+		if !ok {
+			pz, ok := v.(Int)
+			if !ok {
+				return errors.New("page field PZ invalid")
+			}
+			q.PZ = Number(pz)
+		}
+	}
+
+	// SeparationInfo
+	v, ok = dict["SeparationInfo"]
+	if ok {
+		q.SeparationInfo = v
+	}
+
+	// return without error
+	return nil
 }

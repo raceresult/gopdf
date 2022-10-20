@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"errors"
 )
 
 // PDF Reference 1.4, Table 3.12 Entries in the file trailer dictionary
@@ -56,4 +57,78 @@ func (q *Trailer) ToRawBytes() []byte {
 
 	sb.Write(d.ToRawBytes())
 	return sb.Bytes()
+}
+
+func (q *Trailer) Read(dict Dictionary) error {
+	// Size
+	v, ok := dict["Size"]
+	if !ok {
+		return errors.New("trailer missing Size")
+	}
+	size, ok := v.(Int)
+	if !ok {
+		return errors.New("trailer field Size invalid")
+	}
+	q.Size = int(size)
+
+	// Prev
+	v, ok = dict["Prev"]
+	if ok {
+		prev, ok := v.(Int)
+		if !ok {
+			return errors.New("trailer field Prev invalid")
+		}
+		q.Prev = prev
+	}
+
+	// Root
+	v, ok = dict["Root"]
+	if !ok {
+		return errors.New("trailer missing Root")
+	}
+	root, ok := v.(Reference)
+	if !ok {
+		return errors.New("trailer field Size invalid")
+	}
+	q.Root = root
+
+	// Encrypt
+	v, ok = dict["Encrypt"]
+	if ok {
+		q.Encrypt = v
+	}
+
+	// Info
+	v, ok = dict["Info"]
+	if ok {
+		info, ok := v.(Reference)
+		if !ok {
+			return errors.New("trailer field Info invalid")
+		}
+		q.Info = info
+	}
+
+	// ID
+	v, ok = dict["ID"]
+	if ok {
+		a, ok := v.(Array)
+		if !ok {
+			return errors.New("trailer field ID invalid")
+		}
+		if len(a) != 2 {
+			return errors.New("trailer field ID invalid")
+		}
+		v1, ok := a[0].(String)
+		if !ok {
+			return errors.New("trailer field ID invalid")
+		}
+		v2, ok := a[0].(String)
+		if !ok {
+			return errors.New("trailer field ID invalid")
+		}
+		q.ID = [2]String{v1, v2}
+	}
+
+	// return without error
+	return nil
 }

@@ -61,3 +61,16 @@ func (q NameDictionary) ToRawBytes() []byte {
 	}
 	return d.ToRawBytes()
 }
+
+func (q NameDictionary) Copy(copyRef func(reference Reference) Reference) Object {
+	return NameDictionary{
+		Dests:         Copy(q.Dests, copyRef),
+		AP:            Copy(q.AP, copyRef),
+		JavaScript:    Copy(q.JavaScript, copyRef),
+		Pages:         Copy(q.Pages, copyRef),
+		Templates:     Copy(q.Templates, copyRef),
+		IDS:           Copy(q.IDS, copyRef),
+		URLS:          Copy(q.URLS, copyRef),
+		EmbeddedFiles: Copy(q.EmbeddedFiles, copyRef),
+	}
+}

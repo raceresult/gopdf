@@ -13,6 +13,12 @@ import (
 	"golang.org/x/image/bmp"
 )
 
+// Image holds both the Image object and the reference to it
+type Image struct {
+	Reference types.Reference
+	Image     *types.Image
+}
+
 // NewImage adds a new image as XObject to the file and returns the image object and its reference
 func (q *File) NewImage(bts []byte) (*Image, error) {
 	// read config
@@ -63,7 +69,7 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 		return nil, err
 	}
 	img := types.Image{
-		Stream:           *imgStream,
+		Stream:           imgStream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
@@ -144,7 +150,7 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	img.Stream = *imgStream
+	img.Stream = imgStream
 
 	// finish
 	return &Image{
@@ -177,7 +183,7 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		return nil, err
 	}
 	img := types.Image{
-		Stream:           *imgStream,
+		Stream:           imgStream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
@@ -189,13 +195,13 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	smaskStream.DecodeParms = types.Dictionary{
+	smaskStream.Dictionary.DecodeParms = types.Dictionary{
 		"Colors":           types.Int(1),
 		"BitsPerComponent": types.Int(8),
 		"Columns":          types.Int(conf.Width),
 	}
 	smaskRef := q.creator.AddObject(types.Image{
-		Stream:           *smaskStream,
+		Stream:           smaskStream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		ColorSpace:       types.ColorSpace_DeviceGray,
@@ -234,7 +240,7 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 		return nil, err
 	}
 	img := types.Image{
-		Stream:           *imgStream,
+		Stream:           imgStream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
@@ -246,13 +252,13 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	smaskStream.DecodeParms = types.Dictionary{
+	smaskStream.Dictionary.DecodeParms = types.Dictionary{
 		"Colors":           types.Int(1),
 		"BitsPerComponent": types.Int(8),
 		"Columns":          types.Int(conf.Width),
 	}
 	smaskRef := q.creator.AddObject(types.Image{
-		Stream:           *smaskStream,
+		Stream:           smaskStream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		ColorSpace:       types.ColorSpace_DeviceGray,

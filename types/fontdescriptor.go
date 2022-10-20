@@ -70,3 +70,26 @@ func (q FontDescriptor) ToRawBytes() []byte {
 
 	return d.ToRawBytes()
 }
+
+func (q FontDescriptor) Copy(copyRef func(reference Reference) Reference) Object {
+	return FontDescriptor{
+		FontName:     q.FontName.Copy(copyRef).(Name),
+		Flags:        q.Flags.Copy(copyRef).(Int),
+		FontBBox:     q.FontBBox.Copy(copyRef).(Rectangle),
+		ItalicAngle:  q.ItalicAngle.Copy(copyRef).(Number),
+		Ascent:       q.Ascent.Copy(copyRef).(Number),
+		Descent:      q.Descent.Copy(copyRef).(Number),
+		Leading:      q.Leading.Copy(copyRef).(Number),
+		CapHeight:    q.CapHeight.Copy(copyRef).(Number),
+		XHeight:      q.XHeight.Copy(copyRef).(Number),
+		StemV:        q.StemV.Copy(copyRef).(Number),
+		StemH:        q.StemH.Copy(copyRef).(Number),
+		AvgWidth:     q.AvgWidth.Copy(copyRef).(Number),
+		MaxWidth:     q.MaxWidth.Copy(copyRef).(Number),
+		MissingWidth: q.MissingWidth.Copy(copyRef).(Number),
+		FontFile:     q.FontFile.Copy(copyRef).(Reference),
+		FontFile2:    q.FontFile2.Copy(copyRef).(Reference),
+		FontFile3:    q.FontFile3.Copy(copyRef).(Reference),
+		CharSet:      q.CharSet.Copy(copyRef).(String),
+	}
+}

@@ -18,3 +18,11 @@ func (q Array) ToRawBytes() []byte {
 	sb.WriteString("]")
 	return sb.Bytes()
 }
+
+func (q Array) Copy(copyRef func(reference Reference) Reference) Object {
+	c := make(Array, len(q))
+	for i, a := range q {
+		c[i] = Copy(a, copyRef)
+	}
+	return c
+}

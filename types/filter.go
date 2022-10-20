@@ -19,3 +19,7 @@ const (
 func (q Filter) ToRawBytes() []byte {
 	return Name(q).ToRawBytes()
 }
+
+func (q Filter) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

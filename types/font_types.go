@@ -31,3 +31,7 @@ const (
 func (q FontSubType) ToRawBytes() []byte {
 	return Name(q).ToRawBytes()
 }
+
+func (q FontSubType) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

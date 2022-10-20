@@ -22,3 +22,7 @@ const (
 func (q StandardFontName) ToRawBytes() []byte {
 	return Name(q).ToRawBytes()
 }
+
+func (q StandardFontName) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

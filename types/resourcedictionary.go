@@ -5,36 +5,36 @@ package types
 type ResourceDictionary struct {
 	// (Optional) A dictionary mapping resource names to graphics state parameter
 	// dictionaries (see Section 4.3.4, “Graphics State Parameter Dictionaries”).
-	ExtGState Dictionary
+	ExtGState Object
 
 	// (Optional) A dictionary mapping each resource name to either the name of a
 	// device-dependent color space or an array describing a color space (see Sec-
 	// tion 4.5, “Color Spaces”).
-	ColorSpace Dictionary
+	ColorSpace Object
 
 	// (Optional) A dictionary mapping resource names to pattern objects (see Sec-
 	// tion 4.6, “Patterns”).
-	Pattern Dictionary
+	Pattern Object
 
 	// (Optional; PDF 1.3) A dictionary mapping resource names to shading dic-
 	// tionaries (see “Shading Dictionaries” on page 233).
-	Shading Dictionary
+	Shading Object
 
 	// (Optional) A dictionary mapping resource names to external objects (see Sec-
 	// tion 4.7, “External Objects”)
-	XObject Dictionary
+	XObject Object
 
 	// (Optional) A dictionary mapping resource names to font dictionaries (see
 	// Chapter 5).
-	Font Dictionary
+	Font Object
 
 	// (Optional) An array of predefined procedure set names (see Section 9.1,
 	// “Procedure Sets”).
-	ProcSet Array
+	ProcSet Object
 
 	// (Optional; PDF 1.2) A dictionary mapping resource names to property list
 	// dictionaries for marked content (see Section 9.5.1, “Property Lists”).
-	Properties Dictionary
+	Properties Object
 }
 
 func (q ResourceDictionary) ToRawBytes() []byte {
@@ -58,7 +58,7 @@ func (q ResourceDictionary) ToRawBytes() []byte {
 	if q.Font != nil {
 		d["Font"] = q.Font
 	}
-	if len(q.ProcSet) != 0 {
+	if q.ProcSet != nil {
 		d["ProcSet"] = q.ProcSet
 	}
 	if q.Properties != nil {
@@ -66,4 +66,57 @@ func (q ResourceDictionary) ToRawBytes() []byte {
 	}
 
 	return d.ToRawBytes()
+}
+
+func (q *ResourceDictionary) Read(dict Dictionary) error {
+	// ExtGState
+	v, ok := dict["ExtGState"]
+	if ok {
+		q.ExtGState = v
+	}
+
+	// ColorSpace
+	v, ok = dict["ColorSpace"]
+	if ok {
+		q.ColorSpace = v
+	}
+
+	// Pattern
+	v, ok = dict["Pattern"]
+	if ok {
+		q.Pattern = v
+	}
+
+	// Shading
+	v, ok = dict["Shading"]
+	if ok {
+		q.Shading = v
+	}
+
+	// XObject
+	v, ok = dict["XObject"]
+	if ok {
+		q.XObject = v
+	}
+
+	// Font
+	v, ok = dict["Font"]
+	if ok {
+		q.Font = v
+	}
+
+	// ProcSet
+	v, ok = dict["ProcSet"]
+	if ok {
+		q.ProcSet = v
+	}
+
+	// Properties
+	v, ok = dict["Properties"]
+	if ok {
+		q.Properties = v
+	}
+
+	// return without errors
+	return nil
 }

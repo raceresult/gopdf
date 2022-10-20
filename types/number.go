@@ -10,3 +10,7 @@ func (q Number) ToRawBytes() []byte {
 	s := strconv.FormatFloat(float64(q), 'f', 3, 64)
 	return []byte(s)
 }
+
+func (q Number) Copy(_ func(reference Reference) Reference) Object {
+	return q
+}

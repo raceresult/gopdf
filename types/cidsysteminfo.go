@@ -30,3 +30,11 @@ func (q CIDSystemInfoDictionary) ToRawBytes() []byte {
 
 	return d.ToRawBytes()
 }
+
+func (q CIDSystemInfoDictionary) Copy(copyRef func(reference Reference) Reference) Object {
+	return CIDSystemInfoDictionary{
+		Registry:   q.Registry.Copy(copyRef).(String),
+		Ordering:   q.Ordering.Copy(copyRef).(String),
+		Supplement: q.Supplement.Copy(copyRef).(Int),
+	}
+}
