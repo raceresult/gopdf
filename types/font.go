@@ -137,7 +137,7 @@ func (q *Font) Read(dict Dictionary) error {
 
 	// FirstChar
 	v, ok = dict["FirstChar"]
-	if ok {
+	if !ok {
 		return errors.New("font field FirstChar missing")
 	}
 	q.FirstChar, ok = v.(Int)

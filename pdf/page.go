@@ -199,8 +199,8 @@ func (q *Page) AddCapturedPage(cp *CapturedPage) {
 		if !ok {
 			d = make(types.Array, 0)
 		}
-		for k, v := range cp.Resources.ProcSet {
-			d[k] = v
+		for _, v := range cp.Resources.ProcSet {
+			d = append(d, v)
 		}
 		q.Data.Resources.ProcSet = d
 	}

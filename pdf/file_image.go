@@ -69,12 +69,13 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 		return nil, err
 	}
 	img := types.Image{
-		Stream:           imgStream,
+		Stream:           imgStream.Stream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
 		ColorSpace:       types.ColorSpace_DeviceRGB,
 	}
+	_ = img.Dictionary.Read(imgStream.Dictionary.(types.Dictionary))
 
 	// finish
 	return &Image{
@@ -150,7 +151,10 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	img.Stream = imgStream
+	img.Stream = imgStream.Stream
+	if err := img.Dictionary.Read(imgStream.Dictionary.(types.Dictionary)); err != nil {
+		return nil, err
+	}
 
 	// finish
 	return &Image{
@@ -183,31 +187,35 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		return nil, err
 	}
 	img := types.Image{
-		Stream:           imgStream,
+		Stream:           imgStream.Stream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
 		ColorSpace:       types.ColorSpace_DeviceRGB,
 	}
+	_ = img.Dictionary.Read(imgStream.Dictionary.(types.Dictionary))
 
 	// create transparency mask
 	smaskStream, err := types.NewStream(smask, types.Filter_FlateDecode)
 	if err != nil {
 		return nil, err
 	}
-	smaskStream.Dictionary.DecodeParms = types.Dictionary{
-		"Colors":           types.Int(1),
-		"BitsPerComponent": types.Int(8),
-		"Columns":          types.Int(conf.Width),
+	smaskStream.Dictionary = types.StreamDictionary{
+		DecodeParms: types.Dictionary{
+			"Colors":           types.Int(1),
+			"BitsPerComponent": types.Int(8),
+			"Columns":          types.Int(conf.Width),
+		},
 	}
-	smaskRef := q.creator.AddObject(types.Image{
-		Stream:           smaskStream,
+	smaskImg := types.Image{
+		Stream:           smaskStream.Stream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		ColorSpace:       types.ColorSpace_DeviceGray,
 		BitsPerComponent: types.Int(8),
-	})
-	img.SMask = smaskRef
+	}
+	_ = smaskImg.Dictionary.Read(smaskStream.Dictionary.(types.Dictionary))
+	img.SMask = q.creator.AddObject(smaskImg)
 
 	// finish
 	return &Image{
@@ -240,31 +248,35 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 		return nil, err
 	}
 	img := types.Image{
-		Stream:           imgStream,
+		Stream:           imgStream.Stream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
 		ColorSpace:       types.ColorSpace_DeviceRGB,
 	}
+	_ = img.Dictionary.Read(imgStream.Dictionary.(types.Dictionary))
 
 	// create transparency mask
 	smaskStream, err := types.NewStream(smask, types.Filter_FlateDecode)
 	if err != nil {
 		return nil, err
 	}
-	smaskStream.Dictionary.DecodeParms = types.Dictionary{
-		"Colors":           types.Int(1),
-		"BitsPerComponent": types.Int(8),
-		"Columns":          types.Int(conf.Width),
+	smaskStream.Dictionary = types.StreamDictionary{
+		DecodeParms: types.Dictionary{
+			"Colors":           types.Int(1),
+			"BitsPerComponent": types.Int(8),
+			"Columns":          types.Int(conf.Width),
+		},
 	}
-	smaskRef := q.creator.AddObject(types.Image{
-		Stream:           smaskStream,
+	sMaskImg := types.Image{
+		Stream:           smaskStream.Stream,
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		ColorSpace:       types.ColorSpace_DeviceGray,
 		BitsPerComponent: types.Int(8),
-	})
-	img.SMask = smaskRef
+	}
+	_ = sMaskImg.Dictionary.Read(imgStream.Dictionary.(types.Dictionary))
+	img.SMask = q.creator.AddObject(sMaskImg)
 
 	// finish
 	return &Image{

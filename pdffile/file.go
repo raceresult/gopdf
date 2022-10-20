@@ -56,31 +56,6 @@ func (q *File) GetObject(ref types.Reference) (types.Object, error) {
 	return nil, errors.New("object " + strconv.Itoa(ref.Number) + "/" + strconv.Itoa(ref.Generation) + " not found")
 }
 
-// GetDictionary returns a dictionary, if given or referenced to
-func (q *File) GetDictionary(obj types.Object) (types.Dictionary, error) {
-	if obj == nil {
-		return nil, errors.New("nil given")
-	}
-	d, ok := obj.(types.Dictionary)
-	if ok {
-		return d, nil
-	}
-
-	r, ok := obj.(types.Reference)
-	if !ok {
-		return nil, errors.New("object is neither dictionary nor reference")
-	}
-	d1, err := q.GetObject(r)
-	if err != nil {
-		return nil, err
-	}
-	d, ok = d1.(types.Dictionary)
-	if !ok {
-		return nil, errors.New("reference does not point to dictionary")
-	}
-	return d, nil
-}
-
 // WriteTo writes the parsed to the given writer
 func (q *File) WriteTo(w io.Writer) (int64, error) {
 	// check version

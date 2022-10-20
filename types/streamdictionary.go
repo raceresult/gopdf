@@ -126,16 +126,20 @@ func (q *StreamDictionary) Read(dict Dictionary) error {
 		if ok {
 			q.Filter = []Filter{Filter(filter)}
 		} else {
-			filterArr, ok := v.(Array)
+			arr, ok := v.(Array)
 			if !ok {
 				return errors.New("stream dictionary field Filter invalid")
 			}
-			for _, v := range filterArr {
-				fv, ok := v.(Name)
+			for _, v := range arr {
+				fv, ok := v.(Filter)
 				if !ok {
-					return errors.New("stream dictionary field Filter invalid")
+					fvn, ok := v.(Name)
+					if !ok {
+						return errors.New("stream dictionary field Filter invalid")
+					}
+					fv = Filter(fvn)
 				}
-				q.Filter = append(q.Filter, Filter(fv))
+				q.Filter = append(q.Filter, fv)
 			}
 		}
 	}
@@ -164,9 +168,13 @@ func (q *StreamDictionary) Read(dict Dictionary) error {
 				return errors.New("stream dictionary field FFilter invalid")
 			}
 			for _, v := range filterArr {
-				fv, ok := v.(Name)
+				fv, ok := v.(Filter)
 				if !ok {
-					return errors.New("stream dictionary field FFilter invalid")
+					fvn, ok := v.(Name)
+					if !ok {
+						return errors.New("stream dictionary field FFilter invalid")
+					}
+					fv = Filter(fvn)
 				}
 				q.FFilter = append(q.FFilter, Filter(fv))
 			}

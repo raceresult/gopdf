@@ -2,8 +2,9 @@ package types
 
 // additional entries according to table 5.23
 
-type StreamDictionaryFont struct {
-	Stream StreamObject
+type StreamFont struct {
+	Dictionary Dictionary
+	Stream     []byte
 
 	// (Required for Type 1 and TrueType fonts) The length in bytes of the clear-text portion
 	// of the Type 1 font program (see below), or the entire TrueType font program, after it
@@ -32,8 +33,11 @@ type StreamDictionaryFont struct {
 	Metadata Object
 }
 
-func (q StreamDictionaryFont) ToRawBytes() []byte {
-	d := q.Stream.Dictionary.createDict()
+func (q StreamFont) ToRawBytes() []byte {
+	d := make(Dictionary)
+	for k, v := range q.Dictionary {
+		d[k] = v
+	}
 	if q.Length1 != 0 {
 		d["Length1"] = q.Length1
 	}
@@ -52,13 +56,14 @@ func (q StreamDictionaryFont) ToRawBytes() []byte {
 	return d.ToRawBytes()
 }
 
-func (q StreamDictionaryFont) Copy(copyRef func(reference Reference) Reference) Object {
-	return StreamDictionaryFont{
-		Stream:   q.Stream.Copy(copyRef).(StreamObject),
-		Length1:  q.Length1.Copy(copyRef).(Int),
-		Length2:  q.Length2.Copy(copyRef).(Int),
-		Length3:  q.Length3.Copy(copyRef).(Int),
-		Subtype:  q.Subtype.Copy(copyRef).(Name),
-		Metadata: Copy(q.Metadata, copyRef),
+func (q StreamFont) Copy(copyRef func(reference Reference) Reference) Object {
+	return StreamFont{
+		Stream:     q.Stream,
+		Dictionary: q.Dictionary.Copy(copyRef).(Dictionary),
+		Length1:    q.Length1.Copy(copyRef).(Int),
+		Length2:    q.Length2.Copy(copyRef).(Int),
+		Length3:    q.Length3.Copy(copyRef).(Int),
+		Subtype:    q.Subtype.Copy(copyRef).(Name),
+		Metadata:   Copy(q.Metadata, copyRef),
 	}
 }

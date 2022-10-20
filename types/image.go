@@ -8,7 +8,8 @@ import (
 // PDF Reference 1.4, Table 4.35 Additional entries specific to an image dictionary
 
 type Image struct {
-	Stream StreamObject
+	Dictionary StreamDictionary
+	Stream     []byte
 
 	// (Optional) The type of PDF object that this dictionary describes; if
 	// present, must be XObject for an image XObject.
@@ -121,7 +122,7 @@ type Image struct {
 
 func (q Image) ToRawBytes() []byte {
 	sb := bytes.Buffer{}
-	d := q.Stream.Dictionary.createDict()
+	d := q.Dictionary.createDict()
 	d["Type"] = Name("XObject")
 	d["Subtype"] = Name("Image")
 	d["Width"] = q.Width
@@ -169,7 +170,7 @@ func (q Image) ToRawBytes() []byte {
 	sb.Write(d.ToRawBytes())
 
 	sb.WriteString("stream\n")
-	sb.Write(q.Stream.Stream)
+	sb.Write(q.Stream)
 	sb.WriteString("\n")
 	sb.WriteString("endstream\n")
 
@@ -204,9 +205,11 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// general stream dictionary
-	if err := q.Stream.Dictionary.Read(dict); err != nil {
+	sd := StreamDictionary{}
+	if err := sd.Read(dict); err != nil {
 		return err
 	}
+	q.Dictionary = sd
 
 	// Width
 	v, ok = dict["Width"]
@@ -345,7 +348,8 @@ func (q *Image) Read(dict Dictionary) error {
 
 func (q Image) Copy(copyRef func(reference Reference) Reference) Object {
 	return Image{
-		Stream:           q.Stream.Copy(copyRef).(StreamObject),
+		Dictionary:       q.Dictionary.Copy(copyRef).(StreamDictionary),
+		Stream:           q.Stream,
 		Width:            q.Width.Copy(copyRef).(Int),
 		Height:           q.Height.Copy(copyRef).(Int),
 		ColorSpace:       Copy(q.ColorSpace, copyRef),

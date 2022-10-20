@@ -9,7 +9,7 @@ import (
 // PDF Reference 1.4, 3.2.7 Stream Objects
 
 type StreamObject struct {
-	Dictionary StreamDictionary
+	Dictionary Object
 	Stream     []byte
 }
 
@@ -29,7 +29,7 @@ func (q StreamObject) ToRawBytes() []byte {
 
 func (q StreamObject) Copy(copyRef func(reference Reference) Reference) Object {
 	return StreamObject{
-		Dictionary: q.Dictionary.Copy(copyRef).(StreamDictionary),
+		Dictionary: Copy(q.Dictionary, copyRef),
 		Stream:     q.Stream,
 	}
 }

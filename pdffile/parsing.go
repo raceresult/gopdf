@@ -179,6 +179,13 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 					}
 					obj = d
 
+				case types.FontSub_Type3:
+					var d types.Type3Font
+					if err := d.Read(dict); err != nil {
+						return types.IndirectObject{}, bts, err
+					}
+					obj = d
+
 				default:
 					var d types.Font
 					if err := d.Read(dict); err != nil {
@@ -186,6 +193,12 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 					}
 					obj = d
 				}
+			case types.Name("FontDescriptor"):
+				var d types.FontDescriptor
+				if err := d.Read(dict); err != nil {
+					return types.IndirectObject{}, bts, err
+				}
+				obj = d
 
 				// todo: add more types
 			}
@@ -198,18 +211,22 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 
 		switch v := obj.(type) {
 		case types.Dictionary:
-			var stream types.StreamObject
-			if err := stream.Dictionary.Read(v); err != nil {
+			stream := types.StreamObject{
+				Dictionary: v,
+				Stream:     nil,
+			}
+			var streamDict types.StreamDictionary
+			if err := streamDict.Read(v); err != nil {
 				return types.IndirectObject{}, bts, err
 			}
 
-			stream.Stream = bts[:stream.Dictionary.Length]
-			bts = bts[stream.Dictionary.Length:]
+			stream.Stream = bts[:streamDict.Length]
+			bts = bts[streamDict.Length:]
 			obj = stream
 
 		case types.Image:
-			v.Stream.Stream = bts[:v.Stream.Dictionary.Length]
-			bts = bts[v.Stream.Dictionary.Length:]
+			v.Stream = bts[:v.Dictionary.Length]
+			bts = bts[v.Dictionary.Length:]
 			obj = v
 
 		default:
