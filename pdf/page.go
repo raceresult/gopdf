@@ -195,14 +195,13 @@ func (q *Page) AddCapturedPage(cp *CapturedPage) {
 
 	// ProcSet
 	if cp.Resources.ProcSet != nil {
-		d, ok := q.Data.Resources.ProcSet.(types.Array)
-		if !ok {
-			d = make(types.Array, 0)
-		}
 		for _, v := range cp.Resources.ProcSet {
-			d = append(d, v)
+			if ps, ok := v.(types.ProcedureSet); ok {
+				q.AddProcSets(ps)
+			} else if ps, ok := v.(types.Name); ok {
+				q.AddProcSets(types.ProcedureSet(ps))
+			}
 		}
-		q.Data.Resources.ProcSet = d
 	}
 
 	// Properties

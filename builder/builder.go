@@ -50,3 +50,28 @@ func (q *Builder) NewPage(size PageSize) *Page {
 func (q *Builder) PageCount() int {
 	return len(q.pages)
 }
+
+// NewImage adds a new image to the PDF file
+func (q *Builder) NewImage(bts []byte) (*pdf.Image, error) {
+	return q.file.NewImage(bts)
+}
+
+// NewCapturedPage adds a new captured page to the PDF file
+func (q *Builder) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (*pdf.CapturedPage, error) {
+	return q.file.NewCapturedPage(sourcePage, sourceFile)
+}
+
+// NewStandardFont adds a new standard font (expected to be available in all PDF consuming systems) to the pdf
+func (q *Builder) NewStandardFont(name types.StandardFontName, encoding types.Encoding) (*pdf.StandardFont, error) {
+	return q.file.NewStandardFont(name, encoding)
+}
+
+// NewTrueTypeFont adds a new TrueType font to the pdf
+func (q *Builder) NewTrueTypeFont(ttf []byte, encoding types.Encoding, embed bool) (*pdf.TrueTypeFont, error) {
+	return q.file.NewTrueTypeFont(ttf, encoding, embed)
+}
+
+// NewCompositeFont adds a font as composite font to the pdf, i.e. with Unicode support
+func (q *Builder) NewCompositeFont(ttf []byte) (*pdf.CompositeFont, error) {
+	return q.file.NewCompositeFont(ttf)
+}

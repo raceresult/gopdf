@@ -1,5 +1,7 @@
 package types
 
+import "errors"
+
 // PDF Reference 1.4, Table 9.2 Entries in the document information dictionary
 
 type InformationDictionary struct {
@@ -69,4 +71,81 @@ func (q InformationDictionary) ToRawBytes() []byte {
 		d["Trapped"] = q.Trapped
 	}
 	return d.ToRawBytes()
+}
+
+func (q *InformationDictionary) Read(dict Dictionary) error {
+	v, ok := dict["Title"]
+	if ok {
+		q.Title, ok = v.(String)
+		if !ok {
+			return errors.New("information dictionary field Title invalid")
+		}
+	}
+
+	v, ok = dict["Author"]
+	if ok {
+		q.Author, ok = v.(String)
+		if !ok {
+			return errors.New("information dictionary field Author invalid")
+		}
+	}
+
+	v, ok = dict["Subject"]
+	if ok {
+		q.Subject, ok = v.(String)
+		if !ok {
+			return errors.New("information dictionary field Subject invalid")
+		}
+	}
+
+	v, ok = dict["Keywords"]
+	if ok {
+		q.Keywords, ok = v.(String)
+		if !ok {
+			return errors.New("information dictionary field Keywords invalid")
+		}
+	}
+
+	v, ok = dict["Creator"]
+	if ok {
+		q.Creator, ok = v.(String)
+		if !ok {
+			return errors.New("information dictionary field Creator invalid")
+		}
+	}
+
+	v, ok = dict["Producer"]
+	if ok {
+		q.Producer, ok = v.(String)
+		if !ok {
+			return errors.New("information dictionary field Producer invalid")
+		}
+	}
+
+	v, ok = dict["CreationDate"]
+	if ok {
+		q.CreationDate, ok = v.(Date)
+		if !ok {
+			return errors.New("information dictionary field CreationDate invalid")
+		}
+	}
+
+	v, ok = dict["ModDate"]
+	if ok {
+		q.ModDate, ok = v.(Date)
+		if !ok {
+			return errors.New("information dictionary field ModDate invalid")
+		}
+	}
+
+	v, ok = dict["Trapped"]
+	if ok {
+		q.Trapped, ok = v.(Name)
+		if !ok {
+			return errors.New("information dictionary field Trapped invalid")
+		}
+	}
+
+	// return without error
+	return nil
 }

@@ -33,15 +33,15 @@ func (q *ImageBoxElement) Build(page *pdf.Page) {
 
 	} else {
 		h := q.Width.Pt() * float64(q.Img.Image.Height) / float64(q.Img.Image.Width)
-		top := float64(page.Data.MediaBox.URY) - q.Top.Pt() - q.Height.Pt()
+		top := float64(page.Data.MediaBox.URY) - q.Top.Pt() - h
 		switch q.VerticalAlign {
 		case VerticalAlignMiddle:
-			top += (q.Height.Pt() - h) / 2
+			top -= (q.Height.Pt() - h) / 2
 		case VerticalAlignBottom:
-			top += q.Height.Pt() - h
+			top -= q.Height.Pt() - h
 		default:
 		}
-		page.GraphicsState_cm(q.Width.Pt(), 0, 0, h, q.Left.Pt(), float64(page.Data.MediaBox.URY)-top-h)
+		page.GraphicsState_cm(q.Width.Pt(), 0, 0, h, q.Left.Pt(), top)
 	}
 
 	page.XObject_Do(q.Img.Reference)

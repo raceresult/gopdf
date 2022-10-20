@@ -57,3 +57,46 @@ func (q *Extractor) GetAllPages() ([]types.Page, error) {
 
 	return collectPages(q.file, pages)
 }
+
+// GetPage returns one pages from the PageTree
+func (q *Extractor) GetPage(pageNo int) (types.Page, error) {
+	if pageNo < 1 {
+		return types.Page{}, errors.New("invalid page no")
+	}
+
+	catalogObj, err := q.file.GetObject(q.file.Root)
+	if err != nil {
+		return types.Page{}, err
+	}
+	catalog, ok := catalogObj.(types.DocumentCatalog)
+	if !ok {
+		return types.Page{}, errors.New("catalog invalid")
+	}
+	pagesObj, err := q.file.GetObject(catalog.Pages)
+	if err != nil {
+		return types.Page{}, err
+	}
+	pages, ok := pagesObj.(types.PageTreeNode)
+	if !ok {
+		return types.Page{}, errors.New("pages invalid")
+	}
+
+	if len(pages.Kids) >= pageNo {
+		obj, err := q.file.GetObject(pages.Kids[pageNo-1])
+		if err != nil {
+			return types.Page{}, err
+		}
+		if p, ok := obj.(types.Page); ok {
+			return p, nil
+		}
+	}
+
+	allPages, err := collectPages(q.file, pages)
+	if err != nil {
+		return types.Page{}, err
+	}
+	if pageNo > len(allPages) {
+		return types.Page{}, errors.New("invalid page no")
+	}
+	return allPages[pageNo-1], nil
+}
