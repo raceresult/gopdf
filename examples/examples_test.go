@@ -1,15 +1,9 @@
-package gopdf
+package examples
 
 import (
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/raceresult/gopdf/extractor"
-
-	"github.com/raceresult/gopdf/pdf"
-
-	"github.com/raceresult/gopdf/pdffile"
 
 	"github.com/raceresult/gopdf/builder"
 	"github.com/raceresult/gopdf/types"
@@ -121,60 +115,6 @@ func TestExample2(t *testing.T) {
 		return
 	}
 	err = ioutil.WriteFile("example2.pdf", bts, os.ModePerm)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-}
-
-func TestRead(t *testing.T) {
-	//bts, err := ioutil.ReadFile("C:\\users\\soenke\\downloads\\02_Bib A5 with Transponder.pdf")
-	bts, err := ioutil.ReadFile("C:\\users\\soenke\\downloads\\108582.pdf")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	f, err := pdffile.ReadFile(bts)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	ex := extractor.NewExtractor(f)
-	allPages, err := ex.GetAllPages()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	newPDF := pdf.NewFile()
-
-	p := allPages[1]
-	newPage := newPDF.NewPage(float64(p.MediaBox.URY), float64(p.MediaBox.URX))
-	cp, err := newPDF.NewCapturedPage(p, f)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	newPage.AddCapturedPage(cp)
-
-	p = allPages[0]
-	newPage = newPDF.NewPage(float64(p.MediaBox.URX), float64(p.MediaBox.URY))
-	cp, err = newPDF.NewCapturedPage(p, f)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	newPage.AddCapturedPage(cp)
-
-	// output
-	bts, err = newPDF.Write()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	err = ioutil.WriteFile("exampleRead.pdf", bts, os.ModePerm)
 	if err != nil {
 		t.Error(err)
 		return
