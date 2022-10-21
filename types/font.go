@@ -68,13 +68,19 @@ type Font struct {
 
 func (q Font) ToRawBytes() []byte {
 	d := Dictionary{
-		"Type":           Name("Font"),
-		"Subtype":        q.Subtype,
-		"BaseFont":       q.BaseFont,
-		"FirstChar":      q.FirstChar,
-		"LastChar":       q.LastChar,
-		"Widths":         q.Widths,
-		"FontDescriptor": q.FontDescriptor,
+		"Type":     Name("Font"),
+		"Subtype":  q.Subtype,
+		"BaseFont": q.BaseFont,
+	}
+	if q.FirstChar != 0 || q.LastChar != 0 {
+		d["FirstChar"] = q.FirstChar
+		d["LastChar"] = q.LastChar
+	}
+	if len(q.Widths) != 0 {
+		d["Widths"] = q.Widths
+	}
+	if q.FontDescriptor.Number > 0 {
+		d["FontDescriptor"] = q.FontDescriptor
 	}
 	if q.Name != "" {
 		d["Name"] = q.Name
@@ -137,38 +143,42 @@ func (q *Font) Read(dict Dictionary) error {
 
 	// FirstChar
 	v, ok = dict["FirstChar"]
-	if ok {
-		q.FirstChar, ok = v.(Int)
-		if !ok {
-			return errors.New("font field FirstChar invalid")
-		}
+	if !ok {
+		return errors.New("font field FirstChar missing")
+	}
+	q.FirstChar, ok = v.(Int)
+	if !ok {
+		return errors.New("font field FirstChar invalid")
 	}
 
 	// LastChar
 	v, ok = dict["LastChar"]
-	if ok {
-		q.LastChar, ok = v.(Int)
-		if !ok {
-			return errors.New("font field LastChar invalid")
-		}
+	if !ok {
+		return errors.New("font field LastChar missing")
+	}
+	q.LastChar, ok = v.(Int)
+	if !ok {
+		return errors.New("font field LastChar invalid")
 	}
 
 	// Widths
 	v, ok = dict["Widths"]
-	if ok {
-		q.Widths, ok = v.(Array)
-		if !ok {
-			return errors.New("font field Widths invalid")
-		}
+	if !ok {
+		return errors.New("font field Widths missing")
+	}
+	q.Widths, ok = v.(Array)
+	if !ok {
+		return errors.New("font field Widths invalid")
 	}
 
 	// FontDescriptor
 	v, ok = dict["FontDescriptor"]
-	if ok {
-		q.FontDescriptor, ok = v.(Reference)
-		if !ok {
-			return errors.New("font field FontDescriptor invalid")
-		}
+	if !ok {
+		return errors.New("font field FontDescriptor missing")
+	}
+	q.FontDescriptor, ok = v.(Reference)
+	if !ok {
+		return errors.New("font field FontDescriptor invalid")
 	}
 
 	// Encoding

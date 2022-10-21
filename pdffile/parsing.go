@@ -199,7 +199,13 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 				default:
 					var d types.Font
 					if err := d.Read(dict); err != nil {
-						return types.IndirectObject{}, bts, err
+						if types.FontSubType(subType) == types.FontSub_Type1 {
+							var d types.StandardFont
+							if err := d.Read(dict); err != nil {
+								return types.IndirectObject{}, bts, err
+							}
+							obj = d
+						}
 					}
 					obj = d
 				}
