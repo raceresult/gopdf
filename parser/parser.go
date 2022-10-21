@@ -1,4 +1,4 @@
-package pdffile
+package parser
 
 import (
 	"bytes"
@@ -7,13 +7,35 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raceresult/gopdf/pdffile"
 	"github.com/raceresult/gopdf/types"
 )
 
-// ReadFile reads a byte stream into a File object
-func ReadFile(bts []byte) (*File, error) {
+// Parser provides functions to extract objects from a pdf file
+type Parser struct {
+	file *pdffile.File
+}
+
+// New creates a new Parser object
+func New(bts []byte) (*Parser, error) {
+	f, err := readFile(bts)
+	if err != nil {
+		return nil, err
+	}
+	return &Parser{
+		file: f,
+	}, nil
+}
+
+// File returns the parsed File object
+func (q *Parser) File() *pdffile.File {
+	return q.file
+}
+
+// readFile reads a byte stream into a File object
+func readFile(bts []byte) (*pdffile.File, error) {
 	// parse PDF version
-	var dest File
+	var dest pdffile.File
 	var firstLine []byte
 	firstLine, bts = readLine(bts)
 	if !bytes.HasPrefix(firstLine, []byte("%PDF-")) {
@@ -68,7 +90,7 @@ func ReadFile(bts []byte) (*File, error) {
 			if err != nil {
 				return nil, err
 			}
-			dest.objects = append(dest.objects, obj)
+			dest.AddIndirectObject(obj)
 		}
 	}
 
@@ -316,14 +338,14 @@ func nextTwoWords(bts []byte) ([]byte, []byte) {
 	return w1, bts[start:]
 }
 
-func readXRef(bts []byte) (XRefTable, []byte, error) {
+func readXRef(bts []byte) (pdffile.XRefTable, []byte, error) {
 	bts = trimLeftWhiteChars(bts)
 	if !bytes.HasPrefix(bts, []byte("xref")) {
 		return nil, bts, errors.New("value is not a n xref table")
 	}
 	bts = trimLeftWhiteChars(bts[4:])
 
-	var xrefTable XRefTable
+	var xrefTable pdffile.XRefTable
 	for {
 		if len(bts) == 0 {
 			return nil, nil, errors.New("unexpected end of xref table")
@@ -349,7 +371,7 @@ func readXRef(bts []byte) (XRefTable, []byte, error) {
 
 		lines := bts[:20*secCount]
 		bts = bts[20*secCount:]
-		xrefTable = append(xrefTable, XRefTableSection{
+		xrefTable = append(xrefTable, pdffile.XRefTableSection{
 			Start: secStart,
 			Count: secCount,
 		})
@@ -360,7 +382,7 @@ func readXRef(bts []byte) (XRefTable, []byte, error) {
 
 			start, _ := strconv.Atoi(string(item[:10]))
 			gen, _ := strconv.Atoi(string(item[12:17]))
-			xrefTable[len(xrefTable)-1].Entries = append(xrefTable[len(xrefTable)-1].Entries, XRefTableEntry{
+			xrefTable[len(xrefTable)-1].Entries = append(xrefTable[len(xrefTable)-1].Entries, pdffile.XRefTableEntry{
 				Start:      int64(start),
 				Generation: gen,
 				Free:       item[18] == 'f',

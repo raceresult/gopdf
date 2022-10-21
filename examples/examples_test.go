@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/raceresult/gopdf"
-
 	"github.com/raceresult/gopdf/types"
 )
 

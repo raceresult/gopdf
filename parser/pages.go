@@ -1,4 +1,4 @@
-package extractor
+package parser
 
 import (
 	"errors"
@@ -37,7 +37,8 @@ func collectPages(f *pdffile.File, node types.PageTreeNode) ([]types.Page, error
 }
 
 // GetAllPages returns all pages from the PageTree
-func (q *Extractor) GetAllPages() ([]types.Page, error) {
+func (q *Parser) GetAllPages() ([]types.Page, error) {
+	// get page tree root
 	catalogObj, err := q.file.GetObject(q.file.Root)
 	if err != nil {
 		return nil, err
@@ -55,15 +56,18 @@ func (q *Extractor) GetAllPages() ([]types.Page, error) {
 		return nil, errors.New("pages invalid")
 	}
 
+	// collect all pages recursively
 	return collectPages(q.file, pages)
 }
 
-// GetPage returns one pages from the PageTree
-func (q *Extractor) GetPage(pageNo int) (types.Page, error) {
+// GetPage returns one page from the PageTree (first page = pageNo 1)
+func (q *Parser) GetPage(pageNo int) (types.Page, error) {
+	// check parameter
 	if pageNo < 1 {
 		return types.Page{}, errors.New("invalid page no")
 	}
 
+	// get page tree root
 	catalogObj, err := q.file.GetObject(q.file.Root)
 	if err != nil {
 		return types.Page{}, err
@@ -81,6 +85,7 @@ func (q *Extractor) GetPage(pageNo int) (types.Page, error) {
 		return types.Page{}, errors.New("pages invalid")
 	}
 
+	// fast path: check if root kids are pages
 	if len(pages.Kids) >= pageNo {
 		obj, err := q.file.GetObject(pages.Kids[pageNo-1])
 		if err != nil {
@@ -91,6 +96,7 @@ func (q *Extractor) GetPage(pageNo int) (types.Page, error) {
 		}
 	}
 
+	// slow path: collect all pages in tree, then return page
 	allPages, err := collectPages(q.file, pages)
 	if err != nil {
 		return types.Page{}, err

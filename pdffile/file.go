@@ -46,6 +46,11 @@ func (q *File) AddObject(obj types.Object) types.Reference {
 	}
 }
 
+// AddIndirectObject adds an indirect object (only used by pdf parser)
+func (q *File) AddIndirectObject(obj types.IndirectObject) {
+	q.objects = append(q.objects, obj)
+}
+
 // GetObject returns an object from the file
 func (q *File) GetObject(ref types.Reference) (types.Object, error) {
 	for _, obj := range q.objects {
