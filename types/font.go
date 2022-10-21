@@ -137,42 +137,38 @@ func (q *Font) Read(dict Dictionary) error {
 
 	// FirstChar
 	v, ok = dict["FirstChar"]
-	if !ok {
-		return errors.New("font field FirstChar missing")
-	}
-	q.FirstChar, ok = v.(Int)
-	if !ok {
-		return errors.New("font field FirstChar invalid")
+	if ok {
+		q.FirstChar, ok = v.(Int)
+		if !ok {
+			return errors.New("font field FirstChar invalid")
+		}
 	}
 
 	// LastChar
 	v, ok = dict["LastChar"]
-	if !ok {
-		return errors.New("font field LastChar missing")
-	}
-	q.LastChar, ok = v.(Int)
-	if !ok {
-		return errors.New("font field LastChar invalid")
+	if ok {
+		q.LastChar, ok = v.(Int)
+		if !ok {
+			return errors.New("font field LastChar invalid")
+		}
 	}
 
 	// Widths
 	v, ok = dict["Widths"]
-	if !ok {
-		return errors.New("font field Widths missing")
-	}
-	q.Widths, ok = v.(Array)
-	if !ok {
-		return errors.New("font field Widths invalid")
+	if ok {
+		q.Widths, ok = v.(Array)
+		if !ok {
+			return errors.New("font field Widths invalid")
+		}
 	}
 
 	// FontDescriptor
 	v, ok = dict["FontDescriptor"]
-	if !ok {
-		return errors.New("font field FontDescriptor missing")
-	}
-	q.FontDescriptor, ok = v.(Reference)
-	if !ok {
-		return errors.New("font field FontDescriptor invalid")
+	if ok {
+		q.FontDescriptor, ok = v.(Reference)
+		if !ok {
+			return errors.New("font field FontDescriptor invalid")
+		}
 	}
 
 	// Encoding

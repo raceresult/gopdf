@@ -21,10 +21,6 @@ type CapturedPage struct {
 	}
 }
 
-func (cp *CapturedPage) Build(page *Page) {
-	page.AddCapturedPage(cp)
-}
-
 // NewCapturedPage is used to copy a page from another pdf
 func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (*CapturedPage, error) {
 	if q.copiedObjects == nil {
