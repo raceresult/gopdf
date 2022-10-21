@@ -8,6 +8,7 @@ import (
 )
 
 type CapturedPage struct {
+	Source    types.Page
 	Contents  []types.Reference
 	Resources struct {
 		ExtGState  types.Dictionary
@@ -45,6 +46,7 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 
 	// ExtGState
 	var res CapturedPage
+	res.Source = sourcePage
 	res.Resources.ExtGState, _ = types.Copy(sourcePage.Resources.ExtGState, copyRef).(types.Dictionary)
 	res.Resources.ColorSpace, _ = types.Copy(sourcePage.Resources.ColorSpace, copyRef).(types.Dictionary)
 	res.Resources.Pattern, _ = types.Copy(sourcePage.Resources.Pattern, copyRef).(types.Dictionary)

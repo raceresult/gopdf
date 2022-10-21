@@ -19,3 +19,11 @@ func (q *CapturedPage) Build(page *pdf.Page) {
 	}
 	page.AddCapturedPage(q.CapturedPage)
 }
+
+// PageSize returns the page size of the captured page
+func (q *CapturedPage) PageSize() PageSize {
+	return PageSize{
+		Pt(float64(q.CapturedPage.Source.MediaBox.URX)),
+		Pt(float64(q.CapturedPage.Source.MediaBox.URY)),
+	}
+}
