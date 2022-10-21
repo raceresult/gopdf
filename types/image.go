@@ -46,7 +46,7 @@ type Image struct {
 	// (Optional; PDF 1.1) The name of a color rendering intent to be used in
 	//rendering the image (see “Rendering Intents” on page 197). Default value:
 	//the current rendering intent in the graphics state.
-	Intent String
+	Intent Name
 
 	// (Optional) A flag indicating whether the image is to be treated as an image
 	//mask (see Section 4.8.5, “Masked Images”). If this flag is true, the value of
@@ -249,7 +249,7 @@ func (q *Image) Read(dict Dictionary) error {
 	// Intent
 	v, ok = dict["Intent"]
 	if ok {
-		q.Intent, ok = v.(String)
+		q.Intent, ok = v.(Name)
 		if !ok {
 			return errors.New("XObject field Intent invalid")
 		}
@@ -354,7 +354,7 @@ func (q Image) Copy(copyRef func(reference Reference) Reference) Object {
 		Height:           q.Height.Copy(copyRef).(Int),
 		ColorSpace:       Copy(q.ColorSpace, copyRef),
 		BitsPerComponent: q.BitsPerComponent.Copy(copyRef).(Int),
-		Intent:           q.Intent.Copy(copyRef).(String),
+		Intent:           q.Intent.Copy(copyRef).(Name),
 		ImageMask:        q.ImageMask.Copy(copyRef).(Boolean),
 		Mask:             Copy(q.Mask, copyRef),
 		SMask:            Copy(q.SMask, copyRef),

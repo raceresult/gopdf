@@ -30,7 +30,7 @@ type Type0Font struct {
 	// dant is a Type 2 CIDFont whose associated TrueType font program is not em-
 	// bedded in the PDF file, the Encoding entry must be a predefined CMap name
 	// (see “Glyph Selection in CIDFonts” on page 339).
-	Encoding Name
+	Encoding Object // name or dictionary
 
 	// (Required) An array specifying one or more fonts or CIDFonts that are
 	// descendants of this composite font. This array is indexed by the font number
@@ -97,13 +97,9 @@ func (q *Type0Font) Read(dict Dictionary) error {
 	}
 
 	// Encoding
-	v, ok = dict["Encoding"]
+	q.Encoding, ok = dict["Encoding"]
 	if !ok {
 		return errors.New("font field Encoding missing")
-	}
-	q.Encoding, ok = v.(Name)
-	if !ok {
-		return errors.New("font field Encoding invalid")
 	}
 
 	// DescendantFonts
@@ -132,7 +128,7 @@ func (q *Type0Font) Read(dict Dictionary) error {
 func (q Type0Font) Copy(copyRef func(reference Reference) Reference) Object {
 	return Type0Font{
 		BaseFont:        q.BaseFont.Copy(copyRef).(Name),
-		Encoding:        q.Encoding.Copy(copyRef).(Name),
+		Encoding:        Copy(q.Encoding, copyRef),
 		DescendantFonts: q.DescendantFonts.Copy(copyRef).(Array),
 		ToUnicode:       q.ToUnicode.Copy(copyRef).(Reference),
 	}

@@ -59,7 +59,7 @@ type Font struct {
 	// Encoding, as described in Appendix D) or an encoding dictionary that
 	// specifies differences from the font’s built-in encoding or from a specified pre-
 	// defined encoding (see Section 5.5.5, “Character Encoding”).
-	Encoding Encoding
+	Encoding Object
 
 	// (Optional; PDF 1.2) A stream containing a CMap file that maps character
 	// codes to Unicode values (see Section 5.9, “ToUnicode CMaps”).
@@ -79,7 +79,7 @@ func (q Font) ToRawBytes() []byte {
 	if q.Name != "" {
 		d["Name"] = q.Name
 	}
-	if q.Encoding != "" {
+	if q.Encoding != nil {
 		d["Encoding"] = q.Encoding
 	}
 	if q.ToUnicode != nil {
@@ -178,14 +178,7 @@ func (q *Font) Read(dict Dictionary) error {
 	// Encoding
 	v, ok = dict["Encoding"]
 	if ok {
-		q.Encoding, ok = v.(Encoding)
-		if !ok {
-			n, ok := v.(Name)
-			if !ok {
-				return errors.New("font field Encoding invalid")
-			}
-			q.Encoding = Encoding(n)
-		}
+		q.Encoding = v
 	}
 
 	// ToUnicode
@@ -210,7 +203,7 @@ func (q Font) Copy(copyRef func(reference Reference) Reference) Object {
 		LastChar:       q.LastChar.Copy(copyRef).(Int),
 		Widths:         q.Widths.Copy(copyRef).(Array),
 		FontDescriptor: q.FontDescriptor.Copy(copyRef).(Reference),
-		Encoding:       q.Encoding.Copy(copyRef).(Encoding),
+		Encoding:       Copy(q.Encoding, copyRef),
 		ToUnicode:      Copy(q.ToUnicode, copyRef),
 	}
 }
