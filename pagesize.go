@@ -1,4 +1,4 @@
-package builder
+package gopdf
 
 // PageSize is width x height
 type PageSize [2]Length

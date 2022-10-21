@@ -19,20 +19,20 @@ Does support Composite Fonts for full Unicode support.
 Getting Started
 -------------------------------------------------------------------------------------------
 
-The highest level of abstraction is provided by the builder package. Simply create a new Builder object,
+The highest level of abstraction is provided by the gopdf package. Simply create a new Builder object,
 add pages and add elements to the pages:
 
 ```go
 package yours
 
 import (
-    "github.com/raceresult/gopdf/builder"
+    "github.com/raceresult/gopdf"
     "github.com/raceresult/gopdf/types"
 )
 
 func TestExample1(t *testing.T) {
     // create new PDF Builder
-    pb := builder.NewBuilder()
+    pb := gopdf.New()
     
     // use a built-in standard fontm
     f, err := pb.NewStandardFont(types.StandardFont_Helvetica, types.EncodingWinAnsi)
@@ -42,15 +42,15 @@ func TestExample1(t *testing.T) {
     }
     
     // add first page
-    p := pb.NewPage(builder.GetStandardPageSize(builder.PageSizeA4, false))
+    p := pb.NewPage(gopdf.GetStandardPageSize(gopdf.PageSizeA4, false))
     
     // add "hello world" element
-    p.AddElement(&builder.TextElement{
+    p.AddElement(&gopdf.TextElement{
         Text:      "hello world",
         FontSize:  36,
-        X:         builder.MM(105),
-        Y:         builder.MM(100),
-        TextAlign: builder.TextAlignCenter,
+        X:         gopdf.MM(105),
+        Y:         gopdf.MM(100),
+        TextAlign: gopdf.TextAlignCenter,
         Font:      f,
     })
     
@@ -78,10 +78,10 @@ import (
 
 func TestExample2(t *testing.T) {
     // create new PDF Builder
-    pb := builder.NewBuilder()
+    pb := gopdf.New()
     
     // add first page
-    p := pb.NewPage(builder.GetStandardPageSize(builder.PageSizeA4, false))
+    p := pb.NewPage(gopdf.GetStandardPageSize(gopdf.PageSizeA4, false))
     
     // add image
     bts, err := ioutil.ReadFile("myImage.jpg")
@@ -94,23 +94,23 @@ func TestExample2(t *testing.T) {
         t.Error(err)
         return
     }
-    p.AddElement(&builder.ImageElement{
-        Width:  builder.MM(70),
-        Height: builder.MM(70 * float64(img.Image.Height) / float64(img.Image.Width)),
-        Left:   builder.MM(20),
-        Top:    builder.MM(20),
+    p.AddElement(&gopdf.ImageElement{
+        Width:  gopdf.MM(70),
+        Height: gopdf.MM(70 * float64(img.Image.Height) / float64(img.Image.Width)),
+        Left:   gopdf.MM(20),
+        Top:    gopdf.MM(20),
         Img:    img,
     })
     
     // add rectangle
-    p.AddElement(&builder.RectElement{
-        X1:        builder.MM(20),
-        Y1:        builder.MM(150),
-        Width:     builder.MM(50),
-        Height:    builder.MM(30),
-        LineWidth: builder.MM(3),
-        LineColor: builder.ColorRGB{0, 255, 0},
-        FillColor: builder.ColorRGB{255, 0, 255},
+    p.AddElement(&gopdf.RectElement{
+        X1:        gopdf.MM(20),
+        Y1:        gopdf.MM(150),
+        Width:     gopdf.MM(50),
+        Height:    gopdf.MM(30),
+        LineWidth: gopdf.MM(3),
+        LineColor: gopdf.ColorRGB{0, 255, 0},
+        FillColor: gopdf.ColorRGB{255, 0, 255},
     })
     
     // add composite font
@@ -126,16 +126,16 @@ func TestExample2(t *testing.T) {
     }
     
     // add text using composite font
-    p.AddElement(&builder.TextElement{
+    p.AddElement(&gopdf.TextElement{
         Text:         "hello world - 漢語",
         Font:         f,
         FontSize:     36,
-        X:            builder.MM(20),
-        Y:            builder.MM(100),
-        Color:        builder.ColorRGB{200, 200, 200},
-        OutlineColor: builder.ColorRGB{10, 20, 10},
+        X:            gopdf.MM(20),
+        Y:            gopdf.MM(100),
+        Color:        gopdf.ColorRGB{200, 200, 200},
+        OutlineColor: gopdf.ColorRGB{10, 20, 10},
         RenderMode:   types.RenderingModeFillAndStroke,
-        OutlineWidth: builder.MM(0.5),
+        OutlineWidth: gopdf.MM(0.5),
     })
     
     

@@ -1,11 +1,10 @@
-package builder
+package gopdf
 
 import (
 	"strings"
 
-	"github.com/raceresult/gopdf/types"
-
 	"github.com/raceresult/gopdf/pdf"
+	"github.com/raceresult/gopdf/types"
 )
 
 type TextBoxElement struct {

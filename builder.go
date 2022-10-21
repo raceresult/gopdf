@@ -1,4 +1,4 @@
-package builder
+package gopdf
 
 import (
 	"github.com/raceresult/gopdf/pdf"
@@ -17,8 +17,8 @@ type Builder struct {
 	pages []*Page
 }
 
-// NewBuilder creates a new Builder object
-func NewBuilder() *Builder {
+// New creates a new Builder object
+func New() *Builder {
 	return &Builder{
 		file:            pdf.NewFile(),
 		CompressStreams: true,

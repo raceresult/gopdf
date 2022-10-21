@@ -1,4 +1,4 @@
-package builder
+package gopdf
 
 // LinearMeasure represents a linear measure like mm or inch.
 type LinearMeasure int

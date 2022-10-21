@@ -1,4 +1,4 @@
-package builder
+package gopdf
 
 // Note: PDF does not understand text align. For example, if you want right-aligned lines of text,
 // you need to place (left-aligned) texts on the appropriate x positions.

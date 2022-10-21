@@ -10,7 +10,6 @@ import (
 
 	"github.com/raceresult/gopdf/pdffile"
 	"github.com/raceresult/gopdf/types"
-
 	_ "golang.org/x/image/bmp"
 )
 
