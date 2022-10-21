@@ -57,8 +57,14 @@ func (q *Builder) NewImage(bts []byte) (*pdf.Image, error) {
 }
 
 // NewCapturedPage adds a new captured page to the PDF file
-func (q *Builder) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (*pdf.CapturedPage, error) {
-	return q.file.NewCapturedPage(sourcePage, sourceFile)
+func (q *Builder) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (*CapturedPage, error) {
+	cp, err := q.file.NewCapturedPage(sourcePage, sourceFile)
+	if err != nil {
+		return nil, err
+	}
+	return &CapturedPage{
+		CapturedPage: cp,
+	}, nil
 }
 
 // NewStandardFont adds a new standard font (expected to be available in all PDF consuming systems) to the pdf
