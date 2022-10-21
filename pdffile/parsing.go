@@ -149,11 +149,21 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 				obj = d
 
 			case types.Name("XObject"):
-				var d types.Image
-				if err := d.Read(dict); err != nil {
-					return types.IndirectObject{}, bts, err
+				subTypeObj, ok := dict["Subtype"]
+				if !ok {
+					return types.IndirectObject{}, bts, errors.New("font does not have Subtype")
 				}
-				obj = d
+				subType, ok := subTypeObj.(types.Name)
+				if !ok {
+					return types.IndirectObject{}, bts, errors.New("font has invalid Subtype")
+				}
+				if subType == "Image" {
+					var d types.Image
+					if err := d.Read(dict); err != nil {
+						return types.IndirectObject{}, bts, err
+					}
+					obj = d
+				}
 
 			case types.Name("Font"):
 				subTypeObj, ok := dict["Subtype"]
@@ -633,7 +643,7 @@ func readName(bts []byte) (types.Name, []byte, error) {
 			break
 		}
 		if c == '#' && i < len(bts)-2 {
-			charCode, err := strconv.Atoi(string(bts[i+1 : i+3]))
+			charCode, err := strconv.ParseInt(string(bts[i+1:i+3]), 16, 64)
 			if err != nil {
 				return "", bts, errors.New("name is invalid hex code")
 			}
