@@ -38,7 +38,7 @@ type Type0Font struct {
 	// the Encoding entry.
 	// Note: In all PDF versions up to and including PDF 1.4, DescendantFonts must
 	// be a one-element array containing a CIDFont dictionary.
-	DescendantFonts Array
+	DescendantFonts Object // Array or Reference
 
 	// (Optional) A stream containing a CMap file that maps character codes to
 	// Unicode values (see Section 5.9, “ToUnicode CMaps”).
@@ -103,13 +103,9 @@ func (q *Type0Font) Read(dict Dictionary) error {
 	}
 
 	// DescendantFonts
-	v, ok = dict["DescendantFonts"]
+	q.DescendantFonts, ok = dict["DescendantFonts"]
 	if !ok {
 		return errors.New("font field DescendantFonts missing")
-	}
-	q.DescendantFonts, ok = v.(Array)
-	if !ok {
-		return errors.New("font field DescendantFonts invalid")
 	}
 
 	// ToUnicode
@@ -129,7 +125,7 @@ func (q Type0Font) Copy(copyRef func(reference Reference) Reference) Object {
 	return Type0Font{
 		BaseFont:        q.BaseFont.Copy(copyRef).(Name),
 		Encoding:        Copy(q.Encoding, copyRef),
-		DescendantFonts: q.DescendantFonts.Copy(copyRef).(Array),
+		DescendantFonts: Copy(q.DescendantFonts, copyRef),
 		ToUnicode:       q.ToUnicode.Copy(copyRef).(Reference),
 	}
 }
