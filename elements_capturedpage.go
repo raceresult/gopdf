@@ -14,10 +14,15 @@ func (q *CapturedPage) Build(page *pdf.Page) {
 	if q.CapturedPage == nil {
 		return
 	}
-	if q.Left.Value != 0 || q.Top.Value != 0 {
-		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), -q.Top.Pt())
+	offsetY := float64(page.Data.MediaBox.URY) - float64(q.CapturedPage.Source.MediaBox.URY) - q.Top.Pt()
+	if q.Left.Value != 0 || offsetY != 0 {
+		page.GraphicsState_q()
+		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), offsetY)
 	}
 	page.AddCapturedPage(q.CapturedPage)
+	if q.Left.Value != 0 || offsetY != 0 {
+		page.GraphicsState_Q()
+	}
 }
 
 // PageSize returns the page size of the captured page
