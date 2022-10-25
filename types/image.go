@@ -127,9 +127,12 @@ func (q Image) ToRawBytes() []byte {
 	d["Subtype"] = Name("Image")
 	d["Width"] = q.Width
 	d["Height"] = q.Height
-	d["ColorSpace"] = q.ColorSpace
-	d["BitsPerComponent"] = q.BitsPerComponent
-
+	if q.ColorSpace != nil {
+		d["ColorSpace"] = q.ColorSpace
+	}
+	if q.BitsPerComponent != 0 {
+		d["BitsPerComponent"] = q.BitsPerComponent
+	}
 	if q.Intent != "" {
 		d["Intent"] = Name(q.Intent)
 	}
