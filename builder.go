@@ -46,6 +46,24 @@ func (q *Builder) NewPage(size PageSize) *Page {
 	return p
 }
 
+// NewPageBefore inserts a new page before the given pageNo to the pdf
+func (q *Builder) NewPageBefore(size PageSize, beforePageNo int) *Page {
+	if beforePageNo > len(q.pages) {
+		return q.NewPage(size)
+	}
+	if beforePageNo < 1 {
+		beforePageNo = 1
+	}
+
+	p := NewPage(size)
+	np := make([]*Page, len(q.pages)+1)
+	copy(np[:beforePageNo-1], q.pages[:beforePageNo-1])
+	np[beforePageNo-1] = p
+	copy(np[beforePageNo:], q.pages[beforePageNo-1:])
+	q.pages = np
+	return p
+}
+
 // PageCount returns the number of pages already added
 func (q *Builder) PageCount() int {
 	return len(q.pages)

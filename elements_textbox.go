@@ -1,6 +1,7 @@
 package gopdf
 
 import (
+	"math"
 	"strings"
 
 	"github.com/raceresult/gopdf/pdf"
@@ -77,7 +78,12 @@ func (q *TextBoxElement) Build(page *pdf.Page) {
 		case TextAlignRight:
 			left += q.Width.Pt() - width
 		}
-		page.TextPosition_Tm(1, 0, c, 1, left, top)
+		if q.Rotate != 0 {
+			r := q.Rotate * math.Pi / 180
+			page.TextPosition_Tm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), left, top)
+		} else {
+			page.TextPosition_Tm(1, 0, c, 1, left, top)
+		}
 		page.TextShowing_Tj(line)
 
 		// underline text
