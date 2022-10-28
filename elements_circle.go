@@ -8,6 +8,7 @@ type CircleElement struct {
 	LineWidth    Length
 	LineColor    Color
 	FillColor    Color
+	DashPattern  DashPattern
 }
 
 // Build adds the element to the content stream
@@ -21,6 +22,7 @@ func (q *CircleElement) Build(page *pdf.Page) {
 	if q.FillColor != nil {
 		q.FillColor.Build(page, false)
 	}
+	q.DashPattern.Build(page)
 
 	y := float64(page.Data.MediaBox.URY) - q.Y.Pt()
 	page.Path_m(q.X.Pt(), y+q.Radius.Pt())

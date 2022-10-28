@@ -26,7 +26,7 @@ func NewColorRGB(r, g, b int) ColorRGB {
 	}
 }
 
-// Build set the color in the graphics state of the given page
+// Build sets the color in the graphics state of the given page
 func (q ColorRGB) Build(page *pdf.Page, stroke bool) {
 	if stroke {
 		page.Color_RG(float64(q.R)/256, float64(q.G)/256, float64(q.B)/256)
@@ -58,7 +58,7 @@ func NewColorCMYK(c, m, y, k int) ColorCMYK {
 	}
 }
 
-// Build set the color in the graphics state of the given page
+// Build sets the color in the graphics state of the given page
 func (q ColorCMYK) Build(page *pdf.Page, stroke bool) {
 	if stroke {
 		page.Color_K(float64(q.C)/100, float64(q.M)/100, float64(q.Y)/100, float64(q.K)/100)
@@ -82,7 +82,7 @@ func NewColorGray(gray int) ColorGray {
 	}
 }
 
-// Build set the color in the graphics state of the given page
+// Build sets the color in the graphics state of the given page
 func (q ColorGray) Build(page *pdf.Page, stroke bool) {
 	if stroke {
 		page.Color_G(float64(q.Gray) / 255)

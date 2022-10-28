@@ -13,6 +13,8 @@ type graphicsState struct {
 	MiterLimit       float64
 	Intent           string
 	Flatness         float64
+	DashPhase        float64
+	DashArray        []float64
 }
 
 // graphicsStateColor handles colors within the graphicsState

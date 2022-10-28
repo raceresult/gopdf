@@ -75,13 +75,27 @@ func (q *Page) GraphicsState_M(miterLimit float64) {
 }
 
 // GraphicsState_d sets the line dash pattern in the graphics state (see “Line Dash Pattern” on page 155)
-func (q *Page) GraphicsState_d(dashArray []int, dashPhase int) {
-	arr := make([]types.Object, 0, len(dashArray)+1)
-	for _, v := range dashArray {
-		arr = append(arr, types.Int(v))
+func (q *Page) GraphicsState_d(dashArray []float64, dashPhase float64) {
+	if q.graphicsState.DashPhase == dashPhase && len(q.graphicsState.DashArray) == len(dashArray) {
+		var different bool
+		for i, v := range dashArray {
+			if v != q.graphicsState.DashArray[i] {
+				different = true
+				break
+			}
+		}
+		if !different {
+			return
+		}
 	}
-	arr = append(arr, types.Int(dashPhase))
-	q.AddCommand("d", arr...)
+	q.graphicsState.DashPhase = dashPhase
+	q.graphicsState.DashArray = dashArray
+
+	arr := make(types.Array, 0, len(dashArray))
+	for _, v := range dashArray {
+		arr = append(arr, types.Number(v))
+	}
+	q.AddCommand("d", arr, types.Number(dashPhase))
 }
 
 // GraphicsState_ri sets the color rendering intent in the graphics state (see “Rendering Intents” on page 197).

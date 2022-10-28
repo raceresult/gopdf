@@ -8,6 +8,7 @@ type RectElement struct {
 	LineWidth             Length
 	LineColor             Color
 	FillColor             Color
+	DashPattern           DashPattern
 }
 
 // Build adds the element to the content stream
@@ -21,6 +22,7 @@ func (q *RectElement) Build(page *pdf.Page) {
 	if q.FillColor != nil {
 		q.FillColor.Build(page, false)
 	}
+	q.DashPattern.Build(page)
 
 	page.Path_re(q.X1.Pt(), float64(page.Data.MediaBox.URY)-q.Y1.Pt()-q.Height.Pt(), q.Width.Pt(), q.Height.Pt())
 
