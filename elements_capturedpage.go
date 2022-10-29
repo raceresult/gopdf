@@ -11,9 +11,9 @@ type CapturedPage struct {
 }
 
 // Build adds the element to the content stream
-func (q *CapturedPage) Build(page *pdf.Page) {
+func (q *CapturedPage) Build(page *pdf.Page) error {
 	if q.CapturedPage == nil {
-		return
+		return nil
 	}
 	if q.Scale == 0 {
 		q.Scale = 1
@@ -27,6 +27,7 @@ func (q *CapturedPage) Build(page *pdf.Page) {
 	if q.Left.Value != 0 || offsetY != 0 || q.Scale != 1 {
 		page.GraphicsState_Q()
 	}
+	return nil
 }
 
 // PageSize returns the page size of the captured page

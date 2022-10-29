@@ -15,10 +15,10 @@ type TextBoxElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *TextBoxElement) Build(page *pdf.Page) {
+func (q *TextBoxElement) Build(page *pdf.Page) error {
 	// if no font or text given, ignore element
 	if q.Font == nil || q.Text == "" {
-		return
+		return nil
 	}
 
 	// set color
@@ -95,6 +95,7 @@ func (q *TextBoxElement) Build(page *pdf.Page) {
 		top -= lineHeight
 	}
 	page.TextObjects_ET()
+	return nil
 }
 
 // wrappedText returns the wrapped text considering line break, max width and max height

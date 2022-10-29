@@ -14,9 +14,9 @@ type ImageBoxElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *ImageBoxElement) Build(page *pdf.Page) {
+func (q *ImageBoxElement) Build(page *pdf.Page) error {
 	if q.Img == nil || q.Img.Image.Height == 0 || q.Img.Image.Width == 0 {
-		return
+		return nil
 	}
 	page.GraphicsState_q()
 
@@ -46,4 +46,5 @@ func (q *ImageBoxElement) Build(page *pdf.Page) {
 
 	page.XObject_Do(q.Img.Reference)
 	page.GraphicsState_Q()
+	return nil
 }

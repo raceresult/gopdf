@@ -202,10 +202,11 @@ type BezierCurve struct {
     X1, Y1, X2, Y2, X3, Y3 Length
 }
 
-func (q *BezierCurve) Build(page *pdf.Page) {
+func (q *BezierCurve) Build(page *pdf.Page) error {
     page.Path_m(q.X.Pt(), q.Y.Pt())
     page.Path_c(q.X1.Pt(), q.Y1.Pt(), q.X2.Pt(), q.Y2.Pt(), q.X3.Pt(), q.Y3.Pt())
     page.Path_S()
+	return nil
 }
 ```
 

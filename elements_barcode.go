@@ -63,7 +63,7 @@ type BarcodeElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *BarcodeElement) Build(page *pdf.Page) {
+func (q *BarcodeElement) Build(page *pdf.Page) error {
 	if q.Color != nil {
 		q.Color.Build(page, false)
 	} else {
@@ -100,4 +100,5 @@ func (q *BarcodeElement) Build(page *pdf.Page) {
 	}
 
 	page.GraphicsState_Q()
+	return nil
 }

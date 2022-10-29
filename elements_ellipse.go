@@ -13,7 +13,7 @@ type EllipseElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *EllipseElement) Build(page *pdf.Page) {
+func (q *EllipseElement) Build(page *pdf.Page) error {
 	if q.LineColor == nil {
 		page.GraphicsState_w(0)
 	} else {
@@ -23,7 +23,9 @@ func (q *EllipseElement) Build(page *pdf.Page) {
 	if q.FillColor != nil {
 		q.FillColor.Build(page, false)
 	}
-	q.DashPattern.Build(page)
+	if err := q.DashPattern.Build(page); err != nil {
+		return err
+	}
 
 	y := float64(page.Data.MediaBox.URY) - q.Y.Pt() - q.Height.Pt()/2
 	page.Path_m(q.X.Pt(), y+q.Height.Pt()/2)
@@ -39,4 +41,5 @@ func (q *EllipseElement) Build(page *pdf.Page) {
 	} else {
 		page.Path_f()
 	}
+	return nil
 }

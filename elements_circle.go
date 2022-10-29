@@ -12,7 +12,7 @@ type CircleElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *CircleElement) Build(page *pdf.Page) {
+func (q *CircleElement) Build(page *pdf.Page) error {
 	if q.LineColor == nil {
 		page.GraphicsState_w(0)
 	} else {
@@ -22,7 +22,9 @@ func (q *CircleElement) Build(page *pdf.Page) {
 	if q.FillColor != nil {
 		q.FillColor.Build(page, false)
 	}
-	q.DashPattern.Build(page)
+	if err := q.DashPattern.Build(page); err != nil {
+		return err
+	}
 
 	y := float64(page.Data.MediaBox.URY) - q.Y.Pt()
 	page.Path_m(q.X.Pt(), y+q.Radius.Pt())
@@ -38,4 +40,5 @@ func (q *CircleElement) Build(page *pdf.Page) {
 	} else {
 		page.Path_f()
 	}
+	return nil
 }

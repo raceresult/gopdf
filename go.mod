@@ -3,6 +3,7 @@ module github.com/raceresult/gopdf
 go 1.16
 
 require (
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	golang.org/x/image v0.0.0-20220902085622-e7cb96979f69
 	golang.org/x/text v0.3.7
 )

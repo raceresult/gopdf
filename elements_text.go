@@ -27,10 +27,10 @@ type TextElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *TextElement) Build(page *pdf.Page) {
+func (q *TextElement) Build(page *pdf.Page) error {
 	// if no font or text given, ignore element
 	if q.Font == nil || q.Text == "" {
-		return
+		return nil
 	}
 
 	// set color
@@ -95,6 +95,7 @@ func (q *TextElement) Build(page *pdf.Page) {
 		top += lineHeight
 	}
 	page.TextObjects_ET()
+	return nil
 }
 
 // TextHeight returns the height of the text, accounting for line breaks
