@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"errors"
+	"io/ioutil"
 )
 
 // PDF Reference 1.4, 3.2.7 Stream Objects
@@ -71,4 +72,42 @@ func NewStream(data []byte, filters ...Filter) (StreamObject, error) {
 		},
 		Stream: data,
 	}, nil
+}
+
+func (q *StreamObject) Decode() ([]byte, error) {
+	data := q.Stream
+	var filters []Filter
+	if d, ok := q.Dictionary.(StreamDictionary); ok {
+		filters = d.Filter
+	}
+
+	for _, filter := range filters {
+		switch filter {
+		case Filter_ASCIIHexDecode:
+			return nil, errors.New("filter not implemented")
+		case Filter_ASCII85Decode:
+			return nil, errors.New("filter not implemented")
+		case Filter_LZWDecode:
+			return nil, errors.New("filter not implemented")
+		case Filter_FlateDecode:
+			r, err := zlib.NewReader(bytes.NewReader(data))
+			if err != nil {
+				return nil, err
+			}
+			data, err = ioutil.ReadAll(r)
+			if err != nil {
+				return nil, err
+			}
+
+		case Filter_RunLengthDecode:
+			return nil, errors.New("filter not implemented")
+		case Filter_CCITTFaxDecode:
+			return nil, errors.New("filter not implemented")
+		case Filter_JBIG2Decode:
+			return nil, errors.New("filter not implemented")
+		case Filter_DCTDecode:
+			return nil, errors.New("filter not implemented")
+		}
+	}
+	return data, nil
 }

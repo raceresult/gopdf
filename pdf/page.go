@@ -14,7 +14,7 @@ type Page struct {
 	Data types.Page
 
 	// list of commands/operators already added to the page
-	contents []interface{}
+	contents [][]byte
 
 	// we need a reference to the current font for character encoding
 	currFont FontHandler
@@ -119,109 +119,6 @@ func (q *Page) AddCommand(operator string, args ...types.Object) {
 	q.contents = append(q.contents, bytes.Join(arr, []byte{' '}))
 }
 
-// AddCapturedPage adds the content of a captured page to this page
-func (q *Page) AddCapturedPage(cp *CapturedPage) {
-	// ExtGState
-	if cp.Resources.ExtGState != nil {
-		d, ok := q.Data.Resources.ExtGState.(types.Dictionary)
-		if !ok {
-			d = make(types.Dictionary)
-		}
-		for k, v := range cp.Resources.ExtGState {
-			d[k] = v
-		}
-		q.Data.Resources.ExtGState = d
-	}
-
-	// ColorSpace
-	if cp.Resources.ColorSpace != nil {
-		d, ok := q.Data.Resources.ColorSpace.(types.Dictionary)
-		if !ok {
-			d = make(types.Dictionary)
-		}
-		for k, v := range cp.Resources.ColorSpace {
-			d[k] = v
-		}
-		q.Data.Resources.ColorSpace = d
-	}
-
-	// Pattern
-	if cp.Resources.Pattern != nil {
-		d, ok := q.Data.Resources.Pattern.(types.Dictionary)
-		if !ok {
-			d = make(types.Dictionary)
-		}
-		for k, v := range cp.Resources.Pattern {
-			d[k] = v
-		}
-		q.Data.Resources.Pattern = d
-	}
-
-	// Shading
-	if cp.Resources.Shading != nil {
-		d, ok := q.Data.Resources.Shading.(types.Dictionary)
-		if !ok {
-			d = make(types.Dictionary)
-		}
-		for k, v := range cp.Resources.Shading {
-			d[k] = v
-		}
-		q.Data.Resources.Shading = d
-	}
-
-	// xObjects
-	if cp.Resources.XObject != nil {
-		d, ok := q.Data.Resources.XObject.(types.Dictionary)
-		if !ok {
-			d = make(types.Dictionary)
-		}
-		for k, v := range cp.Resources.XObject {
-			d[k] = v
-		}
-		q.Data.Resources.XObject = d
-	}
-
-	// fonts
-	if cp.Resources.Font != nil {
-		d, ok := q.Data.Resources.Font.(types.Dictionary)
-		if !ok {
-			d = make(types.Dictionary)
-		}
-		for k, v := range cp.Resources.Font {
-			d[k] = v
-		}
-		q.Data.Resources.Font = d
-	}
-
-	// ProcSet
-	if cp.Resources.ProcSet != nil {
-		for _, v := range cp.Resources.ProcSet {
-			if ps, ok := v.(types.ProcedureSet); ok {
-				q.AddProcSets(ps)
-			} else if ps, ok := v.(types.Name); ok {
-				q.AddProcSets(types.ProcedureSet(ps))
-			}
-		}
-	}
-
-	// Properties
-	if cp.Resources.Properties != nil {
-		d, ok := q.Data.Resources.Properties.(types.Dictionary)
-		if !ok {
-			d = make(types.Dictionary)
-		}
-		for k, v := range cp.Resources.Properties {
-			d[k] = v
-		}
-		q.Data.Resources.Properties = d
-	}
-
-	// stream
-	for _, c := range cp.Contents {
-		q.contents = append(q.contents, c)
-	}
-}
-
 // create is called when building the pdf file. It is supposed to add all objects to the creator and return a
 // reference to the page object
 func (q *Page) create(creator *pdffile.File, compress bool) (types.Reference, error) {
@@ -231,42 +128,13 @@ func (q *Page) create(creator *pdffile.File, compress bool) (types.Reference, er
 		filter = types.Filter_FlateDecode
 	}
 
-	// Contents can be a mixture of byte slices and references to existing content streams (when adding page from other document).
-	// We need to join existing byte parts
-	var allRefs types.Array
-	var currBytes [][]byte
-	flushBytes := func() error {
-		if len(currBytes) == 0 {
-			return nil
-		}
-		stream, err := types.NewStream(bytes.Join(currBytes, []byte{'\n'}), filter)
-		if err != nil {
-			return err
-		}
-		allRefs = append(allRefs, creator.AddObject(stream))
-		currBytes = nil
-		return nil
-	}
-	for _, c := range q.contents {
-		switch v := c.(type) {
-		case []byte:
-			currBytes = append(currBytes, v)
-		case types.Reference:
-			if err := flushBytes(); err != nil {
-				return types.Reference{}, err
-			}
-			allRefs = append(allRefs, v)
-		}
-	}
-	if err := flushBytes(); err != nil {
+	// create stream
+	stream, err := types.NewStream(bytes.Join(q.contents, []byte{'\n'}), filter)
+	if err != nil {
 		return types.Reference{}, err
 	}
 
 	// create page object and return reference to it
-	if len(allRefs) == 1 {
-		q.Data.Contents = allRefs[0]
-	} else {
-		q.Data.Contents = allRefs
-	}
+	q.Data.Contents = creator.AddObject(stream)
 	return creator.AddObject(q.Data), nil
 }

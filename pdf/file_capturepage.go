@@ -8,18 +8,8 @@ import (
 )
 
 type CapturedPage struct {
-	Source    types.Page
-	Contents  []types.Reference
-	Resources struct {
-		ExtGState  types.Dictionary
-		ColorSpace types.Dictionary
-		Pattern    types.Dictionary
-		Shading    types.Dictionary
-		XObject    types.Dictionary
-		Font       types.Dictionary
-		ProcSet    types.Array
-		Properties types.Dictionary
-	}
+	Source types.Page
+	Form   types.Reference
 }
 
 // NewCapturedPage is used to copy a page from another pdf
@@ -44,18 +34,6 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		return newRef
 	}
 
-	// ExtGState
-	var res CapturedPage
-	res.Source = sourcePage
-	res.Resources.ExtGState, _ = types.Copy(sourcePage.Resources.ExtGState, copyRef).(types.Dictionary)
-	res.Resources.ColorSpace, _ = types.Copy(sourcePage.Resources.ColorSpace, copyRef).(types.Dictionary)
-	res.Resources.Pattern, _ = types.Copy(sourcePage.Resources.Pattern, copyRef).(types.Dictionary)
-	res.Resources.Shading, _ = types.Copy(sourcePage.Resources.Shading, copyRef).(types.Dictionary)
-	res.Resources.XObject, _ = types.Copy(sourcePage.Resources.XObject, copyRef).(types.Dictionary)
-	res.Resources.Font, _ = types.Copy(sourcePage.Resources.Font, copyRef).(types.Dictionary)
-	res.Resources.ProcSet, _ = types.Copy(sourcePage.Resources.ProcSet, copyRef).(types.Array)
-	res.Resources.Properties, _ = types.Copy(sourcePage.Resources.Properties, copyRef).(types.Dictionary)
-
 	// stream
 	var cc []types.Reference
 	if sourcePage.Contents == nil {
@@ -72,13 +50,35 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 	} else {
 		return nil, errors.New("content stream has unexpected type")
 	}
+	var data []byte
 	for _, ref := range cc {
 		cs, err := sourceFile.GetObject(ref)
 		if err != nil {
 			return nil, err
 		}
-		res.Contents = append(res.Contents, q.creator.AddObject(cs))
+		if s, ok := cs.(types.StreamObject); ok {
+			decoded, err := s.Decode()
+			if err != nil {
+				return nil, err
+			}
+			data = append(data, decoded...)
+			data = append(data, '\n')
+		}
 	}
+
+	stream, err := types.NewStream(data, types.Filter_FlateDecode)
+	if err != nil {
+		return nil, err
+	}
+
+	var res CapturedPage
+	res.Form = q.creator.AddObject(types.Form{
+		Stream:     stream.Stream,
+		Dictionary: stream.Dictionary.(types.StreamDictionary),
+		BBox:       sourcePage.MediaBox,
+		Resources:  types.Copy(sourcePage.Resources, copyRef),
+	})
+	res.Source = sourcePage
 
 	// return without error
 	return &res, nil

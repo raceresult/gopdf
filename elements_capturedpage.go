@@ -23,7 +23,7 @@ func (q *CapturedPage) Build(page *pdf.Page) error {
 		page.GraphicsState_q()
 		page.GraphicsState_cm(q.Scale, 0, 0, q.Scale, q.Left.Pt(), offsetY)
 	}
-	page.AddCapturedPage(q.CapturedPage)
+	page.XObject_Do(q.CapturedPage.Form)
 	if q.Left.Value != 0 || offsetY != 0 || q.Scale != 1 {
 		page.GraphicsState_Q()
 	}

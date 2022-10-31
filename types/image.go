@@ -121,7 +121,6 @@ type Image struct {
 }
 
 func (q Image) ToRawBytes() []byte {
-	sb := bytes.Buffer{}
 	d := q.Dictionary.createDict()
 	d["Type"] = Name("XObject")
 	d["Subtype"] = Name("Image")
@@ -134,7 +133,7 @@ func (q Image) ToRawBytes() []byte {
 		d["BitsPerComponent"] = q.BitsPerComponent
 	}
 	if q.Intent != "" {
-		d["Intent"] = Name(q.Intent)
+		d["Intent"] = q.Intent
 	}
 	if q.ImageMask {
 		d["ImageMask"] = q.ImageMask
@@ -170,6 +169,7 @@ func (q Image) ToRawBytes() []byte {
 		d["Metadata"] = q.Metadata
 	}
 
+	sb := bytes.Buffer{}
 	sb.Write(d.ToRawBytes())
 
 	sb.WriteString("stream\n")

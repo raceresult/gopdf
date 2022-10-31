@@ -120,3 +120,16 @@ func (q *ResourceDictionary) Read(dict Dictionary) error {
 	// return without errors
 	return nil
 }
+
+func (q ResourceDictionary) Copy(copyRef func(reference Reference) Reference) Object {
+	return ResourceDictionary{
+		ExtGState:  Copy(q.ExtGState, copyRef),
+		ColorSpace: Copy(q.ColorSpace, copyRef),
+		Pattern:    Copy(q.Pattern, copyRef),
+		Shading:    Copy(q.Shading, copyRef),
+		XObject:    Copy(q.XObject, copyRef),
+		Font:       Copy(q.Font, copyRef),
+		ProcSet:    Copy(q.ProcSet, copyRef),
+		Properties: Copy(q.Properties, copyRef),
+	}
+}
