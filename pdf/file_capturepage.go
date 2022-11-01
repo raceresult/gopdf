@@ -8,8 +8,8 @@ import (
 )
 
 type CapturedPage struct {
-	Source types.Page
-	Form   types.Reference
+	BBox types.Rectangle
+	Form types.Reference
 }
 
 // NewCapturedPage is used to copy a page from another pdf
@@ -78,7 +78,7 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		BBox:       sourcePage.MediaBox,
 		Resources:  types.Copy(sourcePage.Resources, copyRef),
 	})
-	res.Source = sourcePage
+	res.BBox = sourcePage.MediaBox
 
 	// return without error
 	return &res, nil

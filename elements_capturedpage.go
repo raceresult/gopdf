@@ -18,7 +18,7 @@ func (q *CapturedPage) Build(page *pdf.Page) error {
 	if q.Scale == 0 {
 		q.Scale = 1
 	}
-	offsetY := float64(page.Data.MediaBox.URY) - float64(q.CapturedPage.Source.MediaBox.URY)*q.Scale - q.Top.Pt()
+	offsetY := float64(page.Data.MediaBox.URY) - float64(q.CapturedPage.BBox.URY)*q.Scale - q.Top.Pt()
 	if q.Left.Value != 0 || offsetY != 0 || q.Scale != 1 {
 		page.GraphicsState_q()
 		page.GraphicsState_cm(q.Scale, 0, 0, q.Scale, q.Left.Pt(), offsetY)
@@ -33,7 +33,7 @@ func (q *CapturedPage) Build(page *pdf.Page) error {
 // PageSize returns the page size of the captured page
 func (q *CapturedPage) PageSize() PageSize {
 	return PageSize{
-		Pt(float64(q.CapturedPage.Source.MediaBox.URX)),
-		Pt(float64(q.CapturedPage.Source.MediaBox.URY)),
+		Pt(float64(q.CapturedPage.BBox.URX)),
+		Pt(float64(q.CapturedPage.BBox.URY)),
 	}
 }

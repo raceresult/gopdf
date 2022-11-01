@@ -12,11 +12,12 @@ const DefaultVersion = 1.4
 
 // File is a pdf file with a list of indirect objects
 type File struct {
-	Version float64
-	Root    types.Reference
-	Info    types.Reference
-	ID      [2]types.String
-	objects []types.IndirectObject
+	Version         float64
+	Root            types.Reference
+	Info            types.Reference
+	ID              [2]types.String
+	objects         []types.IndirectObject
+	objectsIndexMap map[int][]int
 }
 
 // NewFile creates a new File object
@@ -40,6 +41,8 @@ func (q *File) AddObject(obj types.Object) types.Reference {
 		Generation: 0,
 		Data:       obj,
 	})
+
+	q.objectsIndexMap = nil
 	return types.Reference{
 		Number:     no,
 		Generation: 0,
@@ -49,16 +52,28 @@ func (q *File) AddObject(obj types.Object) types.Reference {
 // AddIndirectObject adds an indirect object (only used by pdf parser)
 func (q *File) AddIndirectObject(obj types.IndirectObject) {
 	q.objects = append(q.objects, obj)
+	q.objectsIndexMap = nil
 }
 
 // GetObject returns an object from the file
 func (q *File) GetObject(ref types.Reference) (types.Object, error) {
-	for _, obj := range q.objects {
-		if obj.Number == ref.Number && obj.Generation == ref.Generation {
-			return obj.Data, nil
+	if q.objectsIndexMap == nil {
+		q.objectsIndexMap = make(map[int][]int)
+		for i, obj := range q.objects {
+			arr := q.objectsIndexMap[obj.Number]
+			for len(arr) <= obj.Generation {
+				arr = append(arr, 0)
+			}
+			arr[obj.Generation] = i
+			q.objectsIndexMap[obj.Number] = arr
 		}
 	}
-	return nil, errors.New("object " + strconv.Itoa(ref.Number) + "/" + strconv.Itoa(ref.Generation) + " not found")
+
+	items := q.objectsIndexMap[ref.Number]
+	if ref.Generation < 0 && ref.Generation >= len(items) {
+		return nil, errors.New("object " + strconv.Itoa(ref.Number) + "/" + strconv.Itoa(ref.Generation) + " not found")
+	}
+	return q.objects[items[ref.Generation]].Data, nil
 }
 
 // WriteTo writes the parsed to the given writer
