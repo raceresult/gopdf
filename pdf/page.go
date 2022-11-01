@@ -25,12 +25,11 @@ type Page struct {
 	graphicsStateStack []*graphicsState
 }
 
-// newPage creates and returns a new page
-func newPage(width, height float64, parent types.Reference) *Page {
+// NewPage creates and returns a new page
+func NewPage(width, height float64) *Page {
 	return &Page{
 		Data: types.Page{
 			MediaBox: types.Rectangle{LLX: 0, LLY: 0, URX: types.Number(width), URY: types.Number(height)},
-			Parent:   parent,
 		},
 		textState:     types.NewTextState(),
 		graphicsState: &graphicsState{},

@@ -34,7 +34,9 @@ func (q *Builder) Build() ([]byte, error) {
 	q.file.CompressStreams = q.CompressStreams
 
 	for _, p := range q.pages {
-		p.build(q)
+		if err := p.build(q); err != nil {
+			return nil, err
+		}
 	}
 	return q.file.Write()
 }
@@ -64,6 +66,26 @@ func (q *Builder) NewPageBefore(size PageSize, beforePageNo int) *Page {
 	return p
 }
 
+// NewFormFromPage creates a new form object from the give page
+func (q *Builder) NewFormFromPage(page *Page) (*Form, error) {
+	p := pdf.NewPage(page.Width.Pt(), page.Height.Pt())
+	for _, item := range page.elements {
+		if err := item.Build(p); err != nil {
+			return nil, err
+		}
+	}
+
+	ref, err := q.file.NewFormFromPage(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Form{
+		BBox: types.Rectangle{URX: types.Number(page.Width.Pt()), URY: types.Number(page.Height.Pt())},
+		Form: ref,
+	}, nil
+}
+
 // PageCount returns the number of pages already added
 func (q *Builder) PageCount() int {
 	return len(q.pages)
@@ -75,13 +97,14 @@ func (q *Builder) NewImage(bts []byte) (*pdf.Image, error) {
 }
 
 // NewCapturedPage adds a new captured page to the PDF file
-func (q *Builder) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (*CapturedPage, error) {
+func (q *Builder) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (*Form, error) {
 	cp, err := q.file.NewCapturedPage(sourcePage, sourceFile)
 	if err != nil {
 		return nil, err
 	}
-	return &CapturedPage{
-		CapturedPage: cp,
+	return &Form{
+		BBox: sourcePage.MediaBox,
+		Form: cp,
 	}, nil
 }
 

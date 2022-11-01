@@ -51,7 +51,7 @@ func NewFile() *File {
 
 // NewPage adds and returns a new Page
 func (q *File) NewPage(width, height float64) *Page {
-	p := newPage(width, height, q.catalog.Pages)
+	p := NewPage(width, height)
 	q.Pages = append(q.Pages, p)
 	return p
 }
@@ -72,6 +72,7 @@ func (q *File) WriteTo(w io.Writer) (int64, error) {
 
 	// pages
 	for _, page := range q.Pages {
+		page.Data.Parent = q.catalog.Pages
 		pageRef, err := page.create(q.creator, q.CompressStreams)
 		if err != nil {
 			return 0, err

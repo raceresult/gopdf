@@ -1,19 +1,15 @@
 package pdf
 
 import (
+	"bytes"
 	"errors"
 
 	"github.com/raceresult/gopdf/pdffile"
 	"github.com/raceresult/gopdf/types"
 )
 
-type CapturedPage struct {
-	BBox types.Rectangle
-	Form types.Reference
-}
-
 // NewCapturedPage is used to copy a page from another pdf
-func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (*CapturedPage, error) {
+func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (types.Reference, error) {
 	if q.copiedObjects == nil {
 		q.copiedObjects = make(map[*pdffile.File]map[types.Reference]types.Reference)
 	}
@@ -43,23 +39,23 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		for _, v := range arr {
 			ref, ok := v.(types.Reference)
 			if !ok {
-				return nil, errors.New("content stream has unexpected type")
+				return types.Reference{}, errors.New("content stream has unexpected type")
 			}
 			cc = append(cc, ref)
 		}
 	} else {
-		return nil, errors.New("content stream has unexpected type")
+		return types.Reference{}, errors.New("content stream has unexpected type")
 	}
 	var data []byte
 	for _, ref := range cc {
 		cs, err := sourceFile.GetObject(ref)
 		if err != nil {
-			return nil, err
+			return types.Reference{}, err
 		}
 		if s, ok := cs.(types.StreamObject); ok {
 			decoded, err := s.Decode()
 			if err != nil {
-				return nil, err
+				return types.Reference{}, err
 			}
 			data = append(data, decoded...)
 			data = append(data, '\n')
@@ -68,18 +64,28 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 
 	stream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
-		return nil, err
+		return types.Reference{}, err
 	}
 
-	var res CapturedPage
-	res.Form = q.creator.AddObject(types.Form{
+	return q.creator.AddObject(types.Form{
 		Stream:     stream.Stream,
 		Dictionary: stream.Dictionary.(types.StreamDictionary),
 		BBox:       sourcePage.MediaBox,
 		Resources:  types.Copy(sourcePage.Resources, copyRef),
-	})
-	res.BBox = sourcePage.MediaBox
+	}), nil
+}
 
-	// return without error
-	return &res, nil
+// NewFormFromPage creates a new form object from the given page
+func (q *File) NewFormFromPage(page *Page) (types.Reference, error) {
+	stream, err := types.NewStream(bytes.Join(page.contents, []byte{'\n'}), types.Filter_FlateDecode)
+	if err != nil {
+		return types.Reference{}, err
+	}
+
+	return q.creator.AddObject(types.Form{
+		Stream:     stream.Stream,
+		Dictionary: stream.Dictionary.(types.StreamDictionary),
+		BBox:       page.Data.MediaBox,
+		Resources:  page.Data.Resources,
+	}), nil
 }
