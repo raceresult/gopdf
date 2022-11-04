@@ -79,6 +79,11 @@ func (q *StreamObject) Decode() ([]byte, error) {
 	var filters []Filter
 	if d, ok := q.Dictionary.(StreamDictionary); ok {
 		filters = d.Filter
+	} else if d, ok := q.Dictionary.(Dictionary); ok {
+		sd := StreamDictionary{}
+		if err := sd.Read(d); err == nil {
+			filters = sd.Filter
+		}
 	}
 
 	for _, filter := range filters {

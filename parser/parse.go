@@ -48,11 +48,15 @@ func readFile(bts []byte) (*pdffile.File, error) {
 		case bytes.HasPrefix(bts, []byte("trailer")):
 			trailer, bts, err = readTrailer(bts)
 			if err != nil {
-				return nil, err
+				// if we already had a trailer, it is probably a linearized pdf
+				if dest.Root.Number == 0 {
+					return nil, err
+				}
+			} else {
+				dest.ID = trailer.ID
+				dest.Root = trailer.Root
+				dest.Info = trailer.Info
 			}
-			dest.ID = trailer.ID
-			dest.Root = trailer.Root
-			dest.Info = trailer.Info
 
 		case bytes.HasPrefix(bts, []byte("startxref")):
 			_, bts, err = readValue(bts[9:])
@@ -228,14 +232,16 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 
 		switch v := obj.(type) {
 		case types.Dictionary:
+			stream := types.StreamObject{
+				Dictionary: v,
+				Stream:     nil,
+			}
 			var streamDict types.StreamDictionary
 			if err := streamDict.Read(v); err != nil {
 				return types.IndirectObject{}, bts, err
 			}
-			stream := types.StreamObject{
-				Dictionary: streamDict,
-				Stream:     bts[:streamDict.Length],
-			}
+
+			stream.Stream = bts[:streamDict.Length]
 			bts = bts[streamDict.Length:]
 			obj = stream
 
