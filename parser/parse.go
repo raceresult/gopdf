@@ -228,16 +228,14 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 
 		switch v := obj.(type) {
 		case types.Dictionary:
-			stream := types.StreamObject{
-				Dictionary: v,
-				Stream:     nil,
-			}
 			var streamDict types.StreamDictionary
 			if err := streamDict.Read(v); err != nil {
 				return types.IndirectObject{}, bts, err
 			}
-
-			stream.Stream = bts[:streamDict.Length]
+			stream := types.StreamObject{
+				Dictionary: streamDict,
+				Stream:     bts[:streamDict.Length],
+			}
 			bts = bts[streamDict.Length:]
 			obj = stream
 
