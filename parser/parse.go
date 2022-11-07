@@ -102,22 +102,19 @@ func readTrailer(bts []byte) (types.Trailer, []byte, error) {
 }
 
 func readObject(bts []byte) (types.IndirectObject, []byte, error) {
-	bts = trimLeftWhiteChars(bts)
+	var header [3][]byte
+	for i := 0; i < 3; i++ {
+		header[i], bts = readWord(bts)
+	}
 
-	var firstLine []byte
-	firstLine, bts = readLine(bts)
-	if len(firstLine) == 0 {
+	if string(header[2]) != "obj" {
 		return types.IndirectObject{}, bts, errors.New("error parsing object header")
 	}
-	header := splitWords(string(firstLine))
-	if len(header) != 3 || header[2] != "obj" {
-		return types.IndirectObject{}, bts, errors.New("error parsing object header")
-	}
-	id, err := strconv.Atoi(header[0])
+	id, err := strconv.Atoi(string(header[0]))
 	if err != nil || id <= 0 {
 		return types.IndirectObject{}, bts, errors.New("object header invalid")
 	}
-	gen, err := strconv.Atoi(header[1])
+	gen, err := strconv.Atoi(string(header[1]))
 	if err != nil || gen < 0 {
 		return types.IndirectObject{}, bts, errors.New("object header invalid")
 	}
