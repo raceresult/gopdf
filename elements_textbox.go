@@ -47,7 +47,7 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 
 	wrapped := q.wrappedText()
 	lineHeight := q.lineHeight()
-	top := float64(page.Data.MediaBox.URY) - q.Y.Pt() - q.Font.GetAscent(q.FontSize)
+	top := float64(page.Data.MediaBox.URY) - q.Top.Pt() - q.Font.GetAscent(q.FontSize)
 	var c float64
 	if q.Italic {
 		c = 0.333
@@ -70,7 +70,7 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		}
 
 		// set position
-		left := q.X.Pt()
+		left := q.Left.Pt()
 		width := q.Font.GetWidth(line, q.FontSize)
 		switch q.TextAlign {
 		case TextAlignCenter:

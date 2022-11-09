@@ -4,7 +4,7 @@ import "github.com/raceresult/gopdf/pdf"
 
 // EllipseElement is used to add an ellipse to a page
 type EllipseElement struct {
-	X, Y, Width, Height Length
+	Left, Top, Width, Height Length
 
 	LineWidth   Length
 	LineColor   Color
@@ -27,12 +27,13 @@ func (q *EllipseElement) Build(page *pdf.Page) error {
 		return err
 	}
 
-	y := float64(page.Data.MediaBox.URY) - q.Y.Pt() - q.Height.Pt()/2
-	page.Path_m(q.X.Pt(), y+q.Height.Pt()/2)
-	page.Path_c(q.X.Pt()+.5523*q.Width.Pt()/2, y+q.Height.Pt()/2, q.X.Pt()+q.Width.Pt()/2, y+.5523*q.Height.Pt()/2, q.X.Pt()+q.Width.Pt()/2, y)
-	page.Path_c(q.X.Pt()+q.Width.Pt()/2, y-.5523*q.Height.Pt()/2, q.X.Pt()+.5523*q.Width.Pt()/2, y-q.Height.Pt()/2, q.X.Pt(), y-q.Height.Pt()/2)
-	page.Path_c(q.X.Pt()-.5523*q.Width.Pt()/2, y-q.Height.Pt()/2, q.X.Pt()-q.Width.Pt()/2, y-.5523*q.Height.Pt()/2, q.X.Pt()-q.Width.Pt()/2, y)
-	page.Path_c(q.X.Pt()-q.Width.Pt()/2, y+.5523*q.Height.Pt()/2, q.X.Pt()-.5523*q.Width.Pt()/2, y+q.Height.Pt()/2, q.X.Pt(), y+q.Height.Pt()/2)
+	x := q.Left.Pt() + q.Width.Pt()/2
+	y := float64(page.Data.MediaBox.URY) - q.Top.Pt() - q.Height.Pt()/2
+	page.Path_m(x, y+q.Height.Pt()/2)
+	page.Path_c(x+.5523*q.Width.Pt()/2, y+q.Height.Pt()/2, x+q.Width.Pt()/2, y+.5523*q.Height.Pt()/2, x+q.Width.Pt()/2, y)
+	page.Path_c(x+q.Width.Pt()/2, y-.5523*q.Height.Pt()/2, x+.5523*q.Width.Pt()/2, y-q.Height.Pt()/2, x, y-q.Height.Pt()/2)
+	page.Path_c(x-.5523*q.Width.Pt()/2, y-q.Height.Pt()/2, x-q.Width.Pt()/2, y-.5523*q.Height.Pt()/2, x-q.Width.Pt()/2, y)
+	page.Path_c(x-q.Width.Pt()/2, y+.5523*q.Height.Pt()/2, x-.5523*q.Width.Pt()/2, y+q.Height.Pt()/2, x, y+q.Height.Pt()/2)
 
 	if q.LineColor != nil && q.FillColor != nil {
 		page.Path_B()

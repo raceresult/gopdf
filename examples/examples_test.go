@@ -27,8 +27,8 @@ func TestExample1(t *testing.T) {
 	p.AddElement(&gopdf.TextElement{
 		Text:      "hello world",
 		FontSize:  36,
-		X:         gopdf.MM(105),
-		Y:         gopdf.MM(100),
+		Left:      gopdf.MM(105),
+		Top:       gopdf.MM(100),
 		TextAlign: gopdf.TextAlignCenter,
 		Font:      f,
 	})
@@ -74,8 +74,8 @@ func TestExample2(t *testing.T) {
 
 	// add rectangle
 	p.AddElement(&gopdf.RectElement{
-		X1:        gopdf.MM(20),
-		Y1:        gopdf.MM(150),
+		Left:      gopdf.MM(20),
+		Top:       gopdf.MM(150),
 		Width:     gopdf.MM(50),
 		Height:    gopdf.MM(30),
 		LineWidth: gopdf.MM(3),
@@ -100,8 +100,8 @@ func TestExample2(t *testing.T) {
 		Text:         "hello world - 漢語",
 		Font:         f,
 		FontSize:     36,
-		X:            gopdf.MM(20),
-		Y:            gopdf.MM(100),
+		Left:         gopdf.MM(20),
+		Top:          gopdf.MM(100),
 		Color:        gopdf.NewColorRGB(200, 200, 200),
 		OutlineColor: gopdf.NewColorRGB(10, 20, 10),
 		RenderMode:   types.RenderingModeFillAndStroke,

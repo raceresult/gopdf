@@ -125,7 +125,7 @@ type DocumentCatalog struct {
 	// fications for structure elements or marked content (see Section 9.8.1,
 	// “Natural Language Specification”). If this entry is absent, the language is
 	// considered unknown.
-	Lang TextString
+	Lang String
 
 	// (Optional; PDF 1.3) A Web Capture information dictionary containing
 	// state information used by the Acrobat Web Capture (AcroSpider) plug-
@@ -273,7 +273,7 @@ func (q *DocumentCatalog) Read(dict Dictionary) error {
 	// ViewerPreferences
 	v, ok = dict["ViewerPreferences"]
 	if ok {
-		vt, ok := v.(Name)
+		vt, ok := v.(Dictionary)
 		if !ok {
 			return errors.New("unexpected value type in catalog field ViewerPreferences")
 		}
@@ -373,7 +373,7 @@ func (q *DocumentCatalog) Read(dict Dictionary) error {
 	// Lang
 	v, ok = dict["Lang"]
 	if ok {
-		vt, ok := v.(TextString)
+		vt, ok := v.(String)
 		if !ok {
 			return errors.New("unexpected value type in catalog field Lang")
 		}
@@ -419,7 +419,7 @@ func (q DocumentCatalog) Copy(copyRef func(reference Reference) Reference) Objec
 		Metadata:          q.Metadata.Copy(copyRef).(Reference),
 		StructTreeRoot:    Copy(q.StructTreeRoot, copyRef),
 		MarkInfo:          Copy(q.MarkInfo, copyRef),
-		Lang:              q.Lang.Copy(copyRef).(TextString),
+		Lang:              q.Lang.Copy(copyRef).(String),
 		SpiderInfo:        Copy(q.SpiderInfo, copyRef),
 		OutputIntents:     q.OutputIntents.Copy(copyRef).(Array),
 	}

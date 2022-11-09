@@ -40,13 +40,13 @@ func (q *StandardFont) GetWidth(text string, fontSize float64) float64 {
 	return float64(w) * fontSize / 1000
 }
 func (q *StandardFont) GetAscent(fontSize float64) float64 {
-	return float64(q.metrics.Ascender) * fontSize / 1000
+	return q.metrics.Ascender.Float64() * fontSize / 1000
 }
 func (q *StandardFont) GetUnderlineThickness(fontSize float64) float64 {
-	return float64(q.metrics.Direction[0].UnderlineThickness) * fontSize / 1000
+	return q.metrics.Direction[0].UnderlineThickness.Float64() * fontSize / 1000
 }
 func (q *StandardFont) GetUnderlinePosition(fontSize float64) float64 {
-	return float64(q.metrics.Direction[0].UnderlinePosition) * fontSize / 1000
+	return q.metrics.Direction[0].UnderlinePosition.Float64() * fontSize / 1000
 }
 func (q *StandardFont) finish() error {
 	return nil

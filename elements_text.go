@@ -11,7 +11,7 @@ import (
 // TextElement draws a text, may have line breaks
 type TextElement struct {
 	Text         string
-	X, Y         Length
+	Left, Top    Length
 	Font         pdf.FontHandler
 	FontSize     float64
 	Color        Color
@@ -59,7 +59,7 @@ func (q *TextElement) Build(page *pdf.Page) error {
 
 	// calculate some values needed below
 	lineHeight := q.lineHeight()
-	top := float64(page.Data.MediaBox.URY) - q.Y.Pt()
+	top := float64(page.Data.MediaBox.URY) - q.Top.Pt()
 	var c float64
 	if q.Italic {
 		c = 0.333
@@ -68,7 +68,7 @@ func (q *TextElement) Build(page *pdf.Page) error {
 	// iterate over lines
 	for _, line := range strings.Split(q.Text, "\n") {
 		width := q.Font.GetWidth(line, q.FontSize)
-		left := q.X.Pt()
+		left := q.Left.Pt()
 		switch q.TextAlign {
 		case TextAlignCenter:
 			left -= width / 2

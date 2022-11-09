@@ -6,11 +6,8 @@ import (
 
 // ImageElement is used to add an image to a page
 type ImageElement struct {
-	Img    *pdf.Image
-	Width  Length
-	Height Length
-	Left   Length
-	Top    Length
+	Img                      *pdf.Image
+	Left, Top, Width, Height Length
 }
 
 // Build adds the element to the content stream

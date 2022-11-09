@@ -4,13 +4,10 @@ import "github.com/raceresult/gopdf/pdf"
 
 // ImageBoxElement is used to add an image box to a page
 type ImageBoxElement struct {
-	Img             *pdf.Image
-	Width           Length
-	Height          Length
-	Left            Length
-	Top             Length
-	VerticalAlign   VerticalAlign
-	HorizontalAlign TextAlign
+	Img                      *pdf.Image
+	Left, Top, Width, Height Length
+	VerticalAlign            VerticalAlign
+	HorizontalAlign          TextAlign
 }
 
 // Build adds the element to the content stream
