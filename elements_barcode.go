@@ -176,13 +176,16 @@ func (q *BarcodeElement) encodeCode128(width float64) ([][2]float64, error) {
 	start := -1
 	for x := 0; x < w; x++ {
 		v, _, _, _ := scaled.At(x, 0).RGBA()
-		if start >= 0 && (x == w-1 || v == 0) {
+		if start >= 0 && v != 0 {
 			res = append(res, [2]float64{float64(start) / 100, float64(x-start) / 100})
 			start = -1
 		}
-		if start < 0 && v != 0 {
+		if start < 0 && v == 0 {
 			start = x
 		}
+	}
+	if start >= 0 {
+		res = append(res, [2]float64{float64(start) / 100, float64(w-start) / 100})
 	}
 
 	return res, nil
