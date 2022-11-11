@@ -14,6 +14,7 @@ import (
 // readFile reads a byte stream into a File object
 func readFile(bts []byte) (*pdffile.File, error) {
 	// parse PDF version
+	length := len(bts)
 	var dest pdffile.File
 	var firstLine []byte
 	firstLine, bts = readLine(bts)
@@ -26,6 +27,7 @@ func readFile(bts []byte) (*pdffile.File, error) {
 	}
 
 	// parse objects
+	objectOffsets := make(map[int]types.IndirectObject)
 	var trailer types.Trailer
 	for len(bts) != 0 {
 		var err error
@@ -59,21 +61,40 @@ func readFile(bts []byte) (*pdffile.File, error) {
 			}
 
 		case bytes.HasPrefix(bts, []byte("startxref")):
-			_, bts, err = readValue(bts[9:])
+			var startXRef types.Object
+			startXRef, bts, err = readValue(bts[9:])
 			if err != nil {
 				return nil, err
+			}
+			if dest.Root.Number == 0 {
+				if offset, ok := startXRef.(types.Int); ok && offset > 0 {
+					if obj, ok := objectOffsets[int(offset)]; ok {
+						if so, ok := obj.Data.(types.StreamObject); ok {
+							if dict, ok := so.Dictionary.(types.Dictionary); ok {
+								var t types.Trailer
+								if err := t.Read(dict); err == nil {
+									dest.ID = t.ID
+									dest.Root = t.Root
+									dest.Info = t.Info
+								}
+							}
+						}
+					}
+				}
 			}
 
 		case isWhiteChar(bts[0]):
 			bts = bts[1:]
 
 		default:
+			offset := length - len(bts)
 			var obj types.IndirectObject
 			obj, bts, err = readObject(bts)
 			if err != nil {
 				return nil, err
 			}
 			dest.AddIndirectObject(obj)
+			objectOffsets[offset] = obj
 		}
 	}
 
@@ -223,7 +244,7 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 		}
 	}
 
-	bts = trimWhiteChars(bts)
+	bts = trimLeftWhiteChars(bts)
 	if bytes.HasPrefix(bts, []byte("stream")) {
 		_, bts = readLine(bts)
 
@@ -684,15 +705,6 @@ func isDelimiterChar(c byte) bool {
 	default:
 		return false
 	}
-}
-
-func trimWhiteChars(bts []byte) []byte {
-	return bytes.TrimFunc(bts, func(r rune) bool {
-		if r > 32 {
-			return false
-		}
-		return isWhiteChar(byte(r))
-	})
 }
 
 func trimLeftWhiteChars(bts []byte) []byte {

@@ -29,6 +29,46 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 	color.Build(page, false)
 	color.Build(page, true)
 
+	// text scaling / char spacing
+	page.TextState_Tc(q.CharSpacing.Pt())
+	if q.TextScaling == 0 {
+		page.TextState_Tz(100)
+	} else {
+		page.TextState_Tz(q.TextScaling)
+	}
+
+	// "fit" font size
+	if q.FontSize == -1 { // todo: consider charspacing / textscaling
+		// set to super high value and reset after end of function
+		defer func() { q.FontSize = -1 }()
+		q.FontSize = 100000
+
+		// split by line breaks
+		lines := strings.Split(strings.ReplaceAll(q.Text, "\r\n", "\n"), "\n")
+
+		// adapt to height
+		h := q.Height.Pt()
+		if h > 0 {
+			fh := q.lineHeight() * float64(len(lines))
+			q.FontSize *= h / fh
+		}
+
+		// adapt to width
+		w := q.Width.Pt()
+		if w > 0 {
+			var maxWidth float64
+			for _, line := range lines {
+				w := q.Font.GetWidth(line, q.FontSize)
+				if w > maxWidth {
+					maxWidth = w
+				}
+			}
+			if maxWidth > w {
+				q.FontSize *= w / maxWidth
+			}
+		}
+	}
+
 	// set bold or outline (bold is done via outline)
 	if q.Bold && q.OutlineWidth.Value == 0 && q.OutlineColor == nil {
 		page.GraphicsState_w(q.FontSize * 0.05)
@@ -47,11 +87,16 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 
 	wrapped := q.wrappedText()
 	lineHeight := q.lineHeight()
-	top := float64(page.Data.MediaBox.URY) - q.Top.Pt() - q.Font.GetAscent(q.FontSize)
 	var c float64
 	if q.Italic {
 		c = 0.333
 	}
+
+	page.GraphicsState_q()
+	r := q.Rotate * math.Pi / 180
+	page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt())
+
+	top := -q.Font.GetTop(q.FontSize)
 	if q.Height.Value > 0 {
 		switch q.VerticalAlign {
 		case VerticalAlignMiddle:
@@ -70,7 +115,7 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		}
 
 		// set position
-		left := q.Left.Pt()
+		left := 0.0
 		width := q.Font.GetWidth(line, q.FontSize)
 		switch q.TextAlign {
 		case TextAlignCenter:
@@ -78,22 +123,26 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		case TextAlignRight:
 			left += q.Width.Pt() - width
 		}
-		if q.Rotate != 0 {
-			r := q.Rotate * math.Pi / 180
-			page.TextPosition_Tm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), left, top)
-		} else {
-			page.TextPosition_Tm(1, 0, c, 1, left, top)
-		}
+		page.TextPosition_Tm(1, 0, c, 1, left, top)
 		page.TextShowing_Tj(line)
 
-		// underline text
+		// underline/strike-through text
 		if q.Underline {
 			page.Path_re(left, top+q.Font.GetUnderlinePosition(q.FontSize), width, q.Font.GetUnderlineThickness(q.FontSize))
+			page.Path_f()
+		}
+		if q.StrikeThrough {
+			page.Path_re(
+				left, top+q.Font.GetTop(q.FontSize)/3,
+				width, q.Font.GetUnderlineThickness(q.FontSize),
+			)
 			page.Path_f()
 		}
 
 		top -= lineHeight
 	}
+
+	page.GraphicsState_Q()
 	page.TextObjects_ET()
 	return nil
 }
@@ -129,7 +178,7 @@ func (q *TextBoxElement) wrappedText() []string {
 		var currLine string
 		for _, word := range strings.Split(line, " ") {
 			wordWidth := q.Font.GetWidth(word, q.FontSize)
-			if wordWidth+w > q.Width.Pt() && currLine != "" {
+			if wordWidth+w+spaceWidth > q.Width.Pt() && currLine != "" {
 				res = append(res, currLine)
 				currLine = ""
 				w = 0
@@ -164,6 +213,10 @@ func (q *TextBoxElement) wrappedText() []string {
 			res = append(res, currLine)
 		}
 	}
+
+	if maxLines > 0 && len(res) > maxLines {
+		res = res[:maxLines]
+	}
 	return res
 }
 
@@ -171,11 +224,4 @@ func (q *TextBoxElement) wrappedText() []string {
 func (q *TextBoxElement) TextHeight() Length {
 	lines := len(q.wrappedText())
 	return Pt(float64(lines) * q.lineHeight())
-}
-
-func (q *TextBoxElement) lineHeight() float64 {
-	if q.LineHeight != 0 {
-		return q.LineHeight
-	}
-	return q.FontSize * 1.2
 }

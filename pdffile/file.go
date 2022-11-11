@@ -70,7 +70,7 @@ func (q *File) GetObject(ref types.Reference) (types.Object, error) {
 	}
 
 	items := q.objectsIndexMap[ref.Number]
-	if ref.Generation < 0 && ref.Generation >= len(items) {
+	if ref.Generation < 0 || ref.Generation >= len(items) {
 		return nil, errors.New("object " + strconv.Itoa(ref.Number) + "/" + strconv.Itoa(ref.Generation) + " not found")
 	}
 	return q.objects[items[ref.Generation]].Data, nil

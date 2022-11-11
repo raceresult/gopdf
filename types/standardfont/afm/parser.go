@@ -50,10 +50,10 @@ loop:
 		case "Weight":
 			fnt.Weight = p.readStr(1)
 		case "FontBBox":
-			fnt.BBox.llx = p.readFixed(1)
-			fnt.BBox.lly = p.readFixed(2)
-			fnt.BBox.urx = p.readFixed(3)
-			fnt.BBox.ury = p.readFixed(4)
+			fnt.BBox.LLX = p.readFixed(1)
+			fnt.BBox.LLY = p.readFixed(2)
+			fnt.BBox.URX = p.readFixed(3)
+			fnt.BBox.URY = p.readFixed(4)
 		case "Version":
 			fnt.Version = p.readStr(1)
 		case "Notice":
@@ -256,10 +256,10 @@ func (p *parser) parseCharMetric(fnt *Font) error {
 		case "N":
 			ch.name = p.readStr(1)
 		case "B":
-			ch.bbox.llx = p.readFixed(1)
-			ch.bbox.lly = p.readFixed(2)
-			ch.bbox.urx = p.readFixed(3)
-			ch.bbox.ury = p.readFixed(4)
+			ch.bbox.LLX = p.readFixed(1)
+			ch.bbox.LLY = p.readFixed(2)
+			ch.bbox.URX = p.readFixed(3)
+			ch.bbox.URY = p.readFixed(4)
 		case "L":
 			ch.ligs = append(ch.ligs, lig{
 				succ: p.readStr(1),

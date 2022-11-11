@@ -120,5 +120,10 @@ func (q *Builder) NewTrueTypeFont(ttf []byte, encoding types.Encoding, embed boo
 
 // NewCompositeFont adds a font as composite font to the pdf, i.e. with Unicode support
 func (q *Builder) NewCompositeFont(ttf []byte) (*pdf.CompositeFont, error) {
-	return q.file.NewCompositeFont(ttf)
+	return q.file.NewCompositeFontFromTTF(ttf)
+}
+
+// NewCompositeFontFromOTF adds a otf font as composite font to the pdf, i.e. with Unicode support
+func (q *Builder) NewCompositeFontFromOTF(otf []byte) (*pdf.CompositeFontOTF, error) {
+	return q.file.NewCompositeFontFromOTF(otf)
 }

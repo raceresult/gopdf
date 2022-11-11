@@ -135,7 +135,7 @@ type DocumentCatalog struct {
 	// (Optional; PDF 1.4) An array of output intent dictionaries describing the
 	// color characteristics of output devices on which the document might be
 	// rendered (see “Output Intents” on page 684).
-	OutputIntents Array
+	OutputIntents Object // seems that it can also be a refernece
 }
 
 func (q DocumentCatalog) ToRawBytes() []byte {
@@ -389,11 +389,7 @@ func (q *DocumentCatalog) Read(dict Dictionary) error {
 	// OutputIntents
 	v, ok = dict["OutputIntents"]
 	if ok {
-		vt, ok := v.(Array)
-		if !ok {
-			return errors.New("unexpected value type in catalog field OutputIntents")
-		}
-		q.OutputIntents = vt
+		q.OutputIntents = v
 	}
 
 	// return without error
@@ -421,6 +417,6 @@ func (q DocumentCatalog) Copy(copyRef func(reference Reference) Reference) Objec
 		MarkInfo:          Copy(q.MarkInfo, copyRef),
 		Lang:              q.Lang.Copy(copyRef).(String),
 		SpiderInfo:        Copy(q.SpiderInfo, copyRef),
-		OutputIntents:     q.OutputIntents.Copy(copyRef).(Array),
+		OutputIntents:     Copy(q.OutputIntents, copyRef),
 	}
 }

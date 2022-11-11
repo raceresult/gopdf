@@ -55,15 +55,15 @@ type charMetric struct {
 	vv [2]fixed.Int16_16
 
 	// bbox is the character bounding box.
-	bbox bbox
+	bbox BBox
 
 	// ligs is a ligature sequence.
 	ligs []lig
 }
 
-type bbox struct {
-	llx, lly fixed.Int16_16
-	urx, ury fixed.Int16_16
+type BBox struct {
+	LLX, LLY fixed.Int16_16
+	URX, URY fixed.Int16_16
 }
 
 // lig is a ligature.
@@ -87,7 +87,7 @@ type Font struct {
 	FullName   string // FullName is the full text name of the font.
 	FamilyName string // FamilyName is the name of the typeface family to which the font belongs.
 	Weight     string // Weight is the Weight of the font (ex: Regular, Bold, Light).
-	BBox       bbox   // BBox is the font bounding box.
+	BBox       BBox   // BBox is the font bounding box.
 	Version    string // Version is the font program Version identifier.
 	Notice     string // Notice contains the font name trademark or copyright Notice.
 

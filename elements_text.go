@@ -10,20 +10,23 @@ import (
 
 // TextElement draws a text, may have line breaks
 type TextElement struct {
-	Text         string
-	Left, Top    Length
-	Font         pdf.FontHandler
-	FontSize     float64
-	Color        Color
-	RenderMode   types.RenderingMode
-	OutlineColor Color
-	OutlineWidth Length
-	TextAlign    TextAlign
-	LineHeight   float64
-	Italic       bool
-	Bold         bool
-	Underline    bool
-	Rotate       float64
+	Text          string
+	Left, Top     Length
+	Font          pdf.FontHandler
+	FontSize      float64
+	Color         Color
+	RenderMode    types.RenderingMode
+	OutlineColor  Color
+	OutlineWidth  Length
+	TextAlign     TextAlign
+	LineHeight    float64
+	Italic        bool
+	Bold          bool
+	Underline     bool
+	StrikeThrough bool
+	CharSpacing   Length
+	TextScaling   float64
+	Rotate        float64
 }
 
 // Build adds the element to the content stream
@@ -51,6 +54,14 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		if q.OutlineColor != nil {
 			q.OutlineColor.Build(page, true)
 		}
+	}
+
+	// text scaling / char spacing
+	page.TextState_Tc(q.CharSpacing.Pt())
+	if q.TextScaling == 0 {
+		page.TextState_Tz(100)
+	} else {
+		page.TextState_Tz(q.TextScaling)
 	}
 
 	// begin text and set font
@@ -83,10 +94,17 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		}
 		page.TextShowing_Tj(line)
 
-		// underline text
+		// underline/strike-through text
 		if q.Underline {
 			page.Path_re(
 				left, top+q.Font.GetUnderlinePosition(q.FontSize),
+				width, q.Font.GetUnderlineThickness(q.FontSize),
+			)
+			page.Path_f()
+		}
+		if q.StrikeThrough {
+			page.Path_re(
+				left, top+q.Font.GetTop(q.FontSize)/3,
 				width, q.Font.GetUnderlineThickness(q.FontSize),
 			)
 			page.Path_f()
@@ -104,9 +122,14 @@ func (q *TextElement) TextHeight() Length {
 	return Pt(float64(lines) * q.lineHeight())
 }
 
+// FontHeight returns the height of the font (bounding box y min to max)
+func (q *TextElement) FontHeight() Length {
+	return Pt(q.Font.GetTop(q.FontSize) - q.Font.GetBottom(q.FontSize))
+}
+
 func (q *TextElement) lineHeight() float64 {
 	if q.LineHeight != 0 {
 		return q.LineHeight
 	}
-	return q.FontSize * 1.2
+	return q.FontHeight().Pt()
 }
