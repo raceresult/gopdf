@@ -121,7 +121,7 @@ func (q *BarcodeElement) Build(page *pdf.Page) error {
 // encode returns a list of x-pos + width representing the bars of the barcode
 func (q *BarcodeElement) encode(width float64) ([][2]float64, error) {
 	switch q.Type {
-	case BarcodeType39:
+	case BarcodeType39, 0:
 		return q.encodeCode39(width)
 	case BarcodeType128:
 		return q.encodeCode128(width)
