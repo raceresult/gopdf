@@ -37,38 +37,6 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		page.TextState_Tz(q.TextScaling)
 	}
 
-	// "fit" font size
-	if q.FontSize == -1 { // todo: consider charspacing / textscaling
-		// set to super high value and reset after end of function
-		defer func() { q.FontSize = -1 }()
-		q.FontSize = 100000
-
-		// split by line breaks
-		lines := strings.Split(strings.ReplaceAll(q.Text, "\r\n", "\n"), "\n")
-
-		// adapt to height
-		h := q.Height.Pt()
-		if h > 0 {
-			fh := q.lineHeight() * float64(len(lines))
-			q.FontSize *= h / fh
-		}
-
-		// adapt to width
-		w := q.Width.Pt()
-		if w > 0 {
-			var maxWidth float64
-			for _, line := range lines {
-				w := q.Font.GetWidth(line, q.FontSize)
-				if w > maxWidth {
-					maxWidth = w
-				}
-			}
-			if maxWidth > w {
-				q.FontSize *= w / maxWidth
-			}
-		}
-	}
-
 	// set bold or outline (bold is done via outline)
 	if q.Bold && q.OutlineWidth.Value == 0 && q.OutlineColor == nil {
 		page.GraphicsState_w(q.FontSize * 0.05)
