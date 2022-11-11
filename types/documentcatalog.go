@@ -87,7 +87,7 @@ type DocumentCatalog struct {
 	// or an action dictionary representing an action (Section 8.5, “Actions”). If
 	// this entry is absent, the document should be opened to the top of the
 	// first page at the default magnification factor.
-	OpenAction Array
+	OpenAction Object // can be reference as well
 
 	// (Optional; PDF 1.1) A value specifying a destination to be displayed or
 	// dictionary an action to be performed when the document is opened. The value is
@@ -243,11 +243,7 @@ func (q *DocumentCatalog) Read(dict Dictionary) error {
 	// PageLabels
 	v, ok = dict["PageLabels"]
 	if ok {
-		vt, ok := v.(Name)
-		if !ok {
-			return errors.New("unexpected value type in catalog field PageLabels")
-		}
-		q.PageLabels = vt
+		q.PageLabels = v
 	}
 
 	// Names
@@ -323,11 +319,7 @@ func (q *DocumentCatalog) Read(dict Dictionary) error {
 	// OpenAction
 	v, ok = dict["OpenAction"]
 	if ok {
-		vt, ok := v.(Array)
-		if !ok {
-			return errors.New("unexpected value type in catalog field OpenAction")
-		}
-		q.OpenAction = vt
+		q.OpenAction = v
 	}
 
 	// AdditionalActions
@@ -408,7 +400,7 @@ func (q DocumentCatalog) Copy(copyRef func(reference Reference) Reference) Objec
 		PageMode:          q.PageMode.Copy(copyRef).(Name),
 		Outlines:          q.Outlines.Copy(copyRef).(Reference),
 		Threads:           q.Threads.Copy(copyRef).(Array),
-		OpenAction:        q.OpenAction.Copy(copyRef).(Array),
+		OpenAction:        Copy(q.OpenAction, copyRef),
 		AdditionalActions: Copy(q.AdditionalActions, copyRef),
 		URI:               Copy(q.URI, copyRef).(Array),
 		AcroForm:          Copy(q.AcroForm, copyRef),

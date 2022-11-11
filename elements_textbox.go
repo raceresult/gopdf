@@ -153,6 +153,9 @@ func (q *TextBoxElement) wrappedText() []string {
 	var maxLines int
 	if q.Height.Value > 0 {
 		maxLines = int(q.Height.Pt() / q.lineHeight())
+		if maxLines == 0 {
+			return nil
+		}
 	}
 
 	// split by line break
@@ -195,7 +198,7 @@ func (q *TextBoxElement) wrappedText() []string {
 				var wordPartWidth float64
 				for _, c := range word {
 					charWidth := q.Font.GetWidth(string(c), q.FontSize)
-					if len(wordPart) > 0 && wordPartWidth+charWidth > q.Width.Pt() {
+					if len(wordPart) > 0 && wordPartWidth+charWidth > q.Width.Pt()-0.1 {
 						res = append(res, wordPart)
 						word = word[len(wordPart):]
 						wordWidth = q.Font.GetWidth(word, q.FontSize)
