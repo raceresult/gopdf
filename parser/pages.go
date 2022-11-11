@@ -8,30 +8,49 @@ import (
 )
 
 // collectPages is a helper function to GetAllPAges
-func collectPages(f *pdffile.File, node types.PageTreeNode) ([]types.Page, error) {
+func collectPages(f *pdffile.File, node *types.PageTreeNode) ([]types.Page, error) {
 	var res []types.Page
 	for _, kidRef := range node.Kids {
 		kidObj, err := f.GetObject(kidRef)
 		if err != nil {
 			return nil, err
 		}
-		kidN, ok := kidObj.(types.PageTreeNode)
-		if ok {
-			pp, err := collectPages(f, kidN)
+
+		kidDict, ok := kidObj.(types.Dictionary)
+		if !ok {
+			return nil, errors.New("kid object is not a dictionary")
+		}
+		typ, ok := kidDict["Type"]
+		if !ok {
+			return nil, errors.New("page tree item does not have Type")
+		}
+		typName, ok := typ.(types.Name)
+		if !ok {
+			return nil, errors.New("page tree item Type is not Name")
+		}
+
+		switch typName {
+		case "Pages":
+			var ptn types.PageTreeNode
+			if err := ptn.Read(kidDict); err != nil {
+				return nil, err
+			}
+			pp, err := collectPages(f, &ptn)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, pp...)
-			continue
-		}
 
-		kidP, ok := kidObj.(types.Page)
-		if ok {
-			res = append(res, kidP)
-			continue
-		}
+		case "Page":
+			var p types.Page
+			if err := p.Read(kidDict); err != nil {
+				return nil, err
+			}
+			res = append(res, p)
 
-		return nil, errors.New("page tree kid is neither Page nor PageTreeNode")
+		default:
+			return nil, errors.New("unknown page tree item type " + string(typName))
+		}
 	}
 	return res, nil
 }
@@ -39,25 +58,13 @@ func collectPages(f *pdffile.File, node types.PageTreeNode) ([]types.Page, error
 // GetAllPages returns all pages from the PageTree
 func (q *Parser) GetAllPages() ([]types.Page, error) {
 	// get page tree root
-	catalogObj, err := q.file.GetObject(q.file.Root)
+	ptn, err := q.getPageTreeRoot()
 	if err != nil {
 		return nil, err
-	}
-	catalog, ok := catalogObj.(types.DocumentCatalog)
-	if !ok {
-		return nil, errors.New("catalog invalid")
-	}
-	pagesObj, err := q.file.GetObject(catalog.Pages)
-	if err != nil {
-		return nil, err
-	}
-	pages, ok := pagesObj.(types.PageTreeNode)
-	if !ok {
-		return nil, errors.New("pages invalid")
 	}
 
 	// collect all pages recursively
-	return collectPages(q.file, pages)
+	return collectPages(q.file, ptn)
 }
 
 // GetPage returns one page from the PageTree (first page = pageNo 1)
@@ -68,36 +75,13 @@ func (q *Parser) GetPage(pageNo int) (types.Page, error) {
 	}
 
 	// get page tree root
-	catalogObj, err := q.file.GetObject(q.file.Root)
+	ptn, err := q.getPageTreeRoot()
 	if err != nil {
 		return types.Page{}, err
-	}
-	catalog, ok := catalogObj.(types.DocumentCatalog)
-	if !ok {
-		return types.Page{}, errors.New("catalog invalid")
-	}
-	pagesObj, err := q.file.GetObject(catalog.Pages)
-	if err != nil {
-		return types.Page{}, err
-	}
-	pages, ok := pagesObj.(types.PageTreeNode)
-	if !ok {
-		return types.Page{}, errors.New("pages invalid")
-	}
-
-	// fast path: check if root kids are pages
-	if len(pages.Kids) >= pageNo {
-		obj, err := q.file.GetObject(pages.Kids[pageNo-1])
-		if err != nil {
-			return types.Page{}, err
-		}
-		if p, ok := obj.(types.Page); ok {
-			return p, nil
-		}
 	}
 
 	// slow path: collect all pages in tree, then return page
-	allPages, err := collectPages(q.file, pages)
+	allPages, err := collectPages(q.file, ptn)
 	if err != nil {
 		return types.Page{}, err
 	}
@@ -105,4 +89,40 @@ func (q *Parser) GetPage(pageNo int) (types.Page, error) {
 		return types.Page{}, errors.New("invalid page no")
 	}
 	return allPages[pageNo-1], nil
+}
+
+func (q *Parser) getCatalog() (*types.DocumentCatalog, error) {
+	catalogObj, err := q.file.GetObject(q.file.Root)
+	if err != nil {
+		return nil, err
+	}
+	catalogDict, ok := catalogObj.(types.Dictionary)
+	if !ok {
+		return nil, errors.New("catalog invalid")
+	}
+	var cat types.DocumentCatalog
+	if err := cat.Read(catalogDict); err != nil {
+		return nil, err
+	}
+	return &cat, nil
+}
+
+func (q *Parser) getPageTreeRoot() (*types.PageTreeNode, error) {
+	cat, err := q.getCatalog()
+	if err != nil {
+		return nil, err
+	}
+	pagesObj, err := q.file.GetObject(cat.Pages)
+	if err != nil {
+		return nil, err
+	}
+	pagesDict, ok := pagesObj.(types.Dictionary)
+	if !ok {
+		return nil, errors.New("catalog pages is not a dictionary")
+	}
+	var ptn types.PageTreeNode
+	if err := ptn.Read(pagesDict); err != nil {
+		return nil, err
+	}
+	return &ptn, nil
 }

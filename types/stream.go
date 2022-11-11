@@ -80,9 +80,28 @@ func (q *StreamObject) Decode() ([]byte, error) {
 	if d, ok := q.Dictionary.(StreamDictionary); ok {
 		filters = d.Filter
 	} else if d, ok := q.Dictionary.(Dictionary); ok {
-		sd := StreamDictionary{}
-		if err := sd.Read(d); err == nil {
-			filters = sd.Filter
+		v, ok := d["Filter"]
+		if ok {
+			filter, ok := v.(Name)
+			if ok {
+				filters = []Filter{Filter(filter)}
+			} else {
+				arr, ok := v.(Array)
+				if !ok {
+					return nil, errors.New("stream dictionary field Filter invalid")
+				}
+				for _, v := range arr {
+					fv, ok := v.(Filter)
+					if !ok {
+						fvn, ok := v.(Name)
+						if !ok {
+							return nil, errors.New("stream dictionary field Filter invalid")
+						}
+						fv = Filter(fvn)
+					}
+					filters = append(filters, fv)
+				}
+			}
 		}
 	}
 

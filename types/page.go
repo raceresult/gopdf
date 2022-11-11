@@ -26,7 +26,7 @@ type Page struct {
 	// no resources, the value of this entry should be an empty dictionary; omit-
 	// ting the entry entirely indicates that the resources are to be inherited from
 	// an ancestor node in the page tree.
-	Resources ResourceDictionary
+	Resources Object
 
 	// (Required; inheritable) A rectangle (see Section 3.8.3, “Rectangles”), ex-
 	// pressed in default user space units, defining the boundaries of the physical
@@ -263,18 +263,7 @@ func (q *Page) Read(dict Dictionary) error {
 	if !ok {
 		return errors.New("page field Resource missing")
 	}
-	q.Resources, ok = v.(ResourceDictionary)
-	if !ok {
-		r, ok := v.(Dictionary)
-		if !ok {
-			return errors.New("page field Resources invalid")
-		}
-		var rd ResourceDictionary
-		if err := rd.Read(r); err != nil {
-			return err
-		}
-		q.Resources = rd
-	}
+	q.Resources = v
 
 	// MediaBox
 	v, ok = dict["MediaBox"]

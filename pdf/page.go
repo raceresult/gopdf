@@ -38,9 +38,12 @@ func NewPage(width, height float64) *Page {
 
 // AddProcSets adds ProcedureSets to the page resources unless already listed
 func (q *Page) AddProcSets(pss ...types.ProcedureSet) {
+	var res types.ResourceDictionary
+	res, _ = q.Data.Resources.(types.ResourceDictionary)
+
 	var d types.Array
-	if q.Data.Resources.ProcSet != nil {
-		d = q.Data.Resources.ProcSet.(types.Array)
+	if res.ProcSet != nil {
+		d = res.ProcSet.(types.Array)
 	}
 
 	for _, ps := range pss {
@@ -56,15 +59,19 @@ func (q *Page) AddProcSets(pss ...types.ProcedureSet) {
 		}
 		d = append(d, ps)
 	}
-	q.Data.Resources.ProcSet = d
+	res.ProcSet = d
+	q.Data.Resources = res
 }
 
 // AddFont adds a font to the list of resources of the page (unless already list ed) and return the font name
 func (q *Page) AddFont(f FontHandler) types.Name {
+	var res types.ResourceDictionary
+	res, _ = q.Data.Resources.(types.ResourceDictionary)
+
 	// create font Dictionary if not done yet
 	var d types.Dictionary
-	if q.Data.Resources.Font != nil {
-		d = q.Data.Resources.Font.(types.Dictionary)
+	if res.Font != nil {
+		d = res.Font.(types.Dictionary)
 	} else {
 		d = make(types.Dictionary)
 	}
@@ -80,16 +87,20 @@ func (q *Page) AddFont(f FontHandler) types.Name {
 	// create new name and add
 	n := types.Name("F" + strconv.Itoa(len(d)+1))
 	d[n] = ref
-	q.Data.Resources.Font = d
+	res.Font = d
+	q.Data.Resources = res
 	return n
 }
 
 // AddXObject adds an XObject to the list of resources of the page (unless already listed) and return the resource name
 func (q *Page) AddXObject(obj types.Reference) types.Name {
+	var res types.ResourceDictionary
+	res, _ = q.Data.Resources.(types.ResourceDictionary)
+
 	// create XObject Dictionary if not done yet
 	var d types.Dictionary
-	if q.Data.Resources.XObject != nil {
-		d = q.Data.Resources.XObject.(types.Dictionary)
+	if res.XObject != nil {
+		d = res.XObject.(types.Dictionary)
 	} else {
 		d = make(types.Dictionary)
 	}
@@ -104,7 +115,8 @@ func (q *Page) AddXObject(obj types.Reference) types.Name {
 	// create new name and add
 	n := types.Name("img" + strconv.Itoa(len(d)+1))
 	d[n] = obj
-	q.Data.Resources.XObject = d
+	res.XObject = d
+	q.Data.Resources = res
 	return n
 }
 

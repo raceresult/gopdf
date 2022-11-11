@@ -13,8 +13,20 @@ import (
 
 // readFile reads a byte stream into a File object
 func readFile(bts []byte) (*pdffile.File, error) {
-	// parse PDF version
 	length := len(bts)
+
+	// try to read xref table
+	var xref pdffile.XRefTable
+	startxref := bytes.LastIndex(bts, []byte("startxref"))
+	if startxref >= 0 {
+		startXRefObj, _, _ := readValue(bts[startxref+9:])
+		startXRefVal, ok := startXRefObj.(types.Int)
+		if ok && int(startXRefVal) < len(bts) {
+			xref, _, _ = readXRef(bts[startXRefVal:])
+		}
+	}
+
+	// parse PDF version
 	var dest pdffile.File
 	var firstLine []byte
 	firstLine, bts = readLine(bts)
@@ -89,7 +101,7 @@ func readFile(bts []byte) (*pdffile.File, error) {
 		default:
 			offset := length - len(bts)
 			var obj types.IndirectObject
-			obj, bts, err = readObject(bts)
+			obj, bts, err = readObject(bts, xref, length)
 			if err != nil {
 				return nil, err
 			}
@@ -122,7 +134,25 @@ func readTrailer(bts []byte) (types.Trailer, []byte, error) {
 	return trailer, bts, nil
 }
 
-func readObject(bts []byte) (types.IndirectObject, []byte, error) {
+func findObject(ref types.Reference, bts []byte, xref pdffile.XRefTable, length int) (types.Object, error) {
+	for _, x := range xref {
+		if x.Start > ref.Number || x.Start+x.Count-1 <= ref.Number {
+			continue
+		}
+		entry := x.Entries[x.Start+ref.Number]
+		if entry.Generation != ref.Generation {
+			continue
+		}
+		start := int(entry.Start) - (length - len(bts))
+		if start < len(bts) {
+			res, _, err := readObject(bts[start:], xref, length)
+			return res.Data, err
+		}
+	}
+	return nil, errors.New("object " + strconv.Itoa(ref.Number) + "/" + strconv.Itoa(ref.Generation) + " not found")
+}
+
+func readObject(bts []byte, xref pdffile.XRefTable, length int) (types.IndirectObject, []byte, error) {
 	var header [3][]byte
 	for i := 0; i < 3; i++ {
 		header[i], bts = readWord(bts)
@@ -146,127 +176,38 @@ func readObject(bts []byte) (types.IndirectObject, []byte, error) {
 		return types.IndirectObject{}, bts, err
 	}
 
-	if dict, ok := obj.(types.Dictionary); ok {
-		dictType, ok := dict["Type"]
-		if ok {
-			switch dictType {
-			case types.Name("Catalog"):
-				var d types.DocumentCatalog
-				if err := d.Read(dict); err != nil {
-					return types.IndirectObject{}, bts, err
-				}
-				obj = d
-
-			case types.Name("Pages"):
-				var d types.PageTreeNode
-				if err := d.Read(dict); err != nil {
-					return types.IndirectObject{}, bts, err
-				}
-				obj = d
-
-			case types.Name("Page"):
-				var d types.Page
-				if err := d.Read(dict); err != nil {
-					return types.IndirectObject{}, bts, err
-				}
-				obj = d
-
-			case types.Name("XObject"):
-				subTypeObj, ok := dict["Subtype"]
-				if !ok {
-					return types.IndirectObject{}, bts, errors.New("font does not have Subtype")
-				}
-				subType, ok := subTypeObj.(types.Name)
-				if !ok {
-					return types.IndirectObject{}, bts, errors.New("font has invalid Subtype")
-				}
-				if subType == "Image" {
-					var d types.Image
-					if err := d.Read(dict); err != nil {
-						return types.IndirectObject{}, bts, err
-					}
-					obj = d
-				}
-
-			case types.Name("Font"):
-				subTypeObj, ok := dict["Subtype"]
-				if !ok {
-					return types.IndirectObject{}, bts, errors.New("font does not have Subtype")
-				}
-				subType, ok := subTypeObj.(types.Name)
-				if !ok {
-					return types.IndirectObject{}, bts, errors.New("font has invalid Subtype")
-				}
-				switch types.FontSubType(subType) {
-				case types.FontSub_Type0:
-					var d types.Type0Font
-					if err := d.Read(dict); err != nil {
-						return types.IndirectObject{}, bts, err
-					}
-					obj = d
-
-				case types.FontSub_CIDFontType0, types.FontSub_CIDFontType2:
-					var d types.CIDFont
-					if err := d.Read(dict); err != nil {
-						return types.IndirectObject{}, bts, err
-					}
-					obj = d
-
-				case types.FontSub_Type3:
-					var d types.Type3Font
-					if err := d.Read(dict); err != nil {
-						return types.IndirectObject{}, bts, err
-					}
-					obj = d
-
-				default:
-					var d types.Font
-					if err := d.Read(dict); err != nil {
-						if types.FontSubType(subType) == types.FontSub_Type1 {
-							var d types.StandardFont
-							if err := d.Read(dict); err != nil {
-								return types.IndirectObject{}, bts, err
-							}
-							obj = d
-						}
-					}
-					obj = d
-				}
-			case types.Name("FontDescriptor"):
-				var d types.FontDescriptor
-				if err := d.Read(dict); err != nil {
-					return types.IndirectObject{}, bts, err
-				}
-				obj = d
-
-				// todo: add more types
-			}
-		}
-	}
-
 	bts = trimLeftWhiteChars(bts)
 	if bytes.HasPrefix(bts, []byte("stream")) {
 		_, bts = readLine(bts)
 
 		switch v := obj.(type) {
 		case types.Dictionary:
+			streamLength, ok := v["Length"]
+			if !ok {
+				return types.IndirectObject{}, bts, errors.New("stream dictionary does not have length")
+			}
+			lengthVal, ok := streamLength.(types.Int)
+			if !ok {
+				lengthRef, ok := streamLength.(types.Reference)
+				if !ok {
+					return types.IndirectObject{}, bts, errors.New("stream dictionary Length invalid")
+				}
+				lengthObj, err := findObject(lengthRef, bts, xref, length)
+				if err != nil {
+					return types.IndirectObject{}, bts, err
+				}
+				lengthVal, ok = lengthObj.(types.Int)
+				if !ok {
+					return types.IndirectObject{}, bts, errors.New("stream dictionary Length invalid")
+				}
+			}
+
 			stream := types.StreamObject{
-				Dictionary: v,
-				Stream:     nil,
+				Dictionary: obj,
+				Stream:     bts[:lengthVal],
 			}
-			var streamDict types.StreamDictionary
-			if err := streamDict.Read(v); err != nil {
-				return types.IndirectObject{}, bts, err
-			}
-
-			stream.Stream = bts[:streamDict.Length]
-			bts = bts[streamDict.Length:]
+			bts = bts[lengthVal:]
 			obj = stream
-
-		case types.Image:
-			v.Stream = bts[:v.Dictionary.Length]
-			bts = bts[v.Dictionary.Length:]
-			obj = v
 
 		default:
 			return types.IndirectObject{}, bts, errors.New("stream does not have dictionary")
