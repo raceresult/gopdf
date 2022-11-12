@@ -8,9 +8,9 @@ package gopdf
 type HorizontalAlign int
 
 const (
-	TextAlignLeft   HorizontalAlign = 0
-	TextAlignCenter HorizontalAlign = 1
-	TextAlignRight  HorizontalAlign = 2
+	HorizontalAlignLeft   HorizontalAlign = 0
+	HorizontalAlignCenter HorizontalAlign = 1
+	HorizontalAlignRight  HorizontalAlign = 2
 )
 
 type VerticalAlign int
