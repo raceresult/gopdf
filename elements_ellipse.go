@@ -5,16 +5,15 @@ import "github.com/raceresult/gopdf/pdf"
 // EllipseElement is used to add an ellipse to a page
 type EllipseElement struct {
 	Left, Top, Width, Height Length
-
-	LineWidth   Length
-	LineColor   Color
-	FillColor   Color
-	DashPattern DashPattern
+	LineWidth                Length
+	LineColor                Color
+	FillColor                Color
+	DashPattern              DashPattern
 }
 
 // Build adds the element to the content stream
 func (q *EllipseElement) Build(page *pdf.Page) error {
-	// set color
+	// set colors
 	if q.LineColor == nil {
 		page.GraphicsState_w(0)
 	} else {

@@ -5,7 +5,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-// QRCodeElement is used to add a qrcode to a page
+// QRCodeElement is used to add a QRCode to a page
 type QRCodeElement struct {
 	Left, Top, Size Length
 	Text            string
@@ -15,21 +15,23 @@ type QRCodeElement struct {
 
 // Build adds the element to the content stream
 func (q *QRCodeElement) Build(page *pdf.Page) error {
+	// set color
 	if q.Color != nil {
 		q.Color.Build(page, false)
 	} else {
 		ColorRGBBlack.Build(page, false)
 	}
 
-	page.GraphicsState_q()
-	page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt())
-
-	// create qr code
+	// create qr code bitmap
 	qr, err := qrcode.New(q.Text, q.RecoveryLevel)
 	if err != nil {
 		return err
 	}
 	bits := qr.Bitmap()
+
+	// set position
+	page.GraphicsState_q()
+	page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt())
 
 	// draw
 	bitSize := q.Size.Pt() / float64(len(bits))

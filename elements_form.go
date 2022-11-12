@@ -7,9 +7,9 @@ import (
 
 // Form is used to add a captured page from another document to a page
 type Form struct {
+	Left, Top, Width, Height Length
 	BBox                     types.Rectangle
 	Form                     types.Reference
-	Left, Top, Width, Height Length
 }
 
 // Build adds the element to the content stream
@@ -27,10 +27,10 @@ func (q *Form) Build(page *pdf.Page) error {
 	if q.Left.Value != 0 || offsetY != 0 || q.Width.Value != 0 || q.Height.Value != 0 {
 		page.GraphicsState_q()
 		page.GraphicsState_cm(w/float64(q.BBox.URX), 0, 0, h/float64(q.BBox.URY), q.Left.Pt(), offsetY)
-	}
-	page.XObject_Do(q.Form)
-	if q.Left.Value != 0 || offsetY != 0 || q.Width.Value != 0 || q.Height.Value != 0 {
+		page.XObject_Do(q.Form)
 		page.GraphicsState_Q()
+	} else {
+		page.XObject_Do(q.Form)
 	}
 	return nil
 }

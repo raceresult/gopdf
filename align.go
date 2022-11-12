@@ -5,12 +5,12 @@ package gopdf
 // That is why these types/constants are in the builder package - only this package understands
 // the concept of alignment.
 
-type TextAlign int
+type HorizontalAlign int
 
 const (
-	TextAlignLeft   TextAlign = 0
-	TextAlignCenter TextAlign = 1
-	TextAlignRight  TextAlign = 2
+	TextAlignLeft   HorizontalAlign = 0
+	TextAlignCenter HorizontalAlign = 1
+	TextAlignRight  HorizontalAlign = 2
 )
 
 type VerticalAlign int

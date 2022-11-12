@@ -18,7 +18,7 @@ type TextElement struct {
 	RenderMode    types.RenderingMode
 	OutlineColor  Color
 	OutlineWidth  Length
-	TextAlign     TextAlign
+	TextAlign     HorizontalAlign
 	LineHeight    float64
 	Italic        bool
 	Bold          bool

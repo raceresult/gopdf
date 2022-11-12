@@ -33,11 +33,7 @@ type File struct {
 // NewFile creates a new File object
 func NewFile() *File {
 	q := &File{
-		creator: pdffile.NewFile(),
-		Info: types.InformationDictionary{
-			Creator:      "race result gopdf",
-			CreationDate: types.Date(time.Now()),
-		},
+		creator:         pdffile.NewFile(),
 		Version:         pdffile.DefaultVersion,
 		CompressStreams: true,
 	}
@@ -66,6 +62,12 @@ func (q *File) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	// info
+	if q.Info.Producer == "" {
+		q.Info.Producer = "race result gopdf"
+	}
+	if q.Info.CreationDate.IsZero() {
+		q.Info.CreationDate = types.Date(time.Now())
+	}
 	q.creator.Version = q.Version
 	q.creator.ID = q.ID
 	q.creator.Info = q.creator.AddObject(q.Info)

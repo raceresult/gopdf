@@ -100,29 +100,48 @@ func (q ColorGray) Build(page *pdf.Page, stroke bool) {
 // Gray Color
 // --------------------------------------------------------------------------------
 
-// ParseColor parses a string to a color. Can be r,g,b or c,m,y,k or  #RRGGBB
+// ParseColor parses a string to a color. Can be r,g,b or c,m,y,k or #RRGGBB
 func ParseColor(s string) (Color, error) {
 	if len(s) >= 7 && s[0] == '#' {
-		r, _ := strconv.ParseInt(s[1:3], 16, 64)
-		g, _ := strconv.ParseInt(s[3:5], 16, 64)
-		b, _ := strconv.ParseInt(s[5:7], 16, 64)
-		return NewColorRGB(int(r), int(g), int(b)), nil
+		r, err1 := strconv.ParseInt(s[1:3], 16, 64)
+		g, err2 := strconv.ParseInt(s[3:5], 16, 64)
+		b, err3 := strconv.ParseInt(s[5:7], 16, 64)
+		if err1 == nil && err2 == nil && err3 == nil {
+			return NewColorRGB(int(r), int(g), int(b)), nil
+		}
 	}
 
 	arr := strings.Split(s, ",")
-	if len(arr) == 3 {
-		r, _ := strconv.Atoi(arr[0])
-		g, _ := strconv.Atoi(arr[1])
-		b, _ := strconv.Atoi(arr[2])
-		return NewColorRGB(r, g, b), nil
-	}
+	switch len(arr) {
+	case 1:
+		n, err := strconv.Atoi(arr[0])
+		if err == nil {
+			r := n % 256
+			g := (n / 256) % 256
+			b := n / (256 * 256)
+			return NewColorRGB(r, g, b), nil
+		}
 
-	if len(arr) == 4 {
-		c, _ := strconv.Atoi(arr[0])
-		m, _ := strconv.Atoi(arr[1])
-		y, _ := strconv.Atoi(arr[2])
-		k, _ := strconv.Atoi(arr[3])
-		return NewColorCMYK(c, m, y, k), nil
+	case 3: // r,g,b
+		r, err1 := strconv.Atoi(arr[0])
+		g, err2 := strconv.Atoi(arr[1])
+		b, err3 := strconv.Atoi(arr[2])
+		if err1 == nil && err2 == nil && err3 == nil {
+			if r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
+				return NewColorRGB(r, g, b), nil
+			}
+		}
+
+	case 4: // c,m,y,k
+		c, err1 := strconv.Atoi(arr[0])
+		m, err2 := strconv.Atoi(arr[1])
+		y, err3 := strconv.Atoi(arr[2])
+		k, err4 := strconv.Atoi(arr[3])
+		if err1 == nil && err2 == nil && err3 == nil && err4 == nil {
+			if c >= 0 && c <= 100 && m >= 0 && m <= 100 && y >= 0 && y <= 100 && k >= 0 && k <= 100 {
+				return NewColorCMYK(c, m, y, k), nil
+			}
+		}
 	}
 	return nil, errors.New("unknown color format")
 }

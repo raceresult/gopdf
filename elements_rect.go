@@ -13,6 +13,7 @@ type RectElement struct {
 
 // Build adds the element to the content stream
 func (q *RectElement) Build(page *pdf.Page) error {
+	// set colors
 	if q.LineColor == nil {
 		page.GraphicsState_w(0)
 	} else {
@@ -26,8 +27,10 @@ func (q *RectElement) Build(page *pdf.Page) error {
 		return err
 	}
 
+	// create rect
 	page.Path_re(q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt()-q.Height.Pt(), q.Width.Pt(), q.Height.Pt())
 
+	// fill or stroke
 	if q.LineColor != nil && q.FillColor != nil {
 		page.Path_B()
 	} else if q.LineColor != nil {
