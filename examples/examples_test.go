@@ -29,7 +29,7 @@ func TestExample1(t *testing.T) {
 		FontSize:  36,
 		Left:      gopdf.MM(105),
 		Top:       gopdf.MM(100),
-		TextAlign: gopdf.TextAlignCenter,
+		TextAlign: gopdf.HorizontalAlignCenter,
 		Font:      f,
 	})
 

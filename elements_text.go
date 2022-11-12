@@ -20,8 +20,8 @@ type TextElement struct {
 	OutlineWidth  Length
 	TextAlign     HorizontalAlign
 	LineHeight    float64
-	Italic        bool
 	Bold          bool
+	Italic        bool
 	Underline     bool
 	StrikeThrough bool
 	CharSpacing   Length
@@ -34,6 +34,15 @@ func (q *TextElement) Build(page *pdf.Page) error {
 	// if no font or text given, ignore element
 	if q.Font == nil || q.Text == "" {
 		return nil
+	}
+
+	// set coordinate system
+	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
+	if q.Rotate == 0 {
+		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), y)
+	} else {
+		r := q.Rotate * math.Pi / 180
+		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
 	}
 
 	// set color
@@ -70,7 +79,7 @@ func (q *TextElement) Build(page *pdf.Page) error {
 
 	// calculate some values needed below
 	lineHeight := q.lineHeight()
-	top := float64(page.Data.MediaBox.URY) - q.Top.Pt()
+	top := 0.0
 	var c float64
 	if q.Italic {
 		c = 0.333
@@ -78,20 +87,16 @@ func (q *TextElement) Build(page *pdf.Page) error {
 
 	// iterate over lines
 	for _, line := range strings.Split(q.Text, "\n") {
-		width := q.Font.GetWidth(line, q.FontSize)
-		left := q.Left.Pt()
+		width := q.getLineWidth(line)
+		left := 0.0
 		switch q.TextAlign {
-		case TextAlignCenter:
+		case HorizontalAlignCenter:
 			left -= width / 2
-		case TextAlignRight:
+		case HorizontalAlignRight:
 			left -= width
 		}
-		if q.Rotate != 0 {
-			r := q.Rotate * math.Pi / 180
-			page.TextPosition_Tm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), left, top)
-		} else {
-			page.TextPosition_Tm(1, 0, c, 1, left, top)
-		}
+
+		page.TextPosition_Tm(1, 0, c, 1, left, top)
 		page.TextShowing_Tj(line)
 
 		// underline/strike-through text
@@ -110,7 +115,7 @@ func (q *TextElement) Build(page *pdf.Page) error {
 			page.Path_f()
 		}
 
-		top += lineHeight
+		top -= lineHeight
 	}
 	page.TextObjects_ET()
 	return nil
@@ -125,6 +130,18 @@ func (q *TextElement) TextHeight() Length {
 // FontHeight returns the height of the font (bounding box y min to max)
 func (q *TextElement) FontHeight() Length {
 	return Pt(q.Font.GetTop(q.FontSize) - q.Font.GetBottom(q.FontSize))
+}
+
+// getLineWidth returns the width of the given text line consider font, fontsize, text-scaling, char spacing
+func (q *TextElement) getLineWidth(line string) float64 {
+	v := q.Font.GetWidth(line, q.FontSize)
+	if q.TextScaling != 0 {
+		v *= q.TextScaling / 100
+	}
+	if q.CharSpacing.Value != 0 {
+		v += float64(len([]rune(line))-1) * q.CharSpacing.Pt()
+	}
+	return v
 }
 
 func (q *TextElement) lineHeight() float64 {

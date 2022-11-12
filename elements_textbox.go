@@ -86,9 +86,9 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		left := 0.0
 		width := q.Font.GetWidth(line, q.FontSize)
 		switch q.TextAlign {
-		case TextAlignCenter:
+		case HorizontalAlignCenter:
 			left += (q.Width.Pt() - width) / 2
-		case TextAlignRight:
+		case HorizontalAlignRight:
 			left += q.Width.Pt() - width
 		}
 		page.TextPosition_Tm(1, 0, c, 1, left, top)

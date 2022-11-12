@@ -21,9 +21,9 @@ func (q *ImageBoxElement) Build(page *pdf.Page) error {
 		w := q.Height.Pt() * float64(q.Img.Image.Width) / float64(q.Img.Image.Height)
 		left := q.Left.Pt()
 		switch q.HorizontalAlign {
-		case TextAlignCenter:
+		case HorizontalAlignCenter:
 			left += (q.Width.Pt() - w) / 2
-		case TextAlignRight:
+		case HorizontalAlignRight:
 			left += q.Width.Pt() - w
 		}
 		page.GraphicsState_cm(w, 0, 0, q.Height.Pt(), left, float64(page.Data.MediaBox.URY)-q.Top.Pt()-q.Height.Pt())
