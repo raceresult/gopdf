@@ -8,6 +8,7 @@ import (
 	"github.com/raceresult/gopdf/types"
 )
 
+// TextBoxElement is similar to TextElement, but can have a maximum width and height
 type TextBoxElement struct {
 	TextElement
 	Width, Height Length
@@ -21,6 +22,16 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		return nil
 	}
 
+	// set coordinate system
+	page.GraphicsState_q()
+	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
+	if q.Rotate == 0 {
+		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), y)
+	} else {
+		r := q.Rotate * math.Pi / 180
+		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
+	}
+
 	// set color
 	color := q.Color
 	if color == nil {
@@ -28,14 +39,6 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 	}
 	color.Build(page, false)
 	color.Build(page, true)
-
-	// text scaling / char spacing
-	page.TextState_Tc(q.CharSpacing.Pt())
-	if q.TextScaling == 0 {
-		page.TextState_Tz(100)
-	} else {
-		page.TextState_Tz(q.TextScaling)
-	}
 
 	// set bold or outline (bold is done via outline)
 	if q.Bold && q.OutlineWidth.Value == 0 && q.OutlineColor == nil {
@@ -49,20 +52,25 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		}
 	}
 
+	// text scaling / char spacing
+	page.TextState_Tc(q.CharSpacing.Pt())
+	if q.TextScaling == 0 {
+		page.TextState_Tz(100)
+	} else {
+		page.TextState_Tz(q.TextScaling)
+	}
+
 	// begin text and set font
 	page.TextObjects_BT()
 	page.TextState_Tf(q.Font, q.FontSize)
 
+	// calculate some values needed below
 	wrapped := q.wrappedText()
 	lineHeight := q.lineHeight()
 	var c float64
 	if q.Italic {
 		c = 0.333
 	}
-
-	page.GraphicsState_q()
-	r := q.Rotate * math.Pi / 180
-	page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt())
 
 	top := -q.Font.GetTop(q.FontSize)
 	if q.Height.Value > 0 {
@@ -84,7 +92,7 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 
 		// set position
 		left := 0.0
-		width := q.Font.GetWidth(line, q.FontSize)
+		width := q.getLineWidth(line)
 		switch q.TextAlign {
 		case HorizontalAlignCenter:
 			left += (q.Width.Pt() - width) / 2
@@ -131,7 +139,11 @@ func (q *TextBoxElement) wrappedText() []string {
 
 	// iterate over lines
 	var res []string
-	spaceWidth := q.Font.GetWidth(" ", q.FontSize)
+	charSpacing := q.CharSpacing.Pt()
+	if q.TextScaling != 0 {
+		charSpacing *= q.TextScaling / 100
+	}
+	spaceWidth := q.getLineWidth(" ") + charSpacing
 	for _, line := range lines {
 		// check if max number of lines reached
 		if maxLines > 0 && len(res) >= maxLines {
@@ -139,7 +151,7 @@ func (q *TextBoxElement) wrappedText() []string {
 		}
 
 		// if width of line does not exceed max width, we can add the entire line and continue with the next line
-		if q.Width.Value <= 0 || q.Font.GetWidth(line, q.FontSize) <= q.Width.Pt() {
+		if q.Width.Value <= 0 || q.getLineWidth(line) <= q.Width.Pt() {
 			res = append(res, line)
 			continue
 		}
@@ -148,8 +160,8 @@ func (q *TextBoxElement) wrappedText() []string {
 		var w float64
 		var currLine string
 		for _, word := range strings.Split(line, " ") {
-			wordWidth := q.Font.GetWidth(word, q.FontSize)
-			if wordWidth+w+spaceWidth > q.Width.Pt() && currLine != "" {
+			wordWidth := q.getLineWidth(word)
+			if w+wordWidth+charSpacing+spaceWidth > q.Width.Pt() && currLine != "" {
 				res = append(res, currLine)
 				currLine = ""
 				w = 0
@@ -157,7 +169,7 @@ func (q *TextBoxElement) wrappedText() []string {
 
 			if currLine != "" {
 				currLine += " "
-				w += spaceWidth
+				w += charSpacing + spaceWidth
 			}
 
 			// break word?
@@ -165,20 +177,20 @@ func (q *TextBoxElement) wrappedText() []string {
 				var wordPart string
 				var wordPartWidth float64
 				for _, c := range word {
-					charWidth := q.Font.GetWidth(string(c), q.FontSize)
-					if len(wordPart) > 0 && wordPartWidth+charWidth > q.Width.Pt()-0.1 {
+					charWidth := q.getLineWidth(string(c))
+					if len(wordPart) > 0 && wordPartWidth+charWidth+charSpacing > q.Width.Pt()-0.1 {
 						res = append(res, wordPart)
 						word = word[len(wordPart):]
-						wordWidth = q.Font.GetWidth(word, q.FontSize)
+						wordWidth = q.getLineWidth(word)
 						break
 					}
 					wordPart += string(c)
-					wordPartWidth += charWidth
+					wordPartWidth += charWidth + charSpacing
 				}
 			}
 
 			currLine += word
-			w += wordWidth
+			w += wordWidth + charSpacing
 		}
 		if currLine != "" {
 			res = append(res, currLine)

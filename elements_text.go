@@ -37,6 +37,7 @@ func (q *TextElement) Build(page *pdf.Page) error {
 	}
 
 	// set coordinate system
+	page.GraphicsState_q()
 	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
 	if q.Rotate == 0 {
 		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), y)
@@ -118,6 +119,7 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		top -= lineHeight
 	}
 	page.TextObjects_ET()
+	page.GraphicsState_Q()
 	return nil
 }
 
@@ -134,12 +136,15 @@ func (q *TextElement) FontHeight() Length {
 
 // getLineWidth returns the width of the given text line consider font, fontsize, text-scaling, char spacing
 func (q *TextElement) getLineWidth(line string) float64 {
-	v := q.Font.GetWidth(line, q.FontSize)
-	if q.TextScaling != 0 {
-		v *= q.TextScaling / 100
+	if line == "" {
+		return 0
 	}
+	v := q.Font.GetWidth(line, q.FontSize)
 	if q.CharSpacing.Value != 0 {
 		v += float64(len([]rune(line))-1) * q.CharSpacing.Pt()
+	}
+	if q.TextScaling != 0 {
+		v *= q.TextScaling / 100
 	}
 	return v
 }
