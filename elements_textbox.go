@@ -22,6 +22,42 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		return nil
 	}
 
+	// auto fit font size?
+	if q.FontSize == -1 {
+		defer func() { q.FontSize = -1 }()
+
+		// split by line breaks
+		lines := strings.Split(strings.ReplaceAll(q.Text, "\r\n", "\n"), "\n")
+
+		// adapt to height
+		h := q.Height.Pt()
+		if h > 0 {
+			fh := q.FontHeight().Pt() * float64(len(lines))
+			q.FontSize *= h / fh * 0.999
+		}
+
+		// adapt to width
+		w := q.Width.Pt()
+		if w > 0 {
+			var maxWidth float64
+			for _, line := range lines {
+				v := q.Font.GetWidth(line, q.FontSize)
+				if q.CharSpacing.Value != 0 {
+					v += float64(len([]rune(line))-1) * q.CharSpacing.Pt()
+				}
+				if q.TextScaling != 0 {
+					v *= q.TextScaling / 100
+				}
+				if v > maxWidth {
+					maxWidth = v
+				}
+			}
+			if maxWidth > w {
+				q.FontSize *= w / maxWidth * 0.999
+			}
+		}
+	}
+
 	// set coordinate system
 	page.GraphicsState_q()
 	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
