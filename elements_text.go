@@ -36,16 +36,6 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		return nil
 	}
 
-	// set coordinate system
-	page.GraphicsState_q()
-	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
-	if q.Rotate == 0 {
-		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), y)
-	} else {
-		r := q.Rotate * math.Pi / 180
-		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
-	}
-
 	// set color
 	color := q.Color
 	if color == nil {
@@ -74,9 +64,21 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		page.TextState_Tz(q.TextScaling)
 	}
 
-	// begin text and set font
-	page.TextObjects_BT()
+	// set font
 	page.TextState_Tf(q.Font, q.FontSize)
+
+	// set coordinate system
+	page.GraphicsState_q()
+	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
+	if q.Rotate == 0 {
+		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), y)
+	} else {
+		r := q.Rotate * math.Pi / 180
+		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
+	}
+
+	// begin text
+	page.TextObjects_BT()
 
 	// calculate some values needed below
 	lineHeight := q.lineHeight()
