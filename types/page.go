@@ -154,7 +154,7 @@ type Page struct {
 
 func (q Page) ToRawBytes() []byte {
 	if q.Resources == nil {
-		q.Resources = Array{}
+		q.Resources = Dictionary{}
 	}
 	d := Dictionary{
 		"Type":      Name("Page"),
