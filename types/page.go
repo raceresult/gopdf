@@ -1,6 +1,8 @@
 package types
 
-import "errors"
+import (
+	"errors"
+)
 
 // PDF Reference 1.4, Table 3.18 Entries in a page object
 
@@ -151,6 +153,9 @@ type Page struct {
 }
 
 func (q Page) ToRawBytes() []byte {
+	if q.Resources == nil {
+		q.Resources = Array{}
+	}
 	d := Dictionary{
 		"Type":      Name("Page"),
 		"Parent":    q.Parent,
