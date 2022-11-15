@@ -5,6 +5,8 @@ import (
 	"math"
 	"strings"
 
+	"github.com/boombuler/barcode/ean"
+
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/code128"
 	"github.com/raceresult/gopdf/pdf"
@@ -60,8 +62,9 @@ var code39Chars = map[rune]string{
 type BarcodeType int
 
 const (
-	BarcodeType39  BarcodeType = 1
-	BarcodeType128 BarcodeType = 3
+	BarcodeType39    BarcodeType = 1
+	BarcodeTypeEAN13 BarcodeType = 2
+	BarcodeType128   BarcodeType = 3
 )
 
 // BarcodeElement is used to add a barcode to a page
@@ -123,6 +126,8 @@ func (q *BarcodeElement) encode(width float64) ([][2]float64, error) {
 	switch q.Type {
 	case BarcodeType39, 0:
 		return q.encodeCode39(width)
+	case BarcodeTypeEAN13:
+		return q.encodeEAN13(width)
 	case BarcodeType128:
 		return q.encodeCode128(width)
 	default:
@@ -163,6 +168,41 @@ func (q *BarcodeElement) encodeCode39(width float64) ([][2]float64, error) {
 // encodeCode128 returns a list of x-pos + width representing the bars of a code128 barcode
 func (q *BarcodeElement) encodeCode128(width float64) ([][2]float64, error) {
 	code, err := code128.Encode(q.Text)
+	if err != nil {
+		return nil, err
+	}
+	w := int(width) * 100
+	scaled, err := barcode.Scale(code, w, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	var res [][2]float64
+	start := -1
+	for x := 0; x < w; x++ {
+		v, _, _, _ := scaled.At(x, 0).RGBA()
+		if start >= 0 && v != 0 {
+			res = append(res, [2]float64{float64(start) / 100, float64(x-start) / 100})
+			start = -1
+		}
+		if start < 0 && v == 0 {
+			start = x
+		}
+	}
+	if start >= 0 {
+		res = append(res, [2]float64{float64(start) / 100, float64(w-start) / 100})
+	}
+
+	return res, nil
+}
+
+// encodeEAN13 returns a list of x-pos + width representing the bars of an EAN13 barcode
+func (q *BarcodeElement) encodeEAN13(width float64) ([][2]float64, error) {
+	text := q.Text
+	for len(text) < 7 || len(text) > 7 && len(text) < 12 {
+		text = "0" + text
+	}
+	code, err := ean.Encode(text)
 	if err != nil {
 		return nil, err
 	}
