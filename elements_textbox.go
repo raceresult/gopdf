@@ -156,8 +156,8 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		top -= lineHeight
 	}
 
-	page.GraphicsState_Q()
 	page.TextObjects_ET()
+	page.GraphicsState_Q()
 	return nil
 }
 
