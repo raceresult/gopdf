@@ -138,7 +138,7 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 			left += q.Width.Pt() - width
 		}
 		page.TextPosition_Tm(1, 0, c, 1, left, top)
-		page.TextShowing_Tj(line)
+		page.TextShowing_Tj(reverseRTLString(line))
 
 		// underline/strike-through text
 		if q.Underline {
