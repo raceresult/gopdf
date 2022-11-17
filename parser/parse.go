@@ -307,7 +307,7 @@ func readXRef(bts []byte) (pdffile.XRefTable, []byte, error) {
 
 		secStart, _ := strconv.Atoi(ww[0])
 		secCount, _ := strconv.Atoi(ww[1])
-		if secStart < 0 || secCount < 1 || secCount*20 > len(bts) {
+		if secStart < 0 || secCount < 0 || secCount*20 > len(bts) {
 			return nil, nil, errors.New("invalid xref table section start")
 		}
 

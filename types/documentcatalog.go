@@ -269,11 +269,7 @@ func (q *DocumentCatalog) Read(dict Dictionary) error {
 	// ViewerPreferences
 	v, ok = dict["ViewerPreferences"]
 	if ok {
-		vt, ok := v.(Dictionary)
-		if !ok {
-			return errors.New("unexpected value type in catalog field ViewerPreferences")
-		}
-		q.ViewerPreferences = vt
+		q.ViewerPreferences = v
 	}
 
 	// PageLayout
