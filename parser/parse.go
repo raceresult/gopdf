@@ -542,17 +542,16 @@ func readValue(bts []byte) (types.Object, []byte, error) {
 	if v, err := strconv.Atoi(string(w)); err == nil {
 		w1, w2 := nextTwoWords(bts)
 		if len(w1) != 0 && len(w2) == 1 && w2[0] == 'R' {
-			w1, bts = readWord(bts)
-			w2, bts = readWord(bts)
-
 			gen, err := strconv.Atoi(string(w1))
-			if err != nil || v < 0 {
-				return nil, bts, errors.New("error parsing reference")
+			if err == nil && v >= 0 {
+				w1, bts = readWord(bts)
+				w2, bts = readWord(bts)
+
+				return types.Reference{
+					Number:     v,
+					Generation: gen,
+				}, bts, nil
 			}
-			return types.Reference{
-				Number:     v,
-				Generation: gen,
-			}, bts, nil
 		}
 
 		return types.Int(v), bts, nil
