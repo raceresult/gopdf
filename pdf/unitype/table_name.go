@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"strconv"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/raceresult/gopdf/pdf/unitype/internal/strutils"
 
@@ -103,18 +102,7 @@ func makePrintable(str string) string {
 func (nr nameRecord) Decoded() string {
 	switch nr.platformID {
 	case 0: // unicode
-		// TODO(gunnsth): Untested as have not encountered this yet.
-		dup := make([]byte, len(nr.data))
-		copy(dup, nr.data)
-		var decoded bytes.Buffer
-
-		for len(dup) > 0 {
-			r, size := utf8.DecodeRune(dup)
-			dup = dup[size:]
-			decoded.WriteRune(r)
-		}
-
-		return makePrintable(decoded.String())
+		return makePrintable(strutils.UTF16ToString(nr.data))
 	case 1: // macintosh
 		var decoded bytes.Buffer
 		for _, val := range nr.data {

@@ -77,6 +77,9 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 			q.OutlineColor.Build(page, true)
 		}
 	}
+	if err := q.DashPattern.Build(page); err != nil {
+		return err
+	}
 
 	// text scaling / char spacing
 	page.TextState_Tc(q.CharSpacing.Pt())

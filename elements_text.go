@@ -18,6 +18,7 @@ type TextElement struct {
 	RenderMode    types.RenderingMode
 	OutlineColor  Color
 	OutlineWidth  Length
+	DashPattern   DashPattern
 	TextAlign     HorizontalAlign
 	LineHeight    float64
 	Bold          bool
@@ -54,6 +55,9 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		if q.OutlineColor != nil {
 			q.OutlineColor.Build(page, true)
 		}
+	}
+	if err := q.DashPattern.Build(page); err != nil {
+		return err
 	}
 
 	// text scaling / char spacing
