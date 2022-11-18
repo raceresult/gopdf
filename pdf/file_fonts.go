@@ -195,7 +195,7 @@ func (q *File) NewCompositeFontFromTTF(ttf []byte) (*CompositeFont, error) {
 		fd.FontFile2 = q.creator.AddObject(fileStream)
 
 		// build widths and cidToGID arrays
-		cidToGID := make([]byte, maxRune*2+5)
+		cidToGID := make([]byte, maxRune*2+2)
 		widths := types.Array{}
 		for i, r := range runes {
 			pos := indices[i]
@@ -340,7 +340,7 @@ func (q *File) getCIDSystemInfo() types.Reference {
 	if q.cidSystemInfo.Number == 0 {
 		q.cidSystemInfo = q.creator.AddObject(types.CIDSystemInfoDictionary{
 			Registry:   "Adobe",
-			Ordering:   "UCS",
+			Ordering:   "Identity",
 			Supplement: 0,
 		})
 	}
