@@ -15,8 +15,6 @@ type StreamObject struct {
 }
 
 func (q StreamObject) ToRawBytes() []byte {
-	q.Stream = bytes.TrimSpace(q.Stream)
-
 	sb := bytes.Buffer{}
 	sb.Write(q.Dictionary.ToRawBytes())
 
@@ -63,6 +61,8 @@ func NewStream(data []byte, filters ...Filter) (StreamObject, error) {
 			return StreamObject{}, errors.New("filter not implemented")
 		case Filter_DCTDecode:
 			return StreamObject{}, errors.New("filter not implemented")
+		default:
+			return StreamObject{}, errors.New("unknown filter " + string(filter))
 		}
 	}
 	return StreamObject{

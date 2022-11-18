@@ -8,10 +8,10 @@ import (
 
 // Builder is the main object to build a PDF file
 type Builder struct {
-	Info            types.InformationDictionary
-	ID              [2]string
-	CompressStreams bool
-	Version         float64
+	Info                     types.InformationDictionary
+	ID                       [2]string
+	CompressStreamsThreshold int
+	Version                  float64
 
 	file  *pdf.File
 	pages []*Page
@@ -20,9 +20,9 @@ type Builder struct {
 // New creates a new Builder object
 func New() *Builder {
 	return &Builder{
-		file:            pdf.NewFile(),
-		CompressStreams: true,
-		Version:         pdffile.DefaultVersion,
+		file:                     pdf.NewFile(),
+		CompressStreamsThreshold: 500,
+		Version:                  pdffile.DefaultVersion,
 	}
 }
 
@@ -31,7 +31,7 @@ func (q *Builder) Build() ([]byte, error) {
 	q.file.Version = q.Version
 	q.file.Info = q.Info
 	q.file.ID = [2]types.String{types.String(q.ID[0]), types.String(q.ID[1])}
-	q.file.CompressStreams = q.CompressStreams
+	q.file.CompressStreamsThreshold = q.CompressStreamsThreshold
 
 	for _, p := range q.pages {
 		if err := p.build(q); err != nil {

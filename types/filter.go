@@ -5,7 +5,6 @@ package types
 type Filter Name
 
 const (
-	Filter_NoFilter        Filter = ""
 	Filter_ASCIIHexDecode  Filter = "ASCIIHexDecode"
 	Filter_ASCII85Decode   Filter = "ASCII85Decode"
 	Filter_LZWDecode       Filter = "LZWDecode"

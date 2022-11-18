@@ -15,11 +15,11 @@ import (
 
 // File is the main object to create a pdf file
 type File struct {
-	ID              [2]types.String
-	Info            types.InformationDictionary
-	Pages           []*Page
-	CompressStreams bool
-	Version         float64
+	ID                       [2]types.String
+	Info                     types.InformationDictionary
+	Pages                    []*Page
+	CompressStreamsThreshold int
+	Version                  float64
 
 	fonts         []FontHandler
 	toUnicode     types.Reference
@@ -33,9 +33,9 @@ type File struct {
 // NewFile creates a new File object
 func NewFile() *File {
 	q := &File{
-		creator:         pdffile.NewFile(),
-		Version:         pdffile.DefaultVersion,
-		CompressStreams: true,
+		creator:                  pdffile.NewFile(),
+		Version:                  pdffile.DefaultVersion,
+		CompressStreamsThreshold: 500,
 	}
 
 	// catalog and page tree
@@ -75,7 +75,7 @@ func (q *File) WriteTo(w io.Writer) (int64, error) {
 	// pages
 	for _, page := range q.Pages {
 		page.Data.Parent = q.catalog.Pages
-		pageRef, err := page.create(q.creator, q.CompressStreams)
+		pageRef, err := page.create(q.creator, q.CompressStreamsThreshold)
 		if err != nil {
 			return 0, err
 		}

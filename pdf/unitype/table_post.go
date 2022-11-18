@@ -126,9 +126,9 @@ func (f *font) parsePost(r *byteReader) (*postTable, error) {
 			if err != nil {
 				return nil, err
 			}
-			if numChars == 0 {
-				break
-			}
+			//if numChars == 0 {
+			//	continue
+			//}
 
 			name := make([]byte, numChars)
 			err = r.readBytes(&name, int(numChars))
