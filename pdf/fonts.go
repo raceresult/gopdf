@@ -8,6 +8,7 @@ import (
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
 	"golang.org/x/text/encoding/unicode"
+	"sync"
 )
 
 type FontHandler interface {
@@ -109,20 +110,23 @@ func (q *TrueTypeFont) finish() error {
 
 // CompositeFont references a composite font and provides additional function like font metrics
 type CompositeFont struct {
-	reference types.Reference
-	usedRunes map[rune]struct{}
-	onFinish  func() error
-	font      *unitype.Font
-	metrics   unitype.Metrics
+	reference    types.Reference
+	usedRunes    map[rune]struct{}
+	usedRunesMux sync.Mutex
+	onFinish     func() error
+	font         *unitype.Font
+	metrics      unitype.Metrics
 }
 
 func (q *CompositeFont) Reference() types.Reference {
 	return q.reference
 }
 func (q *CompositeFont) Encode(text string) string {
+	q.usedRunesMux.Lock()
 	for _, r := range text {
 		q.usedRunes[r] = struct{}{}
 	}
+	q.usedRunesMux.Unlock()
 
 	sn, _ := unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM).NewEncoder().String(text)
 	return sn
@@ -160,21 +164,24 @@ func (q *CompositeFont) finish() error {
 
 // CompositeFontOTF references a composite font and provides additional function like font metrics
 type CompositeFontOTF struct {
-	reference types.Reference
-	usedRunes map[rune]struct{}
-	onFinish  func() error
-	font      *sfnt.Font
-	metrics   font.Metrics
-	bounds    fixed.Rectangle26_6
+	reference    types.Reference
+	usedRunes    map[rune]struct{}
+	usedRunesMux sync.Mutex
+	onFinish     func() error
+	font         *sfnt.Font
+	metrics      font.Metrics
+	bounds       fixed.Rectangle26_6
 }
 
 func (q *CompositeFontOTF) Reference() types.Reference {
 	return q.reference
 }
 func (q *CompositeFontOTF) Encode(text string) string {
+	q.usedRunesMux.Lock()
 	for _, r := range text {
 		q.usedRunes[r] = struct{}{}
 	}
+	q.usedRunesMux.Unlock()
 
 	sn, _ := unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM).NewEncoder().String(text)
 	return sn

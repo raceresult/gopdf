@@ -1,6 +1,9 @@
 package gopdf
 
-import "github.com/raceresult/gopdf/types"
+import (
+	"github.com/raceresult/gopdf/pdf"
+	"github.com/raceresult/gopdf/types"
+)
 
 // Page represents on page in the PDF document to which elements can be added arbitrarily
 type Page struct {
@@ -25,8 +28,7 @@ func (q *Page) AddElement(item ...Element) {
 }
 
 // build is called when the PDF file is created and calls the Build function on all elements
-func (q *Page) build(builder *Builder) error {
-	page := builder.file.NewPage(q.Width.Pt(), q.Height.Pt())
+func (q *Page) build(page *pdf.Page) error {
 	page.Data.Rotate = types.Int(q.Rotate)
 
 	for _, item := range q.elements {
