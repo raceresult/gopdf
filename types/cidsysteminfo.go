@@ -38,3 +38,20 @@ func (q CIDSystemInfoDictionary) Copy(copyRef func(reference Reference) Referenc
 		Supplement: q.Supplement.Copy(copyRef).(Int),
 	}
 }
+
+func (q CIDSystemInfoDictionary) Equal(obj Object) bool {
+	a, ok := obj.(CIDSystemInfoDictionary)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Registry, a.Registry) {
+		return false
+	}
+	if !Equal(q.Ordering, a.Ordering) {
+		return false
+	}
+	if !Equal(q.Supplement, a.Supplement) {
+		return false
+	}
+	return true
+}

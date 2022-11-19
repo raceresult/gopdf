@@ -27,3 +27,11 @@ func (q ColorSpaceFamily) ToRawBytes() []byte {
 func (q ColorSpaceFamily) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q ColorSpaceFamily) Equal(obj Object) bool {
+	a, ok := obj.(ColorSpaceFamily)
+	if !ok {
+		return false
+	}
+	return q == a
+}

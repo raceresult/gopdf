@@ -143,3 +143,116 @@ func (q GraphicsState) ToRawBytes() []byte {
 
 	return d.ToRawBytes()
 }
+
+func (q GraphicsState) Copy(copyRef func(reference Reference) Reference) Object {
+	return GraphicsState{
+		W:     q.W.Copy(copyRef).(Number),
+		LC:    q.LC.Copy(copyRef).(Int),
+		LJ:    q.LJ.Copy(copyRef).(Int),
+		ML:    q.ML.Copy(copyRef).(Number),
+		D:     q.D.Copy(copyRef).(Array),
+		RI:    q.RI.Copy(copyRef).(Number),
+		OP:    q.OP.Copy(copyRef).(Boolean),
+		Op:    q.Op.Copy(copyRef).(Boolean),
+		OPM:   q.OPM.Copy(copyRef).(Int),
+		Font:  q.Font.Copy(copyRef).(Array),
+		BG2:   Copy(q.BG2, copyRef),
+		UCR:   q.UCR.Copy(copyRef).(Function),
+		UCR2:  Copy(q.UCR2, copyRef),
+		TR:    Copy(q.TR, copyRef),
+		TR2:   Copy(q.TR2, copyRef),
+		HT:    q.HT.Copy(copyRef).(Dictionary),
+		FL:    q.FL.Copy(copyRef).(Number),
+		SM:    q.SM.Copy(copyRef).(Number),
+		SA:    q.SA.Copy(copyRef).(Boolean),
+		BM:    Copy(q.BM, copyRef),
+		SMask: Copy(q.SMask, copyRef),
+		CA:    q.CA.Copy(copyRef).(Number),
+		Ca:    q.Ca.Copy(copyRef).(Number),
+		AIS:   q.AIS.Copy(copyRef).(Boolean),
+		TK:    q.TK.Copy(copyRef).(Boolean),
+	}
+}
+
+func (q GraphicsState) Equal(obj Object) bool {
+	a, ok := obj.(GraphicsState)
+	if !ok {
+		return false
+	}
+	if !Equal(q.W, a.W) {
+		return false
+	}
+	if !Equal(q.LC, a.LC) {
+		return false
+	}
+	if !Equal(q.LJ, a.LJ) {
+		return false
+	}
+	if !Equal(q.ML, a.ML) {
+		return false
+	}
+	if !Equal(q.D, a.D) {
+		return false
+	}
+	if !Equal(q.RI, a.RI) {
+		return false
+	}
+	if !Equal(q.OP, a.OP) {
+		return false
+	}
+	if !Equal(q.Op, a.Op) {
+		return false
+	}
+	if !Equal(q.OPM, a.OPM) {
+		return false
+	}
+	if !Equal(q.Font, a.Font) {
+		return false
+	}
+	if !Equal(q.BG2, a.BG2) {
+		return false
+	}
+	if !Equal(q.UCR, a.UCR) {
+		return false
+	}
+	if !Equal(q.UCR2, a.UCR2) {
+		return false
+	}
+	if !Equal(q.TR, a.TR) {
+		return false
+	}
+	if !Equal(q.TR2, a.TR2) {
+		return false
+	}
+	if !Equal(q.HT, a.HT) {
+		return false
+	}
+	if !Equal(q.FL, a.FL) {
+		return false
+	}
+	if !Equal(q.SM, a.SM) {
+		return false
+	}
+	if !Equal(q.SA, a.SA) {
+		return false
+	}
+	if !Equal(q.BM, a.BM) {
+		return false
+	}
+	if !Equal(q.SMask, a.SMask) {
+		return false
+	}
+	if !Equal(q.CA, a.CA) {
+		return false
+	}
+	if !Equal(q.Ca, a.Ca) {
+		return false
+	}
+	if !Equal(q.AIS, a.AIS) {
+		return false
+	}
+	if !Equal(q.TK, a.TK) {
+		return false
+	}
+	return true
+}

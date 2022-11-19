@@ -129,3 +129,23 @@ func (q Type0Font) Copy(copyRef func(reference Reference) Reference) Object {
 		ToUnicode:       q.ToUnicode.Copy(copyRef).(Reference),
 	}
 }
+
+func (q Type0Font) Equal(obj Object) bool {
+	a, ok := obj.(Type0Font)
+	if !ok {
+		return false
+	}
+	if !Equal(q.BaseFont, a.BaseFont) {
+		return false
+	}
+	if !Equal(q.Encoding, a.Encoding) {
+		return false
+	}
+	if !Equal(q.DescendantFonts, a.DescendantFonts) {
+		return false
+	}
+	if !Equal(q.ToUnicode, a.ToUnicode) {
+		return false
+	}
+	return true
+}

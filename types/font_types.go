@@ -16,6 +16,14 @@ func (q FontType) ToRawBytes() []byte {
 	return Name(q).ToRawBytes()
 }
 
+func (q FontType) Equal(obj Object) bool {
+	a, ok := obj.(FontType)
+	if !ok {
+		return false
+	}
+	return q == a
+}
+
 type FontSubType Name
 
 const (
@@ -34,4 +42,11 @@ func (q FontSubType) ToRawBytes() []byte {
 
 func (q FontSubType) Copy(_ func(reference Reference) Reference) Object {
 	return q
+}
+func (q FontSubType) Equal(obj Object) bool {
+	a, ok := obj.(FontSubType)
+	if !ok {
+		return false
+	}
+	return q == a
 }

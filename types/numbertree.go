@@ -42,3 +42,20 @@ func (q NumberTree) Copy(copyRef func(reference Reference) Reference) Object {
 		Limits: q.Limits.Copy(copyRef).(Array),
 	}
 }
+
+func (q NumberTree) Equal(obj Object) bool {
+	a, ok := obj.(NumberTree)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Kids, a.Kids) {
+		return false
+	}
+	if !Equal(q.Names, a.Names) {
+		return false
+	}
+	if !Equal(q.Limits, a.Limits) {
+		return false
+	}
+	return true
+}

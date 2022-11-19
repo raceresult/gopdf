@@ -120,6 +120,36 @@ func (q *Page) AddXObject(obj types.Reference) types.Name {
 	return n
 }
 
+// AddExtGState adds an ExtGState to the list of resources of the page (unless already listed) and return the resource name
+func (q *Page) AddExtGState(obj types.Dictionary) types.Name {
+	var res types.ResourceDictionary
+	res, _ = q.Data.Resources.(types.ResourceDictionary)
+
+	// create XObject Dictionary if not done yet
+	var d types.Dictionary
+	if res.ExtGState != nil {
+		d = res.ExtGState.(types.Dictionary)
+	} else {
+		d = make(types.Dictionary)
+	}
+
+	// check if already listed
+	for k, v := range d {
+		if gs, ok := v.(types.Dictionary); ok {
+			if gs.Equal(obj) {
+				return k
+			}
+		}
+	}
+
+	// create new name and add
+	n := types.Name("GS" + strconv.Itoa(len(d)+1))
+	d[n] = obj
+	res.ExtGState = d
+	q.Data.Resources = res
+	return n
+}
+
 // AddCommand adds any command/pdf operator to the content stream of the page
 func (q *Page) AddCommand(operator string, args ...types.Object) {
 	arr := make([][]byte, 0, len(args)+1)

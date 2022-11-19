@@ -27,3 +27,11 @@ func (q String) ToRawBytes() []byte {
 func (q String) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q String) Equal(obj Object) bool {
+	a, ok := obj.(String)
+	if !ok {
+		return false
+	}
+	return q == a
+}

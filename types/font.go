@@ -213,3 +213,38 @@ func (q Font) Copy(copyRef func(reference Reference) Reference) Object {
 		ToUnicode:      Copy(q.ToUnicode, copyRef),
 	}
 }
+
+func (q Font) Equal(obj Object) bool {
+	a, ok := obj.(Font)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Subtype, a.Subtype) {
+		return false
+	}
+	if !Equal(q.Name, a.Name) {
+		return false
+	}
+	if !Equal(q.BaseFont, a.BaseFont) {
+		return false
+	}
+	if !Equal(q.FirstChar, a.FirstChar) {
+		return false
+	}
+	if !Equal(q.LastChar, a.LastChar) {
+		return false
+	}
+	if !Equal(q.Widths, a.Widths) {
+		return false
+	}
+	if !Equal(q.FontDescriptor, a.FontDescriptor) {
+		return false
+	}
+	if !Equal(q.Encoding, a.Encoding) {
+		return false
+	}
+	if !Equal(q.ToUnicode, a.ToUnicode) {
+		return false
+	}
+	return true
+}

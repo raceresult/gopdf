@@ -83,3 +83,36 @@ func (q *PageTreeNode) Read(dict Dictionary) error {
 	// return without error
 	return nil
 }
+
+func (q PageTreeNode) Copy(copyRef func(reference Reference) Reference) Object {
+	n := PageTreeNode{
+		Parent: Copy(q.Parent, copyRef).(Reference),
+		Count:  Copy(q.Count, copyRef).(Int),
+	}
+	for _, v := range q.Kids {
+		n.Kids = append(n.Kids, Copy(v, copyRef).(Reference))
+	}
+	return n
+}
+
+func (q PageTreeNode) Equal(obj Object) bool {
+	a, ok := obj.(PageTreeNode)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Parent, a.Parent) {
+		return false
+	}
+	if len(q.Kids) != len(a.Kids) {
+		return false
+	}
+	for i := range q.Kids {
+		if !Equal(q.Kids[i], a.Kids[i]) {
+			return false
+		}
+	}
+	if !Equal(q.Count, a.Count) {
+		return false
+	}
+	return true
+}

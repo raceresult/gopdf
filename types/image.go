@@ -371,3 +371,65 @@ func (q Image) Copy(copyRef func(reference Reference) Reference) Object {
 		Metadata:         Copy(q.Metadata, copyRef),
 	}
 }
+
+func (q Image) Equal(obj Object) bool {
+	a, ok := obj.(Image)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Dictionary, a.Dictionary) {
+		return false
+	}
+	if !bytes.Equal(q.Stream, a.Stream) {
+		return false
+	}
+	if !Equal(q.Width, a.Width) {
+		return false
+	}
+	if !Equal(q.Height, a.Height) {
+		return false
+	}
+	if !Equal(q.ColorSpace, a.ColorSpace) {
+		return false
+	}
+	if !Equal(q.BitsPerComponent, a.BitsPerComponent) {
+		return false
+	}
+	if !Equal(q.Intent, a.Intent) {
+		return false
+	}
+	if !Equal(q.ImageMask, a.ImageMask) {
+		return false
+	}
+	if !Equal(q.Mask, a.Mask) {
+		return false
+	}
+	if !Equal(q.SMask, a.SMask) {
+		return false
+	}
+	if !Equal(q.Decode, a.Decode) {
+		return false
+	}
+	if !Equal(q.Interpolate, a.Interpolate) {
+		return false
+	}
+	if !Equal(q.Alternates, a.Alternates) {
+		return false
+	}
+	if !Equal(q.Name, a.Name) {
+		return false
+	}
+	if !Equal(q.StructParent, a.StructParent) {
+		return false
+	}
+	if !Equal(q.ID, a.ID) {
+		return false
+	}
+	if !Equal(q.OPI, a.OPI) {
+		return false
+	}
+	if !Equal(q.Metadata, a.Metadata) {
+		return false
+	}
+	return true
+}

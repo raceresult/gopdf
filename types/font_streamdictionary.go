@@ -1,5 +1,7 @@
 package types
 
+import "bytes"
+
 // additional entries according to table 5.23
 
 type StreamFont struct {
@@ -66,4 +68,33 @@ func (q StreamFont) Copy(copyRef func(reference Reference) Reference) Object {
 		Subtype:    q.Subtype.Copy(copyRef).(Name),
 		Metadata:   Copy(q.Metadata, copyRef),
 	}
+}
+
+func (q StreamFont) Equal(obj Object) bool {
+	a, ok := obj.(StreamFont)
+	if !ok {
+		return false
+	}
+	if !bytes.Equal(q.Stream, a.Stream) {
+		return false
+	}
+	if !Equal(q.Dictionary, a.Dictionary) {
+		return false
+	}
+	if !Equal(q.Length1, a.Length1) {
+		return false
+	}
+	if !Equal(q.Length2, a.Length2) {
+		return false
+	}
+	if !Equal(q.Length3, a.Length3) {
+		return false
+	}
+	if !Equal(q.Subtype, a.Subtype) {
+		return false
+	}
+	if !Equal(q.Metadata, a.Metadata) {
+		return false
+	}
+	return true
 }

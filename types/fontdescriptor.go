@@ -333,3 +333,65 @@ func (q FontDescriptor) Copy(copyRef func(reference Reference) Reference) Object
 		CharSet:      q.CharSet.Copy(copyRef).(String),
 	}
 }
+
+func (q FontDescriptor) Equal(obj Object) bool {
+	a, ok := obj.(FontDescriptor)
+	if !ok {
+		return false
+	}
+	if !Equal(q.FontName, a.FontName) {
+		return false
+	}
+	if !Equal(q.Flags, a.Flags) {
+		return false
+	}
+	if !Equal(q.FontBBox, a.FontBBox) {
+		return false
+	}
+	if !Equal(q.ItalicAngle, a.ItalicAngle) {
+		return false
+	}
+	if !Equal(q.Ascent, a.Ascent) {
+		return false
+	}
+	if !Equal(q.Descent, a.Descent) {
+		return false
+	}
+	if !Equal(q.Leading, a.Leading) {
+		return false
+	}
+	if !Equal(q.CapHeight, a.CapHeight) {
+		return false
+	}
+	if !Equal(q.XHeight, a.XHeight) {
+		return false
+	}
+	if !Equal(q.StemV, a.StemV) {
+		return false
+	}
+	if !Equal(q.StemH, a.StemH) {
+		return false
+	}
+	if !Equal(q.AvgWidth, a.AvgWidth) {
+		return false
+	}
+	if !Equal(q.MaxWidth, a.MaxWidth) {
+		return false
+	}
+	if !Equal(q.MissingWidth, a.MissingWidth) {
+		return false
+	}
+	if !Equal(q.FontFile, a.FontFile) {
+		return false
+	}
+	if !Equal(q.FontFile2, a.FontFile2) {
+		return false
+	}
+	if !Equal(q.FontFile3, a.FontFile3) {
+		return false
+	}
+	if !Equal(q.CharSet, a.CharSet) {
+		return false
+	}
+	return true
+}

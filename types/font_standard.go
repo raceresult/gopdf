@@ -98,6 +98,20 @@ func (q StandardFont) Copy(copyRef func(reference Reference) Reference) Object {
 	}
 }
 
+func (q StandardFont) Equal(obj Object) bool {
+	a, ok := obj.(StandardFont)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Encoding, a.Encoding) {
+		return false
+	}
+	if !Equal(q.BaseFont, a.BaseFont) {
+		return false
+	}
+	return true
+}
+
 // Metrics returns font metrics from the embedded afm files
 func (q StandardFont) Metrics() (*afm.Font, error) {
 	bts, err := afmFiles.ReadFile("standardfont/core14/" + string(q.BaseFont) + ".afm")

@@ -5,11 +5,11 @@ import (
 	"math"
 	"strings"
 
-	"github.com/boombuler/barcode/ean"
-
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/code128"
+	"github.com/boombuler/barcode/ean"
 	"github.com/raceresult/gopdf/pdf"
+	"github.com/raceresult/gopdf/types"
 )
 
 var code39Chars = map[rune]string{
@@ -75,6 +75,7 @@ type BarcodeElement struct {
 	Rotate                   float64
 	Flipped                  bool
 	Type                     BarcodeType
+	Transparency             float64
 }
 
 // Build adds the element to the content stream
@@ -88,9 +89,19 @@ func (q *BarcodeElement) Build(page *pdf.Page) error {
 
 	// set position
 	page.GraphicsState_q()
+	defer page.GraphicsState_Q()
 	page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt())
 	r := q.Rotate * math.Pi / 180
 	page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), 0, 0)
+
+	// Transparency
+	if q.Transparency > 0 && q.Transparency <= 1 {
+		n := page.AddExtGState(types.Dictionary{
+			"ca": types.Number(1 - q.Transparency),
+			"CA": types.Number(1 - q.Transparency),
+		})
+		page.GraphicsState_gs(n)
+	}
 
 	// encode
 	var width float64
@@ -115,9 +126,6 @@ func (q *BarcodeElement) Build(page *pdf.Page) error {
 		}
 	}
 	page.Path_f()
-
-	// reset graphics state
-	page.GraphicsState_Q()
 	return nil
 }
 

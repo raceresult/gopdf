@@ -1,6 +1,9 @@
 package gopdf
 
-import "github.com/raceresult/gopdf/pdf"
+import (
+	"github.com/raceresult/gopdf/pdf"
+	"github.com/raceresult/gopdf/types"
+)
 
 // ImageBoxElement is used to add an image box to a page
 type ImageBoxElement struct {
@@ -8,6 +11,7 @@ type ImageBoxElement struct {
 	Img                      *pdf.Image
 	VerticalAlign            VerticalAlign
 	HorizontalAlign          HorizontalAlign
+	Transparency             float64
 }
 
 // Build adds the element to the content stream
@@ -16,6 +20,15 @@ func (q *ImageBoxElement) Build(page *pdf.Page) error {
 		return nil
 	}
 	page.GraphicsState_q()
+
+	// Transparency
+	if q.Transparency > 0 && q.Transparency <= 1 {
+		n := page.AddExtGState(types.Dictionary{
+			"ca": types.Number(1 - q.Transparency),
+			"CA": types.Number(1 - q.Transparency),
+		})
+		page.GraphicsState_gs(n)
+	}
 
 	if q.Width.Pt()/q.Height.Pt() > float64(q.Img.Image.Width)/float64(q.Img.Image.Height) {
 		w := q.Height.Pt() * float64(q.Img.Image.Width) / float64(q.Img.Image.Height)

@@ -26,3 +26,11 @@ func (q StandardFontName) ToRawBytes() []byte {
 func (q StandardFontName) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q StandardFontName) Equal(obj Object) bool {
+	a, ok := obj.(StandardFontName)
+	if !ok {
+		return false
+	}
+	return q == a
+}

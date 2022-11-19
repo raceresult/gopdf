@@ -11,3 +11,8 @@ func (q Null) ToRawBytes() []byte {
 func (q Null) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q Null) Equal(obj Object) bool {
+	_, ok := obj.(Null)
+	return ok
+}

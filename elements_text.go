@@ -15,7 +15,7 @@ type TextElement struct {
 	Font          pdf.FontHandler
 	FontSize      float64
 	Color         Color
-	RenderMode    types.RenderingMode
+	RenderMode    types.RenderingMode // todo: remove - can be done by outlinecolor+color
 	OutlineColor  Color
 	OutlineWidth  Length
 	DashPattern   DashPattern
@@ -28,6 +28,7 @@ type TextElement struct {
 	CharSpacing   Length
 	TextScaling   float64
 	Rotate        float64
+	Transparency  float64
 }
 
 // Build adds the element to the content stream
@@ -79,6 +80,15 @@ func (q *TextElement) Build(page *pdf.Page) error {
 	} else {
 		r := q.Rotate * math.Pi / 180
 		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
+	}
+
+	// Transparency
+	if q.Transparency > 0 && q.Transparency <= 1 {
+		n := page.AddExtGState(types.Dictionary{
+			"ca": types.Number(1 - q.Transparency),
+			"CA": types.Number(1 - q.Transparency),
+		})
+		page.GraphicsState_gs(n)
 	}
 
 	// begin text

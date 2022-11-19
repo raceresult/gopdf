@@ -238,3 +238,41 @@ func (q Type3Font) Copy(copyRef func(reference Reference) Reference) Object {
 		ToUnicode:  q.ToUnicode.Copy(copyRef).(Reference),
 	}
 }
+
+func (q Type3Font) Equal(obj Object) bool {
+	a, ok := obj.(Type3Font)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Name, a.Name) {
+		return false
+	}
+	if !Equal(q.FontBBox, a.FontBBox) {
+		return false
+	}
+	if !Equal(q.FontMatrix, a.FontMatrix) {
+		return false
+	}
+	if !Equal(q.CharProcs, a.CharProcs) {
+		return false
+	}
+	if !Equal(q.Encoding, a.Encoding) {
+		return false
+	}
+	if !Equal(q.FirstChar, a.FirstChar) {
+		return false
+	}
+	if !Equal(q.LastChar, a.LastChar) {
+		return false
+	}
+	if !Equal(q.Widths, a.Widths) {
+		return false
+	}
+	if !Equal(q.Resources, a.Resources) {
+		return false
+	}
+	if !Equal(q.ToUnicode, a.ToUnicode) {
+		return false
+	}
+	return true
+}

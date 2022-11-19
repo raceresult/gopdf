@@ -14,3 +14,11 @@ func (q TextString) ToRawBytes() []byte {
 func (q TextString) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q TextString) Equal(obj Object) bool {
+	a, ok := obj.(TextString)
+	if !ok {
+		return false
+	}
+	return q == a
+}

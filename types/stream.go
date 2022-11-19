@@ -135,3 +135,17 @@ func (q *StreamObject) Decode() ([]byte, error) {
 	}
 	return data, nil
 }
+
+func (q StreamObject) Equal(obj Object) bool {
+	a, ok := obj.(StreamObject)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Dictionary, a.Dictionary) {
+		return false
+	}
+	if !bytes.Equal(q.Stream, a.Stream) {
+		return false
+	}
+	return true
+}

@@ -19,3 +19,17 @@ func (q Reference) Copy(copyRef func(reference Reference) Reference) Object {
 	}
 	return copyRef(q)
 }
+
+func (q Reference) Equal(obj Object) bool {
+	a, ok := obj.(Reference)
+	if !ok {
+		return false
+	}
+	if q.Number != a.Number {
+		return false
+	}
+	if q.Generation != a.Generation {
+		return false
+	}
+	return true
+}

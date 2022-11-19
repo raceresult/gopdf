@@ -40,3 +40,12 @@ func (q Encoding) Encode(s string) string {
 func (q Encoding) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q Encoding) Equal(obj Object) bool {
+	a, ok := obj.(Encoding)
+	if !ok {
+		return false
+	}
+	return q == a
+
+}

@@ -152,3 +152,72 @@ func (q Form) ToRawBytes() []byte {
 
 	return sb.Bytes()
 }
+
+func (q Form) Copy(copyRef func(reference Reference) Reference) Object {
+	return Form{
+		Dictionary:    q.Dictionary.Copy(copyRef).(StreamDictionary),
+		Stream:        q.Stream,
+		FormType:      q.FormType.Copy(copyRef).(Int),
+		Name:          q.Name.Copy(copyRef).(Name),
+		LastModified:  q.LastModified.Copy(copyRef).(Date),
+		BBox:          q.BBox.Copy(copyRef).(Rectangle),
+		Matrix:        q.Matrix.Copy(copyRef).(Array),
+		Resources:     Copy(q.Resources, copyRef),
+		Group:         Copy(q.Group, copyRef),
+		Metadata:      Copy(q.Metadata, copyRef),
+		PieceInfo:     Copy(q.PieceInfo, copyRef),
+		StructParent:  q.StructParent.Copy(copyRef).(Int),
+		StructParents: q.StructParents.Copy(copyRef).(Int),
+		OPI:           Copy(q.OPI, copyRef),
+	}
+}
+
+func (q Form) Equal(obj Object) bool {
+	a, ok := obj.(Form)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Dictionary, a.Dictionary) {
+		return false
+	}
+	if !bytes.Equal(q.Stream, a.Stream) {
+		return false
+	}
+	if !Equal(q.FormType, a.FormType) {
+		return false
+	}
+	if !Equal(q.Name, a.Name) {
+		return false
+	}
+	if !Equal(q.LastModified, a.LastModified) {
+		return false
+	}
+	if !Equal(q.BBox, a.BBox) {
+		return false
+	}
+	if !Equal(q.Matrix, a.Matrix) {
+		return false
+	}
+	if !Equal(q.Resources, a.Resources) {
+		return false
+	}
+	if !Equal(q.Group, a.Group) {
+		return false
+	}
+	if !Equal(q.Metadata, a.Metadata) {
+		return false
+	}
+	if !Equal(q.PieceInfo, a.PieceInfo) {
+		return false
+	}
+	if !Equal(q.StructParent, a.StructParent) {
+		return false
+	}
+	if !Equal(q.StructParents, a.StructParents) {
+		return false
+	}
+	if !Equal(q.OPI, a.OPI) {
+		return false
+	}
+	return true
+}

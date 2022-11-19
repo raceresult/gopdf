@@ -123,7 +123,7 @@ func (q *Page) GraphicsState_i(flatness float64) {
 // GraphicsState_gs sets the specified parameters in the graphics state. dictName is
 // the name of a graphics state parameter dictionary in the ExtGState sub-
 // dictionary of the current resource dictionary (see the next section).
-func (q *Page) GraphicsState_gs(dictName string) {
+func (q *Page) GraphicsState_gs(dictName types.Name) {
 	// set q.graphicsState to some impossible values so that new operators will not be skipped
 	q.graphicsState.NonStrokingColor = graphicsStateColor{}
 	q.graphicsState.StrokingColor = graphicsStateColor{}
@@ -134,5 +134,5 @@ func (q *Page) GraphicsState_gs(dictName string) {
 	q.graphicsState.LineJoin = -1
 	q.graphicsState.MiterLimit = -1
 
-	q.AddCommand("gs", types.Name(dictName))
+	q.AddCommand("gs", dictName)
 }

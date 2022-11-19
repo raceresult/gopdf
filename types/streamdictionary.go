@@ -190,3 +190,43 @@ func (q *StreamDictionary) Read(dict Dictionary) error {
 	// return without error
 	return nil
 }
+
+func (q StreamDictionary) Equal(obj Object) bool {
+	a, ok := obj.(StreamDictionary)
+	if !ok {
+		return false
+	}
+	if q.Length != a.Length {
+		return false
+	}
+
+	if len(q.Filter) != len(a.Filter) {
+		return false
+	}
+	for i := range q.FFilter {
+		if !Equal(q.Filter[i], a.Filter[i]) {
+			return false
+		}
+	}
+
+	if !Equal(q.DecodeParms, a.DecodeParms) {
+		return false
+	}
+	if !Equal(q.F, a.F) {
+		return false
+	}
+
+	if len(q.FFilter) != len(a.FFilter) {
+		return false
+	}
+	for i := range q.FFilter {
+		if !Equal(q.FFilter[i], a.FFilter[i]) {
+			return false
+		}
+	}
+
+	if !Equal(q.FDecodeParms, a.FDecodeParms) {
+		return false
+	}
+	return true
+}

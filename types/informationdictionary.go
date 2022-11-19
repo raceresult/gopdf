@@ -149,3 +149,52 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 	// return without error
 	return nil
 }
+
+func (q InformationDictionary) Copy(copyRef func(reference Reference) Reference) Object {
+	return InformationDictionary{
+		Title:        q.Title.Copy(copyRef).(String),
+		Author:       q.Author.Copy(copyRef).(String),
+		Subject:      q.Subject.Copy(copyRef).(String),
+		Keywords:     q.Keywords.Copy(copyRef).(String),
+		Creator:      q.Creator.Copy(copyRef).(String),
+		Producer:     q.Producer.Copy(copyRef).(String),
+		CreationDate: q.CreationDate.Copy(copyRef).(Date),
+		ModDate:      q.ModDate.Copy(copyRef).(Date),
+		Trapped:      q.Trapped.Copy(copyRef).(Name),
+	}
+}
+
+func (q InformationDictionary) Equal(obj Object) bool {
+	a, ok := obj.(InformationDictionary)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Title, a.Title) {
+		return false
+	}
+	if !Equal(q.Author, a.Author) {
+		return false
+	}
+	if !Equal(q.Subject, a.Subject) {
+		return false
+	}
+	if !Equal(q.Keywords, a.Keywords) {
+		return false
+	}
+	if !Equal(q.Creator, a.Creator) {
+		return false
+	}
+	if !Equal(q.Producer, a.Producer) {
+		return false
+	}
+	if !Equal(q.CreationDate, a.CreationDate) {
+		return false
+	}
+	if !Equal(q.ModDate, a.ModDate) {
+		return false
+	}
+	if !Equal(q.Trapped, a.Trapped) {
+		return false
+	}
+	return true
+}

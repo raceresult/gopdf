@@ -102,6 +102,15 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
 	}
 
+	// Transparency
+	if q.Transparency > 0 && q.Transparency <= 1 {
+		n := page.AddExtGState(types.Dictionary{
+			"ca": types.Number(1 - q.Transparency),
+			"CA": types.Number(1 - q.Transparency),
+		})
+		page.GraphicsState_gs(n)
+	}
+
 	// begin text
 	page.TextObjects_BT()
 

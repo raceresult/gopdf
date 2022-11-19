@@ -42,24 +42,24 @@ type Page struct {
 	// and then imposed on the output medium in some implementation-
 	// defined manner (see Section 9.10.1, “Page Boundaries”). Default value:
 	// the value of MediaBox.
-	CropBox *Rectangle
+	CropBox Object
 
 	// (Optional; PDF 1.3) A rectangle, expressed in default user space units, de-
 	// fining the region to which the contents of the page should be clipped
 	// when output in a production environment (see Section 9.10.1, “Page
 	// Boundaries”). Default value: the value of CropBox.
-	BleedBox *Rectangle
+	BleedBox Object
 
 	// (Optional; PDF 1.3) A rectangle, expressed in default user space units, de-
 	// fining the intended dimensions of the finished page after trimming (see
 	// Section 9.10.1, “Page Boundaries”). Default value: the value of CropBox.
-	TrimBox *Rectangle
+	TrimBox Object
 
 	// (Optional; PDF 1.3) A rectangle, expressed in default user space units, de-
 	// fining the extent of the page’s meaningful content (including potential
 	// white space) as intended by the page’s creator (see Section 9.10.1, “Page
 	// Boundaries”). Default value: the value of CropBox.
-	ArtBox *Rectangle
+	ArtBox Object
 
 	// (Optional) A box color information dictionary specifying the colors and
 	// other visual characteristics to be used in displaying guidelines on the
@@ -297,8 +297,9 @@ func (q *Page) Read(dict Dictionary) error {
 			if !ok {
 				return errors.New("page field CropBox invalid")
 			}
-			q.CropBox = &Rectangle{}
-			if err := q.CropBox.Read(va); err != nil {
+			r := Rectangle{}
+			q.CropBox = &r
+			if err := r.Read(va); err != nil {
 				return err
 			}
 		}
@@ -315,8 +316,9 @@ func (q *Page) Read(dict Dictionary) error {
 			if !ok {
 				return errors.New("page field BleedBox invalid")
 			}
-			q.BleedBox = &Rectangle{}
-			if err := q.BleedBox.Read(va); err != nil {
+			r := Rectangle{}
+			q.BleedBox = &r
+			if err := r.Read(va); err != nil {
 				return err
 			}
 		}
@@ -333,8 +335,9 @@ func (q *Page) Read(dict Dictionary) error {
 			if !ok {
 				return errors.New("page field TrimBox invalid")
 			}
-			q.TrimBox = &Rectangle{}
-			if err := q.TrimBox.Read(va); err != nil {
+			r := Rectangle{}
+			q.TrimBox = &r
+			if err := r.Read(va); err != nil {
 				return err
 			}
 		}
@@ -351,8 +354,9 @@ func (q *Page) Read(dict Dictionary) error {
 			if !ok {
 				return errors.New("page field ArtBox invalid")
 			}
-			q.ArtBox = &Rectangle{}
-			if err := q.ArtBox.Read(va); err != nil {
+			r := Rectangle{}
+			q.ArtBox = &r
+			if err := r.Read(va); err != nil {
 				return err
 			}
 		}
@@ -494,4 +498,113 @@ func (q *Page) Read(dict Dictionary) error {
 
 	// return without error
 	return nil
+}
+
+func (q Page) Copy(copyRef func(reference Reference) Reference) Object {
+	return Page{
+		Parent:         q.Parent.Copy(copyRef).(Reference),
+		LastModified:   q.LastModified.Copy(copyRef).(Date),
+		Resources:      Copy(q.Resources, copyRef),
+		MediaBox:       q.MediaBox.Copy(copyRef).(Rectangle),
+		CropBox:        Copy(q.CropBox, copyRef),
+		BleedBox:       Copy(q.BleedBox, copyRef),
+		TrimBox:        Copy(q.TrimBox, copyRef),
+		ArtBox:         Copy(q.ArtBox, copyRef),
+		BoxColorInfo:   Copy(q.BoxColorInfo, copyRef),
+		Contents:       Copy(q.Contents, copyRef),
+		Rotate:         q.Rotate.Copy(copyRef).(Int),
+		Group:          Copy(q.Group, copyRef),
+		Thumb:          Copy(q.Thumb, copyRef),
+		B:              q.B.Copy(copyRef).(Array),
+		Dur:            q.Dur.Copy(copyRef).(Number),
+		Trans:          Copy(q.Trans, copyRef),
+		Annots:         q.Annots.Copy(copyRef).(Array),
+		AA:             Copy(q.AA, copyRef),
+		Metadata:       Copy(q.Metadata, copyRef),
+		PieceInfo:      Copy(q.PieceInfo, copyRef),
+		StructParents:  q.StructParents.Copy(copyRef).(Int),
+		ID:             q.ID.Copy(copyRef).(String),
+		PZ:             q.PZ.Copy(copyRef).(Number),
+		SeparationInfo: Copy(q.SeparationInfo, copyRef),
+	}
+}
+
+func (q Page) Equal(obj Object) bool {
+	a, ok := obj.(Page)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Parent, a.Parent) {
+		return false
+	}
+	if !Equal(q.LastModified, a.LastModified) {
+		return false
+	}
+	if !Equal(q.Resources, a.Resources) {
+		return false
+	}
+	if !Equal(q.MediaBox, a.MediaBox) {
+		return false
+	}
+	if !Equal(q.CropBox, a.CropBox) {
+		return false
+	}
+	if !Equal(q.BleedBox, a.BleedBox) {
+		return false
+	}
+	if !Equal(q.TrimBox, a.TrimBox) {
+		return false
+	}
+	if !Equal(q.ArtBox, a.ArtBox) {
+		return false
+	}
+	if !Equal(q.BoxColorInfo, a.BoxColorInfo) {
+		return false
+	}
+	if !Equal(q.Contents, a.Contents) {
+		return false
+	}
+	if !Equal(q.Rotate, a.Rotate) {
+		return false
+	}
+	if !Equal(q.Group, a.Group) {
+		return false
+	}
+	if !Equal(q.Thumb, a.Thumb) {
+		return false
+	}
+	if !Equal(q.B, a.B) {
+		return false
+	}
+	if !Equal(q.Dur, a.Dur) {
+		return false
+	}
+	if !Equal(q.Trans, a.Trans) {
+		return false
+	}
+	if !Equal(q.Annots, a.Annots) {
+		return false
+	}
+	if !Equal(q.AA, a.AA) {
+		return false
+	}
+	if !Equal(q.Metadata, a.Metadata) {
+		return false
+	}
+	if !Equal(q.PieceInfo, a.PieceInfo) {
+		return false
+	}
+	if !Equal(q.StructParents, a.StructParents) {
+		return false
+	}
+	if !Equal(q.ID, a.ID) {
+		return false
+	}
+	if !Equal(q.PZ, a.PZ) {
+		return false
+	}
+	if !Equal(q.SeparationInfo, a.SeparationInfo) {
+		return false
+	}
+	return true
 }

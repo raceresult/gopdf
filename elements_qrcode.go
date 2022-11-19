@@ -2,6 +2,7 @@ package gopdf
 
 import (
 	"github.com/raceresult/gopdf/pdf"
+	"github.com/raceresult/gopdf/types"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -11,6 +12,7 @@ type QRCodeElement struct {
 	Text            string
 	Color           Color
 	RecoveryLevel   qrcode.RecoveryLevel
+	Transparency    float64
 }
 
 // Build adds the element to the content stream
@@ -32,6 +34,15 @@ func (q *QRCodeElement) Build(page *pdf.Page) error {
 	// set position
 	page.GraphicsState_q()
 	page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt())
+
+	// Transparency
+	if q.Transparency > 0 && q.Transparency <= 1 {
+		n := page.AddExtGState(types.Dictionary{
+			"ca": types.Number(1 - q.Transparency),
+			"CA": types.Number(1 - q.Transparency),
+		})
+		page.GraphicsState_gs(n)
+	}
 
 	// draw
 	bitSize := q.Size.Pt() / float64(len(bits))

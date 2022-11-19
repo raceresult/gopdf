@@ -191,3 +191,38 @@ func (q CIDFont) Copy(copyRef func(reference Reference) Reference) Object {
 		CIDToGIDMap:    Copy(q.CIDToGIDMap, copyRef),
 	}
 }
+
+func (q CIDFont) Equal(obj Object) bool {
+	a, ok := obj.(CIDFont)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Subtype, a.Subtype) {
+		return false
+	}
+	if !Equal(q.BaseFont, a.BaseFont) {
+		return false
+	}
+	if !Equal(q.CIDSystemInfo, a.CIDSystemInfo) {
+		return false
+	}
+	if !Equal(q.FontDescriptor, a.FontDescriptor) {
+		return false
+	}
+	if !Equal(q.DW, a.DW) {
+		return false
+	}
+	if !Equal(q.W, a.W) {
+		return false
+	}
+	if !Equal(q.DW2, a.DW2) {
+		return false
+	}
+	if !Equal(q.W2, a.W2) {
+		return false
+	}
+	if !Equal(q.CIDToGIDMap, a.CIDToGIDMap) {
+		return false
+	}
+	return true
+}

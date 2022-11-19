@@ -75,3 +75,23 @@ func (q Rectangle) Copy(copyRef func(reference Reference) Reference) Object {
 		URY: q.URY.Copy(copyRef).(Number),
 	}
 }
+
+func (q Rectangle) Equal(obj Object) bool {
+	a, ok := obj.(Rectangle)
+	if !ok {
+		return false
+	}
+	if !Equal(q.LLX, a.LLX) {
+		return false
+	}
+	if !Equal(q.LLY, a.LLY) {
+		return false
+	}
+	if !Equal(q.URX, a.URX) {
+		return false
+	}
+	if !Equal(q.URY, a.URY) {
+		return false
+	}
+	return true
+}

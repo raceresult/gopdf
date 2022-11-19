@@ -408,3 +408,71 @@ func (q DocumentCatalog) Copy(copyRef func(reference Reference) Reference) Objec
 		OutputIntents:     Copy(q.OutputIntents, copyRef),
 	}
 }
+
+func (q DocumentCatalog) Equal(obj Object) bool {
+	a, ok := obj.(DocumentCatalog)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Version, a.Version) {
+		return false
+	}
+	if !Equal(q.Pages, a.Pages) {
+		return false
+	}
+	if !Equal(q.PageLabels, a.PageLabels) {
+		return false
+	}
+	if !Equal(q.Names, a.Names) {
+		return false
+	}
+	if !Equal(q.Dests, a.Dests) {
+		return false
+	}
+	if !Equal(q.ViewerPreferences, a.ViewerPreferences) {
+		return false
+	}
+	if !Equal(q.PageLayout, a.PageLayout) {
+		return false
+	}
+	if !Equal(q.PageMode, a.PageMode) {
+		return false
+	}
+	if !Equal(q.Outlines, a.Outlines) {
+		return false
+	}
+	if !Equal(q.Threads, a.Threads) {
+		return false
+	}
+	if !Equal(q.OpenAction, a.OpenAction) {
+		return false
+	}
+	if !Equal(q.AdditionalActions, a.AdditionalActions) {
+		return false
+	}
+	if !Equal(q.URI, a.URI) {
+		return false
+	}
+	if !Equal(q.AcroForm, a.AcroForm) {
+		return false
+	}
+	if !Equal(q.Metadata, a.Metadata) {
+		return false
+	}
+	if !Equal(q.StructTreeRoot, a.StructTreeRoot) {
+		return false
+	}
+	if !Equal(q.MarkInfo, a.MarkInfo) {
+		return false
+	}
+	if !Equal(q.Lang, a.Lang) {
+		return false
+	}
+	if !Equal(q.SpiderInfo, a.SpiderInfo) {
+		return false
+	}
+	if !Equal(q.OutputIntents, a.OutputIntents) {
+		return false
+	}
+	return true
+}

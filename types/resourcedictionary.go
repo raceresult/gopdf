@@ -133,3 +133,35 @@ func (q ResourceDictionary) Copy(copyRef func(reference Reference) Reference) Ob
 		Properties: Copy(q.Properties, copyRef),
 	}
 }
+
+func (q ResourceDictionary) Equal(obj Object) bool {
+	a, ok := obj.(ResourceDictionary)
+	if !ok {
+		return false
+	}
+	if !Equal(q.ExtGState, a.ExtGState) {
+		return false
+	}
+	if !Equal(q.ColorSpace, a.ColorSpace) {
+		return false
+	}
+	if !Equal(q.Pattern, a.Pattern) {
+		return false
+	}
+	if !Equal(q.Shading, a.Shading) {
+		return false
+	}
+	if !Equal(q.XObject, a.XObject) {
+		return false
+	}
+	if !Equal(q.Font, a.Font) {
+		return false
+	}
+	if !Equal(q.ProcSet, a.ProcSet) {
+		return false
+	}
+	if !Equal(q.Properties, a.Properties) {
+		return false
+	}
+	return true
+}

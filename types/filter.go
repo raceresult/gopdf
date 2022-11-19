@@ -22,3 +22,11 @@ func (q Filter) ToRawBytes() []byte {
 func (q Filter) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q Filter) Equal(obj Object) bool {
+	a, ok := obj.(Filter)
+	if !ok {
+		return false
+	}
+	return q == a
+}

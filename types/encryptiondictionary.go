@@ -38,6 +38,31 @@ func (q EncryptionDictionary) ToRawBytes() []byte {
 	return d.ToRawBytes()
 }
 
+func (q EncryptionDictionary) Copy(copyRef func(reference Reference) Reference) Object {
+	return EncryptionDictionary{
+		Filter: q.Filter.Copy(copyRef).(Name),
+		V:      q.V.Copy(copyRef).(Number),
+		Length: q.Length.Copy(copyRef).(Int),
+	}
+}
+
+func (q EncryptionDictionary) Equal(obj Object) bool {
+	a, ok := obj.(EncryptionDictionary)
+	if !ok {
+		return false
+	}
+	if !q.Filter.Equal(a.Filter) {
+		return false
+	}
+	if !q.V.Equal(a.V) {
+		return false
+	}
+	if !q.Length.Equal(a.Length) {
+		return false
+	}
+	return true
+}
+
 // PDF Reference 1.4, Table 3.14 Additional encryption dictionary entries for the standard security handler
 
 type StandardSecurityHandler struct {
@@ -80,4 +105,37 @@ func (q StandardSecurityHandler) ToRawBytes() []byte {
 		d["Length"] = q.Length
 	}
 	return d.ToRawBytes()
+}
+
+func (q StandardSecurityHandler) Copy(copyRef func(reference Reference) Reference) Object {
+	return StandardSecurityHandler{
+		EncryptionDictionary: Copy(q.EncryptionDictionary, copyRef).(EncryptionDictionary),
+		R:                    q.R.Copy(copyRef).(Number),
+		O:                    q.O.Copy(copyRef).(String),
+		U:                    q.U.Copy(copyRef).(String),
+		P:                    q.P.Copy(copyRef).(Int),
+	}
+}
+
+func (q StandardSecurityHandler) Equal(obj Object) bool {
+	a, ok := obj.(StandardSecurityHandler)
+	if !ok {
+		return false
+	}
+	if !Equal(q.EncryptionDictionary, a.EncryptionDictionary) {
+		return false
+	}
+	if !Equal(q.R, a.R) {
+		return false
+	}
+	if !Equal(q.O, a.O) {
+		return false
+	}
+	if !Equal(q.U, a.U) {
+		return false
+	}
+	if !Equal(q.P, a.P) {
+		return false
+	}
+	return true
 }

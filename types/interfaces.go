@@ -2,6 +2,7 @@ package types
 
 type Object interface {
 	ToRawBytes() []byte
+	Equal(object Object) bool
 }
 
 type PDFFile interface {
@@ -19,4 +20,11 @@ func Copy(obj Object, copyRef func(reference Reference) Reference) Object {
 	} else {
 		return obj
 	}
+}
+
+func Equal(obj1, obj2 Object) bool {
+	if obj1 == nil {
+		return obj2 == nil
+	}
+	return obj1.Equal(obj2)
 }

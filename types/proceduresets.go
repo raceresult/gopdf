@@ -19,3 +19,11 @@ func (q ProcedureSet) ToRawBytes() []byte {
 func (q ProcedureSet) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q ProcedureSet) Equal(obj Object) bool {
+	a, ok := obj.(ProcedureSet)
+	if !ok {
+		return false
+	}
+	return q == a
+}

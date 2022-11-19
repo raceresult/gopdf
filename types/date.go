@@ -19,3 +19,11 @@ func (q Date) ToRawBytes() []byte {
 func (q Date) Copy(_ func(reference Reference) Reference) Object {
 	return q
 }
+
+func (q Date) Equal(obj Object) bool {
+	a, ok := obj.(Date)
+	if !ok {
+		return false
+	}
+	return time.Time(q).Equal(time.Time(a))
+}

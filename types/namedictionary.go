@@ -74,3 +74,35 @@ func (q NameDictionary) Copy(copyRef func(reference Reference) Reference) Object
 		EmbeddedFiles: Copy(q.EmbeddedFiles, copyRef),
 	}
 }
+
+func (q NameDictionary) Equal(obj Object) bool {
+	a, ok := obj.(NameDictionary)
+	if !ok {
+		return false
+	}
+	if !Equal(q.Dests, a.Dests) {
+		return false
+	}
+	if !Equal(q.AP, a.AP) {
+		return false
+	}
+	if !Equal(q.JavaScript, a.JavaScript) {
+		return false
+	}
+	if !Equal(q.Pages, a.Pages) {
+		return false
+	}
+	if !Equal(q.Templates, a.Templates) {
+		return false
+	}
+	if !Equal(q.IDS, a.IDS) {
+		return false
+	}
+	if !Equal(q.URLS, a.URLS) {
+		return false
+	}
+	if !Equal(q.EmbeddedFiles, a.EmbeddedFiles) {
+		return false
+	}
+	return true
+}

@@ -26,3 +26,19 @@ func (q Dictionary) Copy(copyRef func(reference Reference) Reference) Object {
 	}
 	return c
 }
+
+func (q Dictionary) Equal(obj Object) bool {
+	a, ok := obj.(Dictionary)
+	if !ok {
+		return false
+	}
+	if len(q) != len(a) {
+		return false
+	}
+	for i := range q {
+		if !Equal(q[i], a[i]) {
+			return false
+		}
+	}
+	return true
+}
