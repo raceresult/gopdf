@@ -241,9 +241,16 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 	var data, smask []byte
 	for i := 0; i < conf.Height; i++ {
 		for j := 0; j < conf.Width; j++ {
-			r, g, b, a := x.At(j, i).RGBA()
-			data = append(data, byte(r), byte(g), byte(b))
-			smask = append(smask, byte(a))
+			c := x.At(j, i)
+			switch v := c.(type) {
+			case color.RGBA:
+				data = append(data, v.R, v.G, v.B)
+				smask = append(smask, v.A)
+			default:
+				r, g, b, a := c.RGBA()
+				data = append(data, byte(r), byte(g), byte(b))
+				smask = append(smask, byte(a))
+			}
 		}
 	}
 
@@ -266,13 +273,13 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	smaskStream.Dictionary = types.StreamDictionary{
-		DecodeParms: types.Dictionary{
-			"Colors":           types.Int(1),
-			"BitsPerComponent": types.Int(8),
-			"Columns":          types.Int(conf.Width),
-		},
+	dict := smaskStream.Dictionary.(types.StreamDictionary)
+	dict.DecodeParms = types.Dictionary{
+		"Colors":           types.Int(1),
+		"BitsPerComponent": types.Int(8),
+		"Columns":          types.Int(conf.Width),
 	}
+	smaskStream.Dictionary = dict
 	sMaskImg := types.Image{
 		Stream:           smaskStream.Stream,
 		Dictionary:       smaskStream.Dictionary.(types.StreamDictionary),

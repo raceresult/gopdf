@@ -15,7 +15,6 @@ type TextElement struct {
 	Font          pdf.FontHandler
 	FontSize      float64
 	Color         Color
-	RenderMode    types.RenderingMode // todo: remove - can be done by outlinecolor+color
 	OutlineColor  Color
 	OutlineWidth  Length
 	DashPattern   DashPattern
@@ -38,22 +37,28 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		return nil
 	}
 
-	// set color
+	// set color and rendering mode
 	color := q.Color
-	if color == nil {
+	if color == nil && q.OutlineColor == nil {
 		color = ColorRGBBlack
 	}
-	color.Build(page, false)
-	color.Build(page, true)
-
-	// set bold or outline (bold is done via outline)
-	if q.Bold && q.OutlineWidth.Value == 0 && q.OutlineColor == nil {
+	if q.Bold && q.OutlineWidth.Value == 0 && color != nil && q.OutlineColor == nil {
+		color.Build(page, false)
+		color.Build(page, true)
 		page.GraphicsState_w(q.FontSize * 0.05)
 		page.TextState_Tr(types.RenderingModeFillAndStroke)
 	} else {
 		page.GraphicsState_w(q.OutlineWidth.Pt())
-		page.TextState_Tr(q.RenderMode)
-		if q.OutlineColor != nil {
+		switch {
+		case color != nil && q.OutlineColor != nil:
+			color.Build(page, false)
+			q.OutlineColor.Build(page, true)
+			page.TextState_Tr(types.RenderingModeFillAndStroke)
+		case color != nil:
+			color.Build(page, false)
+			page.TextState_Tr(types.RenderingModeFill)
+		case q.OutlineColor != nil:
+			page.TextState_Tr(types.RenderingModeStroke)
 			q.OutlineColor.Build(page, true)
 		}
 	}
