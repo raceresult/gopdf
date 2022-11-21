@@ -11,6 +11,7 @@ import (
 
 	"github.com/raceresult/gopdf/types"
 	"golang.org/x/image/bmp"
+	"golang.org/x/image/tiff"
 )
 
 // Image holds both the Image object and the reference to it
@@ -40,6 +41,9 @@ func (q *File) NewImage(bts []byte) (*Image, error) {
 
 	case "gif":
 		return q.newImageGIF(bts, im)
+
+	case "tiff":
+		return q.newImageTIFF(bts, im)
 
 	default:
 		return nil, errors.New("unsupported image type " + name)
@@ -176,8 +180,8 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 			c := x.At(j, i)
 			switch v := c.(type) {
 			case color.NRGBA:
-				data = append(data, byte(v.R), byte(v.G), byte(v.B))
-				smask = append(smask, byte(v.A))
+				data = append(data, v.R, v.G, v.B)
+				smask = append(smask, v.A)
 			default:
 				r, g, b, a := c.RGBA()
 				data = append(data, byte(r), byte(g), byte(b))
@@ -244,6 +248,77 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 			c := x.At(j, i)
 			switch v := c.(type) {
 			case color.RGBA:
+				data = append(data, v.R, v.G, v.B)
+				smask = append(smask, v.A)
+			default:
+				r, g, b, a := c.RGBA()
+				data = append(data, byte(r), byte(g), byte(b))
+				smask = append(smask, byte(a))
+			}
+		}
+	}
+
+	// create image stream
+	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
+	if err != nil {
+		return nil, err
+	}
+	img := types.Image{
+		Stream:           imgStream.Stream,
+		Dictionary:       imgStream.Dictionary.(types.StreamDictionary),
+		Width:            types.Int(conf.Width),
+		Height:           types.Int(conf.Height),
+		BitsPerComponent: types.Int(8),
+		ColorSpace:       types.ColorSpace_DeviceRGB,
+	}
+
+	// create transparency mask
+	smaskStream, err := types.NewStream(smask, types.Filter_FlateDecode)
+	if err != nil {
+		return nil, err
+	}
+	dict := smaskStream.Dictionary.(types.StreamDictionary)
+	dict.DecodeParms = types.Dictionary{
+		"Colors":           types.Int(1),
+		"BitsPerComponent": types.Int(8),
+		"Columns":          types.Int(conf.Width),
+	}
+	smaskStream.Dictionary = dict
+	sMaskImg := types.Image{
+		Stream:           smaskStream.Stream,
+		Dictionary:       smaskStream.Dictionary.(types.StreamDictionary),
+		Width:            types.Int(conf.Width),
+		Height:           types.Int(conf.Height),
+		ColorSpace:       types.ColorSpace_DeviceGray,
+		BitsPerComponent: types.Int(8),
+	}
+	img.SMask = q.creator.AddObject(sMaskImg)
+
+	// finish
+	return &Image{
+		Reference: q.creator.AddObject(img),
+		Image:     &img,
+	}, nil
+}
+
+// newImageTIFF adds a new tif image as XObject to the file
+func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
+	// decode image
+	x, err := tiff.Decode(bytes.NewReader(bts))
+	if err != nil {
+		return nil, err
+	}
+
+	// separate colors and transparency mask
+	var data, smask []byte
+	for i := 0; i < conf.Height; i++ {
+		for j := 0; j < conf.Width; j++ {
+			c := x.At(j, i)
+			switch v := c.(type) {
+			case color.RGBA:
+				data = append(data, v.R, v.G, v.B)
+				smask = append(smask, v.A)
+			case color.NRGBA:
 				data = append(data, v.R, v.G, v.B)
 				smask = append(smask, v.A)
 			default:

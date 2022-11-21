@@ -11,8 +11,9 @@ import (
 // TextBoxElement is similar to TextElement, but can have a maximum width and height
 type TextBoxElement struct {
 	TextElement
-	Width, Height Length
-	VerticalAlign VerticalAlign
+	Width, Height   Length
+	VerticalAlign   VerticalAlign
+	HeightBufferRel float64
 }
 
 // Build adds the element to the content stream
@@ -184,10 +185,7 @@ func (q *TextBoxElement) wrappedText() []string {
 	// determine max number of lines
 	var maxLines int
 	if q.Height.Value > 0 {
-		maxLines = int(q.Height.Pt() / q.lineHeight())
-		if maxLines == 0 {
-			return nil
-		}
+		maxLines = int(q.Height.Pt() * (1 + q.HeightBufferRel) / q.lineHeight())
 	}
 
 	// split by line break
