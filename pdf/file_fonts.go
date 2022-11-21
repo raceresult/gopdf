@@ -244,7 +244,7 @@ func (q *File) NewCompositeFontFromOTF(otf []byte) (*CompositeFontOTF, error) {
 	otfStream.Dictionary = types.Dictionary{
 		"Length":  types.Int(len(otf)),
 		"Length3": types.Int(len(otf)),
-		"Subtype": types.Name("Type1C"),
+		"Subtype": types.Name("OpenType"),
 	}
 	fontFileRef := q.creator.AddObject(otfStream)
 
@@ -279,7 +279,7 @@ func (q *File) NewCompositeFontFromOTF(otf []byte) (*CompositeFontOTF, error) {
 
 	// create CID font
 	cid := &types.CIDFont{
-		Subtype:        types.FontSub_CIDFontType0,
+		Subtype:        types.FontSub_CIDFontType2,
 		BaseFont:       fd.FontName,
 		CIDSystemInfo:  q.getCIDSystemInfo(),
 		FontDescriptor: fdRef,
@@ -313,7 +313,7 @@ func (q *File) NewCompositeFontFromOTF(otf []byte) (*CompositeFontOTF, error) {
 		}
 
 		// build widths and cidToGID arrays
-		cidToGID := make([]byte, maxRune*2+5)
+		cidToGID := make([]byte, maxRune*2+2)
 		widths := types.Array{}
 		for _, r := range runes {
 			pos, _ := fnt.GlyphIndex(nil, r)
