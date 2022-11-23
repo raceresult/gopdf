@@ -46,8 +46,7 @@ func (f *font) parseMaxp(r *byteReader) (*maxpTable, error) {
 	}
 
 	if t.version < 0x00010000 {
-		// logrus.Debug("Range check error")
-		return nil, errRangeCheck
+		return nil, errMinVersion
 	}
 
 	err = r.read(&t.maxPoints, &t.maxContours, &t.maxCompositePoints, &t.maxCompositeContours)
@@ -74,8 +73,7 @@ func (f *font) writeMaxp(w *byteWriter) error {
 	}
 
 	if t.version < 0x00010000 {
-		// logrus.Debug("Range check error")
-		return errRangeCheck
+		return errMinVersion
 	}
 
 	err = w.write(t.maxPoints, t.maxContours, t.maxCompositePoints, t.maxCompositeContours)

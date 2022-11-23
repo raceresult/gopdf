@@ -73,7 +73,7 @@ func (q *File) NewTrueTypeFont(ttf []byte, encoding types.Encoding, embed bool) 
 		CapHeight:    types.Number(metrics.CapHeight),
 		XHeight:      types.Number(metrics.XHeight),
 		StemV:        types.Number(calcStemV(metrics.Weight)),
-		MissingWidth: types.Number(fnt.GetGlyphAdvance(0)),
+		MissingWidth: types.Number(metrics.DefaultWidth),
 		FontFile2:    fontFileRef,
 	}
 	fdRef := q.creator.AddObject(fd)
@@ -139,7 +139,7 @@ func (q *File) NewCompositeFontFromTTF(ttf []byte) (*CompositeFont, error) {
 		CapHeight:    types.Number(metrics.CapHeight),
 		XHeight:      types.Number(metrics.XHeight),
 		StemV:        types.Number(calcStemV(metrics.Weight)),
-		MissingWidth: types.Number(fnt.GetGlyphAdvance(0)),
+		MissingWidth: types.Number(metrics.DefaultWidth),
 	}
 	fdRef := q.creator.AddObject(&fd)
 

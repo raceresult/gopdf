@@ -595,10 +595,11 @@ type Metrics struct {
 	UnderlineThickness int
 	Weight             int
 	IsFixedPitch       bool
+	DefaultWidth       int
 }
 
 func (f *Font) GetMetrics() Metrics {
-	return Metrics{
+	q := Metrics{
 		XMin:               int(f.head.xMin) * 1000 / int(f.head.unitsPerEm),
 		YMin:               int(f.head.yMin) * 1000 / int(f.head.unitsPerEm),
 		XMax:               int(f.head.xMax) * 1000 / int(f.head.unitsPerEm),
@@ -612,12 +613,17 @@ func (f *Font) GetMetrics() Metrics {
 		UnderlineThickness: int(f.post.underlineThickness) * 1000 / int(f.head.unitsPerEm),
 		Weight:             int(f.os2.usWeightClass),
 		IsFixedPitch:       f.post.isFixedPitch != 0,
+		DefaultWidth:       int(f.hhea.advanceWidthMax),
 	}
+	if q.DefaultWidth == 0 && len(f.hmtx.hMetrics) != 0 {
+		q.DefaultWidth = int(f.hmtx.hMetrics[0].advanceWidth)
+	}
+	return q
 }
 
 func (f *Font) GetGlyphAdvance(gid GlyphIndex) int {
 	if gid < 0 || int(gid) >= len(f.hmtx.hMetrics) {
-		return 0
+		return int(f.hhea.advanceWidthMax) * 1000 / int(f.head.unitsPerEm)
 	}
 	return int(f.hmtx.hMetrics[gid].advanceWidth) * 1000 / int(f.head.unitsPerEm)
 }

@@ -10,6 +10,7 @@ import "errors"
 var (
 	errTypeCheck      = errors.New("type check error")
 	errRangeCheck     = errors.New("range check error")
+	errMinVersion     = errors.New("min version 1.0 required")
 	errInvalidContext = errors.New("invalid context")
 	errRequiredField  = errors.New("required field missing")
 	errNilReceiver    = errors.New("receiver pointer not initialized")
