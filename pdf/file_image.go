@@ -10,8 +10,8 @@ import (
 	"image/png"
 
 	"github.com/raceresult/gopdf/types"
+	"github.com/raceresult/tiff"
 	"golang.org/x/image/bmp"
-	"golang.org/x/image/tiff"
 )
 
 // Image holds both the Image object and the reference to it
@@ -311,6 +311,7 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
 
 	// separate colors and transparency mask
 	var data, smask []byte
+	colorSpace := types.ColorSpace_DeviceRGB
 	for i := 0; i < conf.Height; i++ {
 		for j := 0; j < conf.Width; j++ {
 			c := x.At(j, i)
@@ -321,6 +322,16 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
 			case color.NRGBA:
 				data = append(data, v.R, v.G, v.B)
 				smask = append(smask, v.A)
+			case color.CMYK:
+				c := x.At(j, i).(color.CMYK)
+				data = append(data, c.C, c.M, c.Y, c.K)
+				smask = append(smask, 255)
+				colorSpace = types.ColorSpace_DeviceCMYK
+			case tiff.CMYKA:
+				c := x.At(j, i).(tiff.CMYKA)
+				data = append(data, c.C, c.M, c.Y, c.K)
+				smask = append(smask, c.A)
+				colorSpace = types.ColorSpace_DeviceCMYK
 			default:
 				r, g, b, a := c.RGBA()
 				data = append(data, byte(r), byte(g), byte(b))
@@ -340,7 +351,7 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       types.ColorSpace_DeviceRGB,
+		ColorSpace:       colorSpace,
 	}
 
 	// create transparency mask
