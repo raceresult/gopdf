@@ -10,7 +10,7 @@ import (
 
 const DefaultVersion = 1.4
 
-// File is a pdf file with a list of indirect objects
+// File is the most basic representation of a pdf file: a list of indirect objects
 type File struct {
 	Version         float64
 	Root            types.Reference
@@ -57,6 +57,7 @@ func (q *File) AddIndirectObject(obj types.IndirectObject) {
 
 // GetObject returns an object from the file
 func (q *File) GetObject(ref types.Reference) (types.Object, error) {
+	// create object map if not yet done
 	if q.objectsIndexMap == nil {
 		q.objectsIndexMap = make(map[int][]int)
 		for i, obj := range q.objects {
@@ -69,6 +70,7 @@ func (q *File) GetObject(ref types.Reference) (types.Object, error) {
 		}
 	}
 
+	// return requested object
 	items := q.objectsIndexMap[ref.Number]
 	if ref.Generation < 0 || ref.Generation >= len(items) {
 		return nil, errors.New("object " + strconv.Itoa(ref.Number) + "/" + strconv.Itoa(ref.Generation) + " not found")

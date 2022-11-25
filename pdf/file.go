@@ -15,12 +15,17 @@ import (
 
 // File is the main object to create a pdf file
 type File struct {
-	ID                       [2]types.String
-	Info                     types.InformationDictionary
-	Pages                    []*Page
-	CompressStreamsThreshold int
-	Version                  float64
+	ID    [2]types.String
+	Info  types.InformationDictionary
+	Pages []*Page
 
+	// Threshold length for compressing content streams
+	CompressStreamsThreshold int
+
+	// PDF Version number
+	Version float64
+
+	// internals
 	fonts         []FontHandler
 	toUnicode     types.Reference
 	cidSystemInfo types.Reference

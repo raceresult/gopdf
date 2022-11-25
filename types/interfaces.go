@@ -5,11 +5,6 @@ type Object interface {
 	Equal(object Object) bool
 }
 
-type PDFFile interface {
-	AddObject(obj Object) Reference
-	GetObject(ref Reference) (Object, error)
-}
-
 type copyable interface {
 	Copy(copyRef func(reference Reference) Reference) Object
 }

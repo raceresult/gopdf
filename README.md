@@ -134,7 +134,6 @@ func TestExample2(t *testing.T) {
         Top:          gopdf.MM(100),
         Color:        gopdf.ColorRGB{200, 200, 200},
         OutlineColor: gopdf.ColorRGB{10, 20, 10},
-        RenderMode:   types.RenderingModeFillAndStroke,
         OutlineWidth: gopdf.MM(0.5),
     })
     

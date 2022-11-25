@@ -3,15 +3,32 @@ package types
 // PDF Reference 1.4, Table 5.1 Text state parameters
 
 type TextState struct {
-	Tc    float64       // Character spacing
-	Tw    float64       // Word spacing
-	Th    float64       // Horizontal scaling
-	Tl    float64       // Leading
-	Tf    Name          // Text font
-	Tfs   float64       // Text font size
-	Tmode RenderingMode // Text rendering mode
-	Trise float64       // Text rise
-	Tk    float64       // Text knockout
+	// Character spacing
+	Tc float64
+
+	// Word spacing
+	Tw float64
+
+	// Horizontal scaling
+	Th float64
+
+	// Leading
+	Tl float64
+
+	// Text font
+	Tf Name
+
+	// Text font size
+	Tfs float64
+
+	// Text rendering mode
+	Tmode RenderingMode
+
+	// Text rise
+	Trise float64
+
+	// Text knockout
+	Tk float64
 }
 
 func NewTextState() *TextState {

@@ -3,6 +3,8 @@ package types
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/ascii85"
+	"encoding/hex"
 	"errors"
 	"io/ioutil"
 )
@@ -37,11 +39,22 @@ func NewStream(data []byte, filters ...Filter) (StreamObject, error) {
 	for _, filter := range filters {
 		switch filter {
 		case Filter_ASCIIHexDecode:
-			return StreamObject{}, errors.New("filter not implemented")
+			data = []byte(hex.EncodeToString(data))
+
 		case Filter_ASCII85Decode:
-			return StreamObject{}, errors.New("filter not implemented")
+			var bts bytes.Buffer
+			w := ascii85.NewEncoder(&bts)
+			if _, err := w.Write(data); err != nil {
+				return StreamObject{}, err
+			}
+			if err := w.Close(); err != nil {
+				return StreamObject{}, err
+			}
+			data = bts.Bytes()
+
 		case Filter_LZWDecode:
-			return StreamObject{}, errors.New("filter not implemented")
+			return StreamObject{}, errors.New("filter " + string(filter) + " not implemented")
+
 		case Filter_FlateDecode:
 			var bts bytes.Buffer
 			w := zlib.NewWriter(&bts)
@@ -54,13 +67,13 @@ func NewStream(data []byte, filters ...Filter) (StreamObject, error) {
 			data = bts.Bytes()
 
 		case Filter_RunLengthDecode:
-			return StreamObject{}, errors.New("filter not implemented")
+			return StreamObject{}, errors.New("filter " + string(filter) + " not implemented")
 		case Filter_CCITTFaxDecode:
-			return StreamObject{}, errors.New("filter not implemented")
+			return StreamObject{}, errors.New("filter " + string(filter) + " not implemented")
 		case Filter_JBIG2Decode:
-			return StreamObject{}, errors.New("filter not implemented")
+			return StreamObject{}, errors.New("filter " + string(filter) + " not implemented")
 		case Filter_DCTDecode:
-			return StreamObject{}, errors.New("filter not implemented")
+			return StreamObject{}, errors.New("filter " + string(filter) + " not implemented")
 		default:
 			return StreamObject{}, errors.New("unknown filter " + string(filter))
 		}
@@ -105,14 +118,25 @@ func (q *StreamObject) Decode() ([]byte, error) {
 		}
 	}
 
+	var err error
 	for _, filter := range filters {
 		switch filter {
 		case Filter_ASCIIHexDecode:
-			return nil, errors.New("filter not implemented")
+			data, err = hex.DecodeString(string(data))
+			if err != nil {
+				return nil, err
+			}
+
 		case Filter_ASCII85Decode:
-			return nil, errors.New("filter not implemented")
+			r := ascii85.NewDecoder(bytes.NewReader(data))
+			data, err = ioutil.ReadAll(r)
+			if err != nil {
+				return nil, err
+			}
+
 		case Filter_LZWDecode:
-			return nil, errors.New("filter not implemented")
+			return nil, errors.New("filter " + string(filter) + " not implemented")
+
 		case Filter_FlateDecode:
 			r, err := zlib.NewReader(bytes.NewReader(data))
 			if err != nil {
@@ -124,13 +148,13 @@ func (q *StreamObject) Decode() ([]byte, error) {
 			}
 
 		case Filter_RunLengthDecode:
-			return nil, errors.New("filter not implemented")
+			return nil, errors.New("filter " + string(filter) + " not implemented")
 		case Filter_CCITTFaxDecode:
-			return nil, errors.New("filter not implemented")
+			return nil, errors.New("filter " + string(filter) + " not implemented")
 		case Filter_JBIG2Decode:
-			return nil, errors.New("filter not implemented")
+			return nil, errors.New("filter " + string(filter) + " not implemented")
 		case Filter_DCTDecode:
-			return nil, errors.New("filter not implemented")
+			return nil, errors.New("filter " + string(filter) + " not implemented")
 		}
 	}
 	return data, nil

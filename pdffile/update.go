@@ -6,6 +6,7 @@ import (
 	"github.com/raceresult/gopdf/types"
 )
 
+// Update is one generation of a PDF file. A pdf file can be modified by added updates to the file.
 type Update struct {
 	Objects   []types.RawIndirectObject
 	xRefTable XRefTable

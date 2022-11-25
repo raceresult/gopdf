@@ -48,7 +48,7 @@ type Type0Font struct {
 func (q Type0Font) ToRawBytes() []byte {
 	d := Dictionary{
 		"Type":            Name("Font"),
-		"Subtype":         Name("Type0"),
+		"Subtype":         Name(FontType_Type0),
 		"BaseFont":        q.BaseFont,
 		"Encoding":        q.Encoding,
 		"DescendantFonts": q.DescendantFonts,

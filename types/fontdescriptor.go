@@ -5,25 +5,95 @@ import "errors"
 // PDF Reference 1.4, Table 5.18 Entries common to all font descriptors
 
 type FontDescriptor struct {
+	// Type name (Required) The type of PDF object that this dictionary describes; must be
+	// FontDescriptor for a font descriptor.
 	// Type // Required
-	FontName     Name      // Required
-	Flags        Int       // Required
-	FontBBox     Rectangle // Required
-	ItalicAngle  Number    // Required
-	Ascent       Number    // Required
-	Descent      Number    // Required
-	Leading      Number    // optional
-	CapHeight    Number    // Required
-	XHeight      Number    // optional
-	StemV        Number    // Required
-	StemH        Number    // optional
-	AvgWidth     Number    // optional
-	MaxWidth     Number    // optional
-	MissingWidth Number    // optional
-	FontFile     Reference // for Type 1 font
-	FontFile2    Reference // for TrueType font
-	FontFile3    Reference // for other font types
-	CharSet      String    // optional
+
+	// (Required) The PostScript name of the font. This should be the same as the
+	// value of BaseFont in the font or CIDFont dictionary that refers to this font
+	// descriptor.
+	FontName Name
+
+	// (Required) A collection of flags defining various characteristics of the font
+	// (see Section 5.7.1, “Font Descriptor Flags”).
+	Flags Int
+
+	// (Required) A rectangle (see Section 3.8.3, “Rectangles”), expressed in the
+	// glyph coordinate system, specifying the font bounding box. This is the small-
+	// est rectangle enclosing the shape that would result if all of the glyphs of the
+	// font were placed with their origins coincident and then filled.
+	FontBBox Rectangle
+
+	// (Required) The angle, expressed in degrees counterclockwise from the verti-
+	// cal, of the dominant vertical strokes of the font. (For example, the 9-o’clock
+	// position is 90 degrees, and the 3-o’clock position is –90 degrees.) The value is
+	// negative for fonts that slope to the right, as almost all italic fonts do.
+	ItalicAngle Number
+
+	// The maximum height above the baseline reached by glyphs in this
+	// font, excluding the height of glyphs for accented characters.
+	Ascent Number
+
+	// The maximum depth below the baseline reached by glyphs in this
+	// font. The value is a negative number.
+	Descent Number
+
+	// The desired spacing between baselines of consecutive lines of text.
+	// Default value: 0.
+	Leading Number
+
+	// The vertical coordinate of the top of flat capital letters, measured
+	// from the baseline.
+	CapHeight Number
+
+	// (Optional) The font’s x height: the vertical coordinate of the top of flat non-
+	// ascending lowercase letters (like the letter x), measured from the baseline.
+	// Default value: 0.
+	XHeight Number
+
+	// (Required) The thickness, measured horizontally, of the dominant vertical
+	// stems of glyphs in the font.
+	StemV Number
+
+	// (Optional) The thickness, measured invertically, of the dominant horizontal
+	// stems of glyphs in the font. Default value: 0.
+	StemH Number
+
+	// (Optional) The average width of glyphs in the font. Default value: 0.
+	AvgWidth Number
+
+	// (Optional) The maximum width of glyphs in the font. Default value: 0.
+	MaxWidth Number
+
+	// (Optional) The width to use for character codes whose widths are not speci-
+	// fied in a font dictionary’s Widths array. This has a predictable effect only if all
+	// such codes map to glyphs whose actual widths are the same as the Missing-
+	// Width value. Default value: 0.
+	MissingWidth Number
+
+	// (Optional) A stream containing a Type 1 font program (see Section 5.8,
+	// “Embedded Font Programs”).
+	FontFile Reference
+
+	// (Optional; PDF 1.1) A stream containing a TrueType font program (see Sec-
+	// tion 5.8, “Embedded Font Programs”).
+	FontFile2 Reference
+
+	// (Optional; PDF 1.2) A stream containing a font program other than Type 1 or
+	// TrueType. The format of the font program is specified by the Subtype entry
+	// in the stream dictionary (see Section 5.8, “Embedded Font Programs,” and
+	// implementation note 49 in Appendix H).
+	// At most, only one of the FontFile, FontFile2, and FontFile3 entries may be
+	// present.
+	FontFile3 Reference
+
+	// (Optional; meaningful only in Type 1 fonts; PDF 1.1) A string listing the char-
+	// acter names defined in a font subset. The names in this string must be in PDF
+	// syntax—that is, each name preceded by a slash (/). The names can appear in
+	// any order. The name .notdef should be omitted; it is assumed to exist in the
+	// font subset. If this entry is absent, the only indication of a font subset is the
+	// subset tag in the FontName entry (see Section 5.5.3, “Font Subsets”).
+	CharSet String
 }
 
 func (q FontDescriptor) ToRawBytes() []byte {

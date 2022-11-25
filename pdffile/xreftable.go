@@ -8,6 +8,7 @@ import (
 
 // PDF Reference 1.4, 3.4.3 Cross-Reference Table
 
+// XRefTable is the cross-reference table consisting of several XRefTableSections
 type XRefTable []XRefTableSection
 
 func (q *XRefTable) clear() {
@@ -45,6 +46,7 @@ func (q *XRefTableSection) ToRawBytes() []byte {
 	return sb.Bytes()
 }
 
+// XRefTableEntry is one entry in a XRefTableSection
 type XRefTableEntry struct {
 	Start      int64
 	Generation int

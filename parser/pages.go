@@ -7,8 +7,9 @@ import (
 	"github.com/raceresult/gopdf/types"
 )
 
-// collectPages is a helper function to GetAllPAges
+// collectPages is a helper function to GetAllPages
 func collectPages(f *pdffile.File, node types.Dictionary) ([]types.Page, error) {
+	// get node type
 	typ, ok := node["Type"]
 	if !ok {
 		return nil, errors.New("page tree item does not have Type")
@@ -18,6 +19,7 @@ func collectPages(f *pdffile.File, node types.Dictionary) ([]types.Page, error) 
 		return nil, errors.New("page tree item Type is not Name")
 	}
 
+	// proceed depending on node type
 	var res []types.Page
 	switch typName {
 	case "Pages":
@@ -26,7 +28,9 @@ func collectPages(f *pdffile.File, node types.Dictionary) ([]types.Page, error) 
 			return nil, err
 		}
 
+		// iterate over kid nodes
 		for _, kidRef := range ptn.Kids {
+			// get kid dictionaries
 			kidObj, err := f.GetObject(kidRef)
 			if err != nil {
 				return nil, err
@@ -35,13 +39,13 @@ func collectPages(f *pdffile.File, node types.Dictionary) ([]types.Page, error) 
 			if !ok {
 				return nil, errors.New("kid object is not a dictionary")
 			}
-
 			for k, v := range node {
 				if _, ok := kidDict[k]; !ok {
 					kidDict[k] = v
 				}
 			}
 
+			// collect pages from all kids
 			pp, err := collectPages(f, kidDict)
 			if err != nil {
 				return nil, err
@@ -88,7 +92,7 @@ func (q *Parser) GetPage(pageNo int) (types.Page, error) {
 		return types.Page{}, err
 	}
 
-	// slow path: collect all pages in tree, then return page
+	// collect all pages in tree, then return page
 	allPages, err := collectPages(q.file, ptn)
 	if err != nil {
 		return types.Page{}, err
@@ -99,6 +103,7 @@ func (q *Parser) GetPage(pageNo int) (types.Page, error) {
 	return allPages[pageNo-1], nil
 }
 
+// getCatalog returns the document catalog of the parsed pdf
 func (q *Parser) getCatalog() (*types.DocumentCatalog, error) {
 	catalogObj, err := q.file.GetObject(q.file.Root)
 	if err != nil {
@@ -115,6 +120,7 @@ func (q *Parser) getCatalog() (*types.DocumentCatalog, error) {
 	return &cat, nil
 }
 
+// getPageTreeRoot returns the page tree root of the parsed pdf
 func (q *Parser) getPageTreeRoot() (types.Dictionary, error) {
 	cat, err := q.getCatalog()
 	if err != nil {

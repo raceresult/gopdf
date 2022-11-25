@@ -30,7 +30,7 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		return newRef
 	}
 
-	// stream
+	// collect content references
 	var cc []types.Reference
 	if sourcePage.Contents == nil {
 	} else if ref, ok := sourcePage.Contents.(types.Reference); ok {
@@ -46,6 +46,8 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 	} else {
 		return types.Reference{}, errors.New("content stream has unexpected type")
 	}
+
+	// copy content objects
 	var data []byte
 	for _, ref := range cc {
 		cs, err := sourceFile.GetObject(ref)
@@ -62,11 +64,13 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		}
 	}
 
+	// create new content stream
 	stream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
 		return types.Reference{}, err
 	}
 
+	// add form object
 	return q.creator.AddObject(types.Form{
 		Stream:     stream.Stream,
 		Dictionary: stream.Dictionary.(types.StreamDictionary),
