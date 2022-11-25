@@ -1,6 +1,8 @@
 package gopdf
 
 import (
+	"errors"
+	"strconv"
 	"sync"
 
 	"github.com/raceresult/gopdf/pdf"
@@ -18,8 +20,9 @@ type Builder struct {
 	// number of worker routines used to generate content streams of pages
 	WorkerRoutines int
 
-	file  *pdf.File
-	pages []*Page
+	file     *pdf.File
+	pages    []*Page
+	currPage *Page
 }
 
 // New creates a new Builder object
@@ -29,6 +32,14 @@ func New() *Builder {
 		CompressStreamsThreshold: 500,
 		Version:                  pdffile.DefaultVersion,
 	}
+}
+
+// AddElement adds one or more elements to the current page
+func (q *Builder) AddElement(item ...Element) {
+	if q.currPage == nil {
+		q.NewPage(GetStandardPageSize(PageSizeA4, false))
+	}
+	q.currPage.AddElement(item...)
 }
 
 // Build builds the PDF document and returns the file as byte slice
@@ -85,9 +96,9 @@ func (q *Builder) Build() ([]byte, error) {
 
 // NewPage adds a new page to the pdf
 func (q *Builder) NewPage(size PageSize) *Page {
-	p := NewPage(size)
-	q.pages = append(q.pages, p)
-	return p
+	q.currPage = NewPage(size)
+	q.pages = append(q.pages, q.currPage)
+	return q.currPage
 }
 
 // NewPageBefore inserts a new page before the given pageNo to the pdf
@@ -99,13 +110,13 @@ func (q *Builder) NewPageBefore(size PageSize, beforePageNo int) *Page {
 		beforePageNo = 1
 	}
 
-	p := NewPage(size)
+	q.currPage = NewPage(size)
 	np := make([]*Page, len(q.pages)+1)
 	copy(np[:beforePageNo-1], q.pages[:beforePageNo-1])
-	np[beforePageNo-1] = p
+	np[beforePageNo-1] = q.currPage
 	copy(np[beforePageNo:], q.pages[beforePageNo-1:])
 	q.pages = np
-	return p
+	return q.currPage
 }
 
 // NewFormFromPage creates a new form object from the give page
@@ -131,6 +142,20 @@ func (q *Builder) NewFormFromPage(page *Page) (*Form, error) {
 // PageCount returns the number of pages already added
 func (q *Builder) PageCount() int {
 	return len(q.pages)
+}
+
+// SelectPage set the current page to the page with the given number (starting from 1)
+func (q *Builder) SelectPage(pageNo int) error {
+	if pageNo < len(q.pages) || pageNo > len(q.pages) {
+		return errors.New("page " + strconv.Itoa(pageNo) + " not found")
+	}
+	q.currPage = q.pages[pageNo-1]
+	return nil
+}
+
+// CurrPage returns the current page
+func (q *Builder) CurrPage() *Page {
+	return q.currPage
 }
 
 // NewImage adds a new image to the PDF file
