@@ -33,7 +33,7 @@ func (q *EllipseElement) Build(page *pdf.Page) error {
 		return err
 	}
 
-	// Transparency
+	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
 		page.GraphicsState_q()
 		defer page.GraphicsState_Q()

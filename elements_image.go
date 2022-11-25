@@ -1,6 +1,8 @@
 package gopdf
 
 import (
+	"errors"
+
 	"github.com/raceresult/gopdf/pdf"
 	"github.com/raceresult/gopdf/types"
 )
@@ -16,14 +18,14 @@ type ImageElement struct {
 func (q *ImageElement) Build(page *pdf.Page) error {
 	// abort if image not set
 	if q.Img == nil {
-		return nil
+		return errors.New("image not set")
 	}
 
 	// graphics state
 	page.GraphicsState_q()
 	defer page.GraphicsState_Q()
 
-	// Transparency
+	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
 		page.GraphicsState_q()
 		defer page.GraphicsState_Q()

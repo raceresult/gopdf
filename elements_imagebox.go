@@ -1,6 +1,8 @@
 package gopdf
 
 import (
+	"errors"
+
 	"github.com/raceresult/gopdf/pdf"
 	"github.com/raceresult/gopdf/types"
 )
@@ -16,12 +18,20 @@ type ImageBoxElement struct {
 
 // Build adds the element to the content stream
 func (q *ImageBoxElement) Build(page *pdf.Page) error {
-	if q.Img == nil || q.Img.Image.Height == 0 || q.Img.Image.Width == 0 {
+	// abort if image not set
+	if q.Img == nil {
+		return errors.New("image not set")
+	}
+	// ignore if size 0
+	if q.Img.Image.Height == 0 || q.Img.Image.Width == 0 {
 		return nil
 	}
-	page.GraphicsState_q()
 
-	// Transparency
+	// graphics state
+	page.GraphicsState_q()
+	defer page.GraphicsState_Q()
+
+	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
 		n := page.AddExtGState(types.Dictionary{
 			"ca": types.Number(1 - q.Transparency),
@@ -55,6 +65,5 @@ func (q *ImageBoxElement) Build(page *pdf.Page) error {
 	}
 
 	page.XObject_Do(q.Img.Reference)
-	page.GraphicsState_Q()
 	return nil
 }

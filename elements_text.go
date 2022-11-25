@@ -77,8 +77,11 @@ func (q *TextElement) Build(page *pdf.Page) error {
 	// set font
 	page.TextState_Tf(q.Font, q.FontSize)
 
-	// set coordinate system
+	// graphics state
 	page.GraphicsState_q()
+	defer page.GraphicsState_Q()
+
+	// set coordinate system
 	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
 	if q.Rotate == 0 {
 		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), y)
@@ -87,7 +90,7 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
 	}
 
-	// Transparency
+	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
 		n := page.AddExtGState(types.Dictionary{
 			"ca": types.Number(1 - q.Transparency),
@@ -140,7 +143,6 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		top -= lineHeight
 	}
 	page.TextObjects_ET()
-	page.GraphicsState_Q()
 	return nil
 }
 

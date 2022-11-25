@@ -12,14 +12,19 @@ import (
 
 // Builder is the main object to build a PDF file
 type Builder struct {
-	Info                     types.InformationDictionary
-	ID                       [2]string
+	Info types.InformationDictionary
+	ID   [2]string
+
+	// Threshold length for compressing content streams
 	CompressStreamsThreshold int
-	Version                  float64
+
+	// PDF Version number
+	Version float64
 
 	// number of worker routines used to generate content streams of pages
 	WorkerRoutines int
 
+	// internals
 	file     *pdf.File
 	pages    []*Page
 	currPage *Page
@@ -111,11 +116,10 @@ func (q *Builder) NewPageBefore(size PageSize, beforePageNo int) *Page {
 	}
 
 	q.currPage = NewPage(size)
-	np := make([]*Page, len(q.pages)+1)
-	copy(np[:beforePageNo-1], q.pages[:beforePageNo-1])
-	np[beforePageNo-1] = q.currPage
-	copy(np[beforePageNo:], q.pages[beforePageNo-1:])
-	q.pages = np
+	q.pages = append(q.pages, nil)
+	copy(q.pages[beforePageNo:], q.pages[beforePageNo-1:])
+	q.pages[beforePageNo-1] = q.currPage
+
 	return q.currPage
 }
 
@@ -190,7 +194,7 @@ func (q *Builder) NewCompositeFont(ttf []byte) (*pdf.CompositeFont, error) {
 	return q.file.NewCompositeFontFromTTF(ttf)
 }
 
-// NewCompositeFontFromOTF adds a otf font as composite font to the pdf, i.e. with Unicode support
+// NewCompositeFontFromOTF adds an otf font as composite font to the pdf, i.e. with Unicode support
 func (q *Builder) NewCompositeFontFromOTF(otf []byte) (*pdf.CompositeFontOTF, error) {
 	return q.file.NewCompositeFontFromOTF(otf)
 }

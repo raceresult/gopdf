@@ -94,7 +94,7 @@ func (q *BarcodeElement) Build(page *pdf.Page) error {
 	r := q.Rotate * math.Pi / 180
 	page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), 0, 0)
 
-	// Transparency
+	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
 		n := page.AddExtGState(types.Dictionary{
 			"ca": types.Number(1 - q.Transparency),

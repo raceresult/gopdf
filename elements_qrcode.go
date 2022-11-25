@@ -31,11 +31,14 @@ func (q *QRCodeElement) Build(page *pdf.Page) error {
 	}
 	bits := qr.Bitmap()
 
-	// set position
+	// graphics state
 	page.GraphicsState_q()
+	defer page.GraphicsState_Q()
+
+	// set position
 	page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt())
 
-	// Transparency
+	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
 		n := page.AddExtGState(types.Dictionary{
 			"ca": types.Number(1 - q.Transparency),
@@ -54,7 +57,5 @@ func (q *QRCodeElement) Build(page *pdf.Page) error {
 		}
 	}
 	page.Path_f()
-
-	page.GraphicsState_Q()
 	return nil
 }

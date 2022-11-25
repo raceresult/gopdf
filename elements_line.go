@@ -29,7 +29,7 @@ func (q *LineElement) Build(page *pdf.Page) error {
 	// line width
 	page.GraphicsState_w(q.LineWidth.Pt())
 
-	// Transparency
+	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
 		page.GraphicsState_q()
 		defer page.GraphicsState_Q()
