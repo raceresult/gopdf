@@ -107,6 +107,15 @@ func readFile(bts []byte) (*pdffile.File, error) {
 			}
 			dest.AddIndirectObject(obj)
 			objectOffsets[offset] = obj
+
+			// unpack object streams
+			items, err := unpackObjectStreams(obj.Data)
+			if err != nil {
+				return nil, err
+			}
+			for _, item := range items {
+				dest.AddIndirectObject(item)
+			}
 		}
 	}
 
@@ -150,6 +159,60 @@ func findObject(ref types.Reference, bts []byte, xref pdffile.XRefTable, length 
 		}
 	}
 	return nil, errors.New("object " + strconv.Itoa(ref.Number) + "/" + strconv.Itoa(ref.Generation) + " not found")
+}
+
+// unpackObjectStreams returns all objects contained in the given object stream
+func unpackObjectStreams(obj types.Object) ([]types.IndirectObject, error) {
+	// check if is object stream
+	s, ok := obj.(types.StreamObject)
+	if !ok {
+		return nil, nil
+	}
+	dict, ok := s.Dictionary.(types.Dictionary)
+	if !ok {
+		return nil, nil
+	}
+	var osdict types.ObjectStreamDictionary
+	if err := osdict.Read(dict); err != nil {
+		return nil, nil
+	}
+
+	// decode stream
+	bts, err := s.Decode()
+	if err != nil {
+		return nil, err
+	}
+
+	// parse stream
+	var objNos []int
+	var dest []types.IndirectObject
+	for {
+		if len(bts) == 0 {
+			break
+		}
+
+		var item types.Object
+		item, bts, err = readAny(bts)
+		if err != nil {
+			return nil, err
+		}
+
+		if no, ok := item.(types.Int); ok && len(dest) == 0 {
+			objNos = append(objNos, int(no))
+			continue
+		}
+
+		if len(dest)*2 >= len(objNos) {
+			break
+		}
+		dest = append(dest, types.IndirectObject{
+			Number:     objNos[len(dest)*2],
+			Generation: 0,
+			Data:       item,
+		})
+	}
+
+	return dest, nil
 }
 
 func readObject(bts []byte, xref pdffile.XRefTable, length int) (types.IndirectObject, []byte, error) {
