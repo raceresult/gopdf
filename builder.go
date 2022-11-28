@@ -150,7 +150,7 @@ func (q *Builder) PageCount() int {
 
 // SelectPage set the current page to the page with the given number (starting from 1)
 func (q *Builder) SelectPage(pageNo int) error {
-	if pageNo < len(q.pages) || pageNo > len(q.pages) {
+	if pageNo < 1 || pageNo > len(q.pages) {
 		return errors.New("page " + strconv.Itoa(pageNo) + " not found")
 	}
 	q.currPage = q.pages[pageNo-1]
