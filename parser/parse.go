@@ -13,6 +13,7 @@ import (
 
 // readFile reads a byte stream into a File object
 func readFile(bts []byte) (*pdffile.File, error) {
+	var dest pdffile.File
 	length := len(bts)
 
 	// try to read xref table
@@ -22,12 +23,22 @@ func readFile(bts []byte) (*pdffile.File, error) {
 		startXRefObj, _, _ := readValue(bts[startxref+9:])
 		startXRefVal, ok := startXRefObj.(types.Int)
 		if ok && int(startXRefVal) < len(bts) {
-			xref, _, _ = readXRef(bts[startXRefVal:])
+			var err error
+			xref, _, err = readXRef(bts[startXRefVal:])
+
+			if err != nil {
+				var trailer *types.Trailer
+				trailer, xref, _, err = readXRefObj(bts[startXRefVal:])
+				if err == nil {
+					dest.ID = trailer.ID
+					dest.Root = trailer.Root
+					dest.Info = trailer.Info
+				}
+			}
 		}
 	}
 
 	// parse PDF version
-	var dest pdffile.File
 	var firstLine []byte
 	firstLine, bts = readLine(bts)
 	if !bytes.HasPrefix(firstLine, []byte("%PDF-")) {
@@ -73,26 +84,9 @@ func readFile(bts []byte) (*pdffile.File, error) {
 			}
 
 		case bytes.HasPrefix(bts, []byte("startxref")):
-			var startXRef types.Object
-			startXRef, bts, err = readValue(bts[9:])
+			_, bts, err = readValue(bts[9:])
 			if err != nil {
 				return nil, err
-			}
-			if dest.Root.Number == 0 {
-				if offset, ok := startXRef.(types.Int); ok && offset > 0 {
-					if obj, ok := objectOffsets[int(offset)]; ok {
-						if so, ok := obj.Data.(types.StreamObject); ok {
-							if dict, ok := so.Dictionary.(types.Dictionary); ok {
-								var t types.Trailer
-								if err := t.Read(dict); err == nil {
-									dest.ID = t.ID
-									dest.Root = t.Root
-									dest.Info = t.Info
-								}
-							}
-						}
-					}
-				}
 			}
 
 		case isWhiteChar(bts[0]):
@@ -341,6 +335,122 @@ func nextTwoWords(bts []byte) ([]byte, []byte) {
 		}
 	}
 	return w1, bts[start:]
+}
+
+func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) {
+	// read object
+	var err error
+	var obj types.IndirectObject
+	obj, bts, err = readObject(bts, nil, 0)
+	if err != nil {
+		return nil, nil, bts, err
+	}
+
+	// convert into stream object
+	so, ok := obj.Data.(types.StreamObject)
+	if !ok {
+		return nil, nil, bts, errors.New("value is not a n xref table")
+	}
+
+	// get trailer dictionary
+	dict, ok := so.Dictionary.(types.Dictionary)
+	if !ok {
+		return nil, nil, nil, errors.New("value is not a n xref table")
+	}
+	var t types.Trailer
+	if err := t.Read(dict); err != nil {
+		return nil, nil, bts, err
+	}
+
+	// get stream data
+	data, err := so.Decode()
+	if err != nil {
+		return nil, nil, bts, err
+	}
+
+	// get index data
+	index, ok := dict["Index"].(types.Array)
+	if !ok {
+		return nil, nil, nil, errors.New("index in xref dictionary not valid")
+	}
+
+	// get W data
+	w, ok := dict["W"].(types.Array)
+	if !ok {
+		return nil, nil, nil, errors.New("W in xref dictionary not valid")
+	}
+	var ww []int
+	for _, i := range w {
+		x, ok := i.(types.Int)
+		if !ok {
+			return nil, nil, nil, errors.New("W in xref dictionary not valid")
+		}
+		ww = append(ww, int(x))
+	}
+	if len(ww) != 3 {
+		return nil, nil, nil, errors.New("W in xref dictionary does not have length 3")
+	}
+
+	toInt := func(bts []byte) int {
+		var x uint32
+		for _, b := range bts {
+			x = x << 8
+			x += uint32(b)
+		}
+		return int(x)
+	}
+
+	// parse data
+	var xrefTable pdffile.XRefTable
+	for i := 0; i < len(index); i += 2 {
+		first, ok := index[i*2].(types.Int)
+		if !ok {
+			return nil, nil, nil, errors.New("index in xref dictionary not valid")
+		}
+		length, ok := index[i*2+1].(types.Int)
+		if !ok {
+			return nil, nil, nil, errors.New("index in xref dictionary not valid")
+		}
+		xrefTable = append(xrefTable, pdffile.XRefTableSection{
+			Start:   int(first),
+			Count:   int(length),
+			Entries: nil,
+		})
+
+		for no := first; no < first+length; no++ {
+			if len(data) < ww[2] {
+				return nil, nil, nil, errors.New("xref stream valid")
+			}
+
+			entryType := toInt(data[0:ww[0]])
+			data = data[ww[0]:]
+			f2 := toInt(data[0:ww[1]])
+			data = data[ww[1]:]
+			f3 := toInt(data[0:ww[2]])
+			data = data[ww[2]:]
+
+			switch entryType {
+			case 0:
+				xrefTable[len(xrefTable)-1].Entries = append(xrefTable[len(xrefTable)-1].Entries, pdffile.XRefTableEntry{
+					Start:      0,
+					Generation: f3,
+					Free:       true,
+				})
+			case 1:
+				xrefTable[len(xrefTable)-1].Entries = append(xrefTable[len(xrefTable)-1].Entries, pdffile.XRefTableEntry{
+					Start:      int64(f2),
+					Generation: f3,
+					Free:       false,
+				})
+			case 2:
+				// todo: objects in object stream
+			default:
+				return nil, nil, nil, errors.New("invalid entry type in xref stream")
+			}
+		}
+	}
+
+	return &t, xrefTable, bts, nil
 }
 
 func readXRef(bts []byte) (pdffile.XRefTable, []byte, error) {
