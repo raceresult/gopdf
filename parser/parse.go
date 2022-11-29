@@ -16,28 +16,6 @@ func readFile(bts []byte) (*pdffile.File, error) {
 	var dest pdffile.File
 	length := len(bts)
 
-	// try to read xref table
-	var xref pdffile.XRefTable
-	startxref := bytes.LastIndex(bts, []byte("startxref"))
-	if startxref >= 0 {
-		startXRefObj, _, _ := readValue(bts[startxref+9:])
-		startXRefVal, ok := startXRefObj.(types.Int)
-		if ok && int(startXRefVal) < len(bts) {
-			var err error
-			xref, _, err = readXRef(bts[startXRefVal:])
-
-			if err != nil {
-				var trailer *types.Trailer
-				trailer, xref, _, err = readXRefObj(bts[startXRefVal:])
-				if err == nil {
-					dest.ID = trailer.ID
-					dest.Root = trailer.Root
-					dest.Info = trailer.Info
-				}
-			}
-		}
-	}
-
 	// parse PDF version
 	var firstLine []byte
 	firstLine, bts = readLine(bts)
@@ -47,6 +25,29 @@ func readFile(bts []byte) (*pdffile.File, error) {
 	dest.Version, _ = strconv.ParseFloat(string(firstLine[5:]), 64)
 	if dest.Version <= 0 {
 		return nil, errors.New("file does not have valid PDF version number")
+	}
+
+	// try to read xref table
+	var xref pdffile.XRefTable
+	startxref := bytes.LastIndex(bts, []byte("startxref"))
+	if startxref < 0 {
+		return nil, errors.New("startxref not found")
+	}
+	startXRefObj, _, _ := readValue(bts[startxref+9:])
+	startXRefVal, ok := startXRefObj.(types.Int)
+	if !ok || int(startXRefVal) >= len(bts) {
+		return nil, errors.New("startxref value invalid ")
+	}
+	var err error
+	xref, _, err = readXRef(bts[startXRefVal:]) // parse as xref table
+	if err != nil {
+		var trailer *types.Trailer
+		trailer, xref, _, err = readXRefObj(bts[startXRefVal:]) // parse as xref object
+		if err == nil {
+			dest.ID = trailer.ID
+			dest.Root = trailer.Root
+			dest.Info = trailer.Info
+		}
 	}
 
 	// parse objects

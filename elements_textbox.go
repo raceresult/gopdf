@@ -188,6 +188,9 @@ func (q *TextBoxElement) wrappedText() []string {
 	var maxLines int
 	if q.Height.Value > 0 {
 		maxLines = int(q.Height.Pt() * (1 + q.HeightBufferRel) / q.lineHeight())
+		if maxLines == 0 {
+			return nil
+		}
 	}
 
 	// split by line break
