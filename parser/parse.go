@@ -420,6 +420,10 @@ func readAny(bts []byte) (types.Object, []byte, error) {
 				if err == nil {
 					return types.Date(t), rest, err
 				}
+				t, err = time.Parse("20060102150405Z", string(s)[2:])
+				if err == nil {
+					return types.Date(t), rest, err
+				}
 			}
 			return s, rest, err
 
