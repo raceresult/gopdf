@@ -30,39 +30,37 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		return newRef
 	}
 
-	// collect content references
-	var cc []types.Reference
-	if sourcePage.Contents == nil {
-	} else if ref, ok := sourcePage.Contents.(types.Reference); ok {
-		cc = append(cc, ref)
-	} else if arr, ok := sourcePage.Contents.(types.Array); ok {
-		for _, v := range arr {
-			ref, ok := v.(types.Reference)
-			if !ok {
-				return types.Reference{}, errors.New("content stream has unexpected type")
-			}
-			cc = append(cc, ref)
-		}
-	} else {
-		return types.Reference{}, errors.New("content stream has unexpected type")
-	}
-
-	// copy content objects
+	// collect content
 	var data []byte
-	for _, ref := range cc {
-		cs, err := sourceFile.GetObject(ref)
-		if err != nil {
-			return types.Reference{}, err
+	var addContent func(obj types.Object) error
+	addContent = func(obj types.Object) error {
+		if obj == nil {
+			return nil
 		}
-		if s, ok := cs.(types.StreamObject); ok {
-			decoded, err := s.Decode()
+		switch item := obj.(type) {
+		case types.Reference:
+			newItem, err := sourceFile.GetObject(item)
 			if err != nil {
-				return types.Reference{}, err
+				return err
+			}
+			addContent(newItem)
+		case types.Array:
+			for _, v := range item {
+				addContent(v)
+			}
+		case types.StreamObject:
+			decoded, err := item.Decode()
+			if err != nil {
+				return err
 			}
 			data = append(data, decoded...)
 			data = append(data, '\n')
+		default:
+			return errors.New("content stream has unexpected type")
 		}
+		return nil
 	}
+	addContent(sourcePage.Contents)
 
 	// create new content stream
 	stream, err := types.NewStream(data, types.Filter_FlateDecode)

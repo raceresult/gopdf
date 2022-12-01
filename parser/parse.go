@@ -18,7 +18,7 @@ func readFile(bts []byte) (*pdffile.File, error) {
 
 	// parse PDF version
 	var firstLine []byte
-	firstLine, bts = readLine(bts)
+	firstLine, _ = readLine(bts)
 	if !bytes.HasPrefix(firstLine, []byte("%PDF-")) {
 		return nil, errors.New("file does not have %PDF- prefix")
 	}
@@ -43,7 +43,7 @@ func readFile(bts []byte) (*pdffile.File, error) {
 	if err != nil {
 		var trailer *types.Trailer
 		trailer, xref, _, err = readXRefObj(bts[startXRefVal:]) // parse as xref object
-		if err == nil {
+		if trailer != nil {
 			dest.ID = trailer.ID
 			dest.Root = trailer.Root
 			dest.Info = trailer.Info
@@ -366,30 +366,30 @@ func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) 
 	// get stream data
 	data, err := so.Decode()
 	if err != nil {
-		return nil, nil, bts, err
+		return &t, nil, bts, err
 	}
 
 	// get index data
 	index, ok := dict["Index"].(types.Array)
 	if !ok {
-		return nil, nil, nil, errors.New("index in xref dictionary not valid")
+		return &t, nil, nil, errors.New("index in xref dictionary not valid")
 	}
 
 	// get W data
 	w, ok := dict["W"].(types.Array)
 	if !ok {
-		return nil, nil, nil, errors.New("W in xref dictionary not valid")
+		return &t, nil, nil, errors.New("W in xref dictionary not valid")
 	}
 	var ww []int
 	for _, i := range w {
 		x, ok := i.(types.Int)
 		if !ok {
-			return nil, nil, nil, errors.New("W in xref dictionary not valid")
+			return &t, nil, nil, errors.New("W in xref dictionary not valid")
 		}
 		ww = append(ww, int(x))
 	}
 	if len(ww) != 3 {
-		return nil, nil, nil, errors.New("W in xref dictionary does not have length 3")
+		return &t, nil, nil, errors.New("W in xref dictionary does not have length 3")
 	}
 
 	toInt := func(bts []byte) int {
@@ -410,7 +410,7 @@ func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) 
 		}
 		length, ok := index[i*2+1].(types.Int)
 		if !ok {
-			return nil, nil, nil, errors.New("index in xref dictionary not valid")
+			return &t, nil, nil, errors.New("index in xref dictionary not valid")
 		}
 		xrefTable = append(xrefTable, pdffile.XRefTableSection{
 			Start:   int(first),
@@ -420,7 +420,7 @@ func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) 
 
 		for no := first; no < first+length; no++ {
 			if len(data) < ww[2] {
-				return nil, nil, nil, errors.New("xref stream valid")
+				return &t, nil, nil, errors.New("xref stream valid")
 			}
 
 			entryType := toInt(data[0:ww[0]])
@@ -446,7 +446,7 @@ func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) 
 			case 2:
 				// todo: objects in object stream
 			default:
-				return nil, nil, nil, errors.New("invalid entry type in xref stream")
+				return &t, nil, nil, errors.New("invalid entry type in xref stream")
 			}
 		}
 	}

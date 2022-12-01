@@ -249,11 +249,7 @@ func (q *DocumentCatalog) Read(dict Dictionary) error {
 	// Names
 	v, ok = dict["Names"]
 	if ok {
-		vt, ok := v.(Name)
-		if !ok {
-			return errors.New("unexpected value type in catalog field Names")
-		}
-		q.Names = vt
+		q.Names = v
 	}
 
 	// Dests
