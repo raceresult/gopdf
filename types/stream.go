@@ -87,39 +87,107 @@ func NewStream(data []byte, filters ...Filter) (StreamObject, error) {
 	}, nil
 }
 
-func (q *StreamObject) Decode() ([]byte, error) {
-	data := q.Stream
-	var filters []Filter
-	if d, ok := q.Dictionary.(StreamDictionary); ok {
-		filters = d.Filter
-	} else if d, ok := q.Dictionary.(Dictionary); ok {
+func (q *StreamObject) getFilters() ([]Filter, error) {
+	switch d := q.Dictionary.(type) {
+	case StreamDictionary:
+		return d.Filter, nil
+
+	case Dictionary:
 		v, ok := d["Filter"]
+		if !ok {
+			return nil, nil
+		}
+		filter, ok := v.(Name)
 		if ok {
-			filter, ok := v.(Name)
-			if ok {
-				filters = []Filter{Filter(filter)}
-			} else {
-				arr, ok := v.(Array)
+			return []Filter{Filter(filter)}, nil
+		}
+
+		arr, ok := v.(Array)
+		if !ok {
+			return nil, errors.New("stream dictionary field Filter invalid")
+		}
+		var filters []Filter
+		for _, v := range arr {
+			fv, ok := v.(Filter)
+			if !ok {
+				fvn, ok := v.(Name)
 				if !ok {
 					return nil, errors.New("stream dictionary field Filter invalid")
 				}
-				for _, v := range arr {
-					fv, ok := v.(Filter)
-					if !ok {
-						fvn, ok := v.(Name)
-						if !ok {
-							return nil, errors.New("stream dictionary field Filter invalid")
-						}
-						fv = Filter(fvn)
-					}
-					filters = append(filters, fv)
-				}
+				fv = Filter(fvn)
 			}
+			filters = append(filters, fv)
 		}
+		return filters, nil
+
+	default:
+		return nil, nil
+	}
+}
+
+// getDecodeParams returns the FilterParams in DecodeParms
+func (q *StreamObject) getDecodeParams() ([]FilterParameters, error) {
+	// get stream dictionary
+	var sd StreamDictionary
+	switch d := q.Dictionary.(type) {
+	case StreamDictionary:
+		sd = d
+
+	case Dictionary:
+		if err := sd.Read(d); err != nil {
+			return nil, err
+		}
+
+	default:
+		return nil, errors.New("could not get DecodeParms of stream")
 	}
 
-	var err error
-	for _, filter := range filters {
+	// read
+	switch dp := sd.DecodeParms.(type) {
+	case Array:
+		var fps []FilterParameters
+		for _, item := range dp {
+			d, ok := item.(Dictionary)
+			if !ok {
+				return nil, errors.New("unexpected value in DecodeParms array")
+			}
+			var fp FilterParameters
+			if err := fp.Read(d); err != nil {
+				return nil, err
+			}
+			fps = append(fps, fp)
+		}
+		return fps, nil
+
+	case Dictionary:
+		var fp FilterParameters
+		if err := fp.Read(dp); err != nil {
+			return nil, err
+		}
+		return []FilterParameters{fp}, nil
+
+	case nil:
+		return nil, nil
+
+	default:
+		return nil, errors.New("unexpected value in DecodeParms of stream")
+	}
+}
+
+func (q *StreamObject) Decode() ([]byte, error) {
+	// get filter list and decodeParams list
+	filters, err := q.getFilters()
+	if err != nil {
+		return nil, err
+	}
+	decodeParms, err := q.getDecodeParams()
+	if err != nil {
+		return nil, err
+	}
+
+	// decode
+	data := q.Stream
+	for i, filter := range filters {
 		switch filter {
 		case Filter_ASCIIHexDecode:
 			data, err = hex.DecodeString(string(data))
@@ -156,7 +224,15 @@ func (q *StreamObject) Decode() ([]byte, error) {
 		case Filter_DCTDecode:
 			return nil, errors.New("filter " + string(filter) + " not implemented")
 		}
+
+		if i < len(decodeParms) {
+			data, err = decodePredictor(data, decodeParms[i])
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
+
 	return data, nil
 }
 

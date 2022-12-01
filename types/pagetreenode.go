@@ -2,7 +2,7 @@ package types
 
 import "errors"
 
-// PDF Reference 1.4, Table  3.17 Required entries in a page tree node
+// PDF Reference 1.4, Table 3.17 Required entries in a page tree node
 
 type PageTreeNode struct {
 	// (Required) The type of PDF object that this dictionary describes; must be Pages for

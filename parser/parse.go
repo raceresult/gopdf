@@ -391,6 +391,7 @@ func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) 
 	if len(ww) != 3 {
 		return &t, nil, nil, errors.New("W in xref dictionary does not have length 3")
 	}
+	entryLen := ww[0] + ww[1] + ww[2]
 
 	toInt := func(bts []byte) int {
 		var x uint32
@@ -404,11 +405,11 @@ func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) 
 	// parse data
 	var xrefTable pdffile.XRefTable
 	for i := 0; i < len(index); i += 2 {
-		first, ok := index[i*2].(types.Int)
+		first, ok := index[i].(types.Int)
 		if !ok {
 			return nil, nil, nil, errors.New("index in xref dictionary not valid")
 		}
-		length, ok := index[i*2+1].(types.Int)
+		length, ok := index[i+1].(types.Int)
 		if !ok {
 			return &t, nil, nil, errors.New("index in xref dictionary not valid")
 		}
@@ -419,7 +420,7 @@ func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) 
 		})
 
 		for no := first; no < first+length; no++ {
-			if len(data) < ww[2] {
+			if len(data) < entryLen {
 				return &t, nil, nil, errors.New("xref stream valid")
 			}
 
