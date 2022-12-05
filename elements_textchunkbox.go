@@ -1,29 +1,12 @@
 package gopdf
 
 import (
-	"errors"
 	"math"
 	"strings"
 
 	"github.com/raceresult/gopdf/pdf"
 	"github.com/raceresult/gopdf/types"
 )
-
-type TextChunk struct {
-	Text          string
-	Font          pdf.FontHandler
-	FontSize      float64
-	Color         Color
-	OutlineColor  Color
-	OutlineWidth  Length
-	DashPattern   DashPattern
-	Bold          bool
-	Italic        bool
-	Underline     bool
-	StrikeThrough bool
-	CharSpacing   Length
-	TextScaling   float64
-}
 
 // TextChunkBoxElement is similar to TextBoxElement, but can have chunks with different format
 type TextChunkBoxElement struct {
@@ -47,9 +30,16 @@ func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
 	}
 
 	// wrap text
-	wrapped := q.wrappedChunks()
+	wrapped := q.wrapLines()
 	if len(wrapped) == 0 {
 		return nil
+	}
+
+	// set format of first font before saving graphics state
+	if len(wrapped[0].ChunkWidths) != 0 {
+		if err := wrapped[0].Chunks[0].setFontAndColor(page); err != nil {
+			return err
+		}
 	}
 
 	// graphics state
@@ -150,72 +140,10 @@ func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
 
 		// iterate over text chunks in this line
 		for j, chunk := range line.Chunks {
-			// if no font or text given, ignore chunk
-			if chunk.Font == nil {
-				return errors.New("no font set")
-			}
-
-			// set position
-			var c float64
-			if chunk.Italic {
-				c = 0.333
-			}
-			page.TextPosition_Tm(1, 0, c, 1, left, top)
-			left += line.ChunkWidths[j]
-
-			// set color and rendering mode
-			color := chunk.Color
-			if color == nil && chunk.OutlineColor == nil {
-				color = ColorRGBBlack
-			}
-			if chunk.Bold && chunk.OutlineWidth.Value == 0 && color != nil && chunk.OutlineColor == nil {
-				color.Build(page, false)
-				color.Build(page, true)
-				page.GraphicsState_w(chunk.FontSize * 0.05)
-				page.TextState_Tr(types.RenderingModeFillAndStroke)
-			} else {
-				page.GraphicsState_w(chunk.OutlineWidth.Pt())
-				switch {
-				case color != nil && chunk.OutlineColor != nil:
-					color.Build(page, false)
-					chunk.OutlineColor.Build(page, true)
-					page.TextState_Tr(types.RenderingModeFillAndStroke)
-				case color != nil:
-					color.Build(page, false)
-					page.TextState_Tr(types.RenderingModeFill)
-				case chunk.OutlineColor != nil:
-					page.TextState_Tr(types.RenderingModeStroke)
-					chunk.OutlineColor.Build(page, true)
-				}
-			}
-			if err := chunk.DashPattern.Build(page); err != nil {
+			if err := chunk.draw(page, left, top); err != nil {
 				return err
 			}
-
-			// text scaling / char spacing
-			page.TextState_Tc(chunk.CharSpacing.Pt())
-			if chunk.TextScaling == 0 {
-				page.TextState_Tz(100)
-			} else {
-				page.TextState_Tz(chunk.TextScaling)
-			}
-
-			// set font and draw text
-			page.TextState_Tf(chunk.Font, chunk.FontSize)
-			page.TextShowing_Tj(reverseRTLString(chunk.Text))
-
-			// underline/strike-through text
-			if chunk.Underline {
-				page.Path_re(left-line.ChunkWidths[j], top+chunk.Font.GetUnderlinePosition(chunk.FontSize), line.ChunkWidths[j], chunk.Font.GetUnderlineThickness(chunk.FontSize))
-				page.Path_f()
-			}
-			if chunk.StrikeThrough {
-				page.Path_re(
-					left-line.ChunkWidths[j], top+chunk.Font.GetTop(chunk.FontSize)/3,
-					line.ChunkWidths[j], chunk.Font.GetUnderlineThickness(chunk.FontSize),
-				)
-				page.Path_f()
-			}
+			left += line.ChunkWidths[j]
 		}
 		top -= line.Height
 	}
@@ -230,8 +158,8 @@ type chunkLine struct {
 	ChunkWidths []float64
 }
 
-// wrappedChunks returns the wrapped text considering line break, max width and max height
-func (q *TextChunkBoxElement) wrappedChunks() []chunkLine {
+// wrapLines returns the wrapped text considering line break, max width and max height
+func (q *TextChunkBoxElement) wrapLines() []chunkLine {
 	var chunkLines []chunkLine
 	var currLine *chunkLine
 	boxWidth := q.Width.Pt()
@@ -379,28 +307,8 @@ func (q *TextChunkBoxElement) wrappedChunks() []chunkLine {
 // TextHeight returns the height of the text, accounting for line breaks and max width
 func (q *TextChunkBoxElement) TextHeight() Length {
 	var h float64
-	for _, l := range q.wrappedChunks() {
+	for _, l := range q.wrapLines() {
 		h += l.Height
 	}
 	return Pt(h)
-}
-
-// getLineWidth returns the width of the given text line consider font, fontsize, text-scaling, char spacing
-func (q *TextChunk) getLineWidth(line string) float64 {
-	if line == "" {
-		return 0
-	}
-	v := q.Font.GetWidth(line, q.FontSize)
-	if q.CharSpacing.Value != 0 {
-		v += float64(len([]rune(line))-1) * q.CharSpacing.Pt()
-	}
-	if q.TextScaling != 0 {
-		v *= q.TextScaling / 100
-	}
-	return v
-}
-
-// FontHeight returns the height of the font (bounding box y min to max)
-func (q *TextChunk) FontHeight() Length {
-	return Pt(q.Font.GetTop(q.FontSize) - q.Font.GetBottom(q.FontSize))
 }

@@ -9,10 +9,10 @@ import "github.com/raceresult/gopdf/types"
 // Initial value: 0.
 // No-Op if identical to value in current text state
 func (q *Page) TextState_Tc(charSpace float64) {
-	if q.textState.Tc == charSpace {
+	if q.graphicsState.TextState.Tc == charSpace {
 		return
 	}
-	q.textState.Tc = charSpace
+	q.graphicsState.TextState.Tc = charSpace
 
 	q.AddCommand("Tc", types.Int(charSpace))
 }
@@ -22,10 +22,10 @@ func (q *Page) TextState_Tc(charSpace float64) {
 // Initial value: 0.
 // No-Op if identical to value in current text state
 func (q *Page) TextState_Tw(wordSpace float64) {
-	if q.textState.Tw == wordSpace {
+	if q.graphicsState.TextState.Tw == wordSpace {
 		return
 	}
-	q.textState.Tw = wordSpace
+	q.graphicsState.TextState.Tw = wordSpace
 
 	q.AddCommand("Tw", types.Int(wordSpace))
 }
@@ -35,10 +35,10 @@ func (q *Page) TextState_Tw(wordSpace float64) {
 // Initial value: 100 (normal width).
 // No-Op if identical to value in current text state
 func (q *Page) TextState_Tz(scale float64) {
-	if q.textState.Th == scale {
+	if q.graphicsState.TextState.Th == scale {
 		return
 	}
-	q.textState.Th = scale
+	q.graphicsState.TextState.Th = scale
 
 	q.AddCommand("Tz", types.Int(scale))
 }
@@ -48,10 +48,10 @@ func (q *Page) TextState_Tz(scale float64) {
 // Initial value: 0.
 // No-Op if identical to value in current text state
 func (q *Page) TextState_TL(leading float64) {
-	if q.textState.Tl == leading {
+	if q.graphicsState.TextState.Tl == leading {
 		return
 	}
-	q.textState.Tl = leading
+	q.graphicsState.TextState.Tl = leading
 
 	q.AddCommand("TL", types.Int(leading))
 }
@@ -63,11 +63,11 @@ func (q *Page) TextState_TL(leading float64) {
 // No-Op if identical to value in current text state
 func (q *Page) TextState_Tf(font FontHandler, fontSize float64) {
 	n := q.AddFont(font)
-	if q.textState.Tf == n && q.textState.Tfs == fontSize {
+	if q.graphicsState.TextState.Tf == n && q.graphicsState.TextState.Tfs == fontSize {
 		return
 	}
-	q.textState.Tf = n
-	q.textState.Tfs = fontSize
+	q.graphicsState.TextState.Tf = n
+	q.graphicsState.TextState.Tfs = fontSize
 
 	q.currFont = font
 	q.AddCommand("Tf", n, types.Number(fontSize))
@@ -77,10 +77,10 @@ func (q *Page) TextState_Tf(font FontHandler, fontSize float64) {
 // Initial value: 0.
 // No-Op if identical to value in current text state
 func (q *Page) TextState_Tr(mode types.RenderingMode) {
-	if q.textState.Tmode == mode {
+	if q.graphicsState.TextState.Tmode == mode {
 		return
 	}
-	q.textState.Tmode = mode
+	q.graphicsState.TextState.Tmode = mode
 
 	q.AddCommand("Tr", types.Int(mode))
 }
@@ -90,10 +90,10 @@ func (q *Page) TextState_Tr(mode types.RenderingMode) {
 // Initial value: 0
 // No-Op if identical to value in current text state
 func (q *Page) TextState_Ts(rise float64) {
-	if q.textState.Trise == rise {
+	if q.graphicsState.TextState.Trise == rise {
 		return
 	}
-	q.textState.Trise = rise
+	q.graphicsState.TextState.Trise = rise
 
 	q.AddCommand("Ts", types.Number(rise))
 }

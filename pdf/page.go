@@ -20,7 +20,6 @@ type Page struct {
 	currFont FontHandler
 
 	// internal text and graphics state to check if commands actually change the state
-	textState          *types.TextState
 	graphicsState      *graphicsState
 	graphicsStateStack []*graphicsState
 }
@@ -31,7 +30,6 @@ func NewPage(width, height float64) *Page {
 		Data: types.Page{
 			MediaBox: types.Rectangle{LLX: 0, LLY: 0, URX: types.Number(width), URY: types.Number(height)},
 		},
-		textState:     types.NewTextState(),
 		graphicsState: &graphicsState{},
 	}
 }

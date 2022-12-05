@@ -10,72 +10,25 @@ import (
 
 // TextElement draws a text, may have line breaks
 type TextElement struct {
-	Text          string
-	Left, Top     Length
-	Font          pdf.FontHandler
-	FontSize      float64
-	Color         Color
-	OutlineColor  Color
-	OutlineWidth  Length
-	DashPattern   DashPattern
-	TextAlign     HorizontalAlign
-	LineHeight    float64
-	Bold          bool
-	Italic        bool
-	Underline     bool
-	StrikeThrough bool
-	CharSpacing   Length
-	TextScaling   float64
-	Rotate        float64
-	Transparency  float64
+	TextChunk
+	Left, Top    Length
+	TextAlign    HorizontalAlign
+	LineHeight   float64
+	Rotate       float64
+	Transparency float64
 }
 
 // Build adds the element to the content stream
 func (q *TextElement) Build(page *pdf.Page) error {
-	// if no font or text given, ignore element
-	if q.Font == nil || q.Text == "" {
+	// if no text given, ignore element
+	if q.Text == "" {
 		return nil
 	}
 
-	// set color and rendering mode
-	color := q.Color
-	if color == nil && q.OutlineColor == nil {
-		color = ColorRGBBlack
-	}
-	if q.Bold && q.OutlineWidth.Value == 0 && color != nil && q.OutlineColor == nil {
-		color.Build(page, false)
-		color.Build(page, true)
-		page.GraphicsState_w(q.FontSize * 0.05)
-		page.TextState_Tr(types.RenderingModeFillAndStroke)
-	} else {
-		page.GraphicsState_w(q.OutlineWidth.Pt())
-		switch {
-		case color != nil && q.OutlineColor != nil:
-			color.Build(page, false)
-			q.OutlineColor.Build(page, true)
-			page.TextState_Tr(types.RenderingModeFillAndStroke)
-		case color != nil:
-			color.Build(page, false)
-			page.TextState_Tr(types.RenderingModeFill)
-		case q.OutlineColor != nil:
-			page.TextState_Tr(types.RenderingModeStroke)
-			q.OutlineColor.Build(page, true)
-		}
-	}
-	if err := q.DashPattern.Build(page); err != nil {
+	// set format of first font before saving graphics state
+	if err := q.setFontAndColor(page); err != nil {
 		return err
 	}
-
-	// text scaling / char spacing
-	page.TextState_Tc(q.CharSpacing.Pt())
-	if q.TextScaling == 0 {
-		page.TextState_Tz(100)
-	} else {
-		page.TextState_Tz(q.TextScaling)
-	}
-
-	// set font
-	page.TextState_Tf(q.Font, q.FontSize)
 
 	// graphics state
 	page.GraphicsState_q()
@@ -101,48 +54,29 @@ func (q *TextElement) Build(page *pdf.Page) error {
 
 	// begin text
 	page.TextObjects_BT()
+	defer page.TextObjects_ET()
 
 	// calculate some values needed below
 	lineHeight := q.lineHeight()
 	top := 0.0
-	var c float64
-	if q.Italic {
-		c = 0.333
-	}
 
 	// iterate over lines
 	for _, line := range strings.Split(q.Text, "\n") {
-		width := q.getLineWidth(line)
 		left := 0.0
 		switch q.TextAlign {
 		case HorizontalAlignCenter:
-			left -= width / 2
+			left -= q.getLineWidth(line) / 2
 		case HorizontalAlignRight:
-			left -= width
+			left -= q.getLineWidth(line)
 		}
 
-		page.TextPosition_Tm(1, 0, c, 1, left, top)
-		page.TextShowing_Tj(reverseRTLString(line))
-
-		// underline/strike-through text
-		if q.Underline {
-			page.Path_re(
-				left, top+q.Font.GetUnderlinePosition(q.FontSize),
-				width, q.Font.GetUnderlineThickness(q.FontSize),
-			)
-			page.Path_f()
-		}
-		if q.StrikeThrough {
-			page.Path_re(
-				left, top+q.Font.GetTop(q.FontSize)/3,
-				width, q.Font.GetUnderlineThickness(q.FontSize),
-			)
-			page.Path_f()
+		if err := q.draw(page, left, top); err != nil {
+			return err
 		}
 
 		top -= lineHeight
 	}
-	page.TextObjects_ET()
+
 	return nil
 }
 

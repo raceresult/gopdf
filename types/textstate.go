@@ -30,9 +30,3 @@ type TextState struct {
 	// Text knockout
 	Tk float64
 }
-
-func NewTextState() *TextState {
-	return &TextState{
-		Th: 100,
-	}
-}

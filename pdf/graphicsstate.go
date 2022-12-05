@@ -15,6 +15,7 @@ type graphicsState struct {
 	Flatness         float64
 	DashPhase        float64
 	DashArray        []float64
+	TextState        types.TextState
 }
 
 // graphicsStateColor handles colors within the graphicsState
@@ -25,7 +26,7 @@ type graphicsStateColor struct {
 }
 
 // Equal checks if the graphicsStateColor is equal to the given values
-func (q graphicsStateColor) Equal(name types.ColorSpaceFamily, addName types.Name, values ...float64) bool {
+func (q *graphicsStateColor) Equal(name types.ColorSpaceFamily, addName types.Name, values ...float64) bool {
 	if name != q.Name {
 		return false
 	}
@@ -44,7 +45,7 @@ func (q graphicsStateColor) Equal(name types.ColorSpaceFamily, addName types.Nam
 }
 
 // SetIfNotEqual updates the graphics state if it differs from the given values
-func (q graphicsStateColor) SetIfNotEqual(name types.ColorSpaceFamily, addName types.Name, values ...float64) bool {
+func (q *graphicsStateColor) SetIfNotEqual(name types.ColorSpaceFamily, addName types.Name, values ...float64) bool {
 	if q.Equal(name, addName, values...) {
 		return false
 	}

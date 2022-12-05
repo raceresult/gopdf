@@ -45,14 +45,16 @@ func TestExample1(t *testing.T) {
     p := pb.NewPage(gopdf.GetStandardPageSize(gopdf.PageSizeA4, false))
     
     // add "hello world" element
-    p.AddElement(&gopdf.TextElement{
-        Text:      "hello world",
-        FontSize:  36,
-        Left:      gopdf.MM(105),
-        Top:       gopdf.MM(100),
-        TextAlign: gopdf.HorizontalAlignCenter,
-        Font:      f,
-    })
+	p.AddElement(&gopdf.TextElement{
+		TextChunk: gopdf.TextChunk{
+			Text:     "hello world",
+			Font:     f,
+			FontSize: 36,
+		},
+		Left:      gopdf.MM(105),
+		Top:       gopdf.MM(100),
+		TextAlign: gopdf.HorizontalAlignCenter,
+	})
     
     // output
     bts, err := pb.Build()
@@ -103,15 +105,18 @@ func TestExample2(t *testing.T) {
     })
     
     // add rectangle
-    p.AddElement(&gopdf.RectElement{
-        Left:      gopdf.MM(20),
-        Top:       gopdf.MM(150),
-        Width:     gopdf.MM(50),
-        Height:    gopdf.MM(30),
-        LineWidth: gopdf.MM(3),
-        LineColor: gopdf.ColorRGB{0, 255, 0},
-        FillColor: gopdf.ColorRGB{255, 0, 255},
-    })
+	p.AddElement(&gopdf.TextElement{
+		TextChunk: gopdf.TextChunk{
+			Text:         "hello world - 漢語",
+			Font:         f,
+			FontSize:     36,
+			Color:        gopdf.NewColorRGB(200, 200, 200),
+			OutlineColor: gopdf.NewColorRGB(10, 20, 10),
+			OutlineWidth: gopdf.MM(0.5),
+		},
+		Left: gopdf.MM(20),
+		Top:  gopdf.MM(100),
+	})
     
     // add composite font
     bts, err = ioutil.ReadFile("arialuni.ttf")

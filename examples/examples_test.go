@@ -25,12 +25,14 @@ func TestExample1(t *testing.T) {
 
 	// add "hello world" element
 	p.AddElement(&gopdf.TextElement{
-		Text:      "hello world",
-		FontSize:  36,
+		TextChunk: gopdf.TextChunk{
+			Text:     "hello world",
+			Font:     f,
+			FontSize: 36,
+		},
 		Left:      gopdf.MM(105),
 		Top:       gopdf.MM(100),
 		TextAlign: gopdf.HorizontalAlignCenter,
-		Font:      f,
 	})
 
 	// output
@@ -97,14 +99,16 @@ func TestExample2(t *testing.T) {
 
 	// add text using composite font
 	p.AddElement(&gopdf.TextElement{
-		Text:         "hello world - 漢語",
-		Font:         f,
-		FontSize:     36,
-		Left:         gopdf.MM(20),
-		Top:          gopdf.MM(100),
-		Color:        gopdf.NewColorRGB(200, 200, 200),
-		OutlineColor: gopdf.NewColorRGB(10, 20, 10),
-		OutlineWidth: gopdf.MM(0.5),
+		TextChunk: gopdf.TextChunk{
+			Text:         "hello world - 漢語",
+			Font:         f,
+			FontSize:     36,
+			Color:        gopdf.NewColorRGB(200, 200, 200),
+			OutlineColor: gopdf.NewColorRGB(10, 20, 10),
+			OutlineWidth: gopdf.MM(0.5),
+		},
+		Left: gopdf.MM(20),
+		Top:  gopdf.MM(100),
 	})
 
 	// output
