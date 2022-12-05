@@ -123,6 +123,7 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 
 	// begin text
 	page.TextObjects_BT()
+	defer page.TextObjects_ET()
 
 	// calculate some values needed below
 	wrapped := q.wrappedText()
@@ -164,7 +165,8 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 
 		// underline/strike-through text
 		if q.Underline {
-			page.Path_re(left, top+q.Font.GetUnderlinePosition(q.FontSize), width, q.Font.GetUnderlineThickness(q.FontSize))
+			th := q.Font.GetUnderlineThickness(q.FontSize)
+			page.Path_re(left, top+q.Font.GetUnderlinePosition(q.FontSize)-th/2, width, th)
 			page.Path_f()
 		}
 		if q.StrikeThrough {
@@ -178,7 +180,6 @@ func (q *TextBoxElement) Build(page *pdf.Page) error {
 		top -= lineHeight
 	}
 
-	page.TextObjects_ET()
 	return nil
 }
 
