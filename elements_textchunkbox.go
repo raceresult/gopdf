@@ -71,7 +71,7 @@ func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
 	}
 
 	// set y starting position
-	top := -wrapped[0].MaxTop
+	top := wrapped[0].Height - wrapped[0].MaxTop
 	if q.Height.Value > 0 {
 		switch q.VerticalAlign {
 		case VerticalAlignMiddle:
@@ -87,9 +87,10 @@ func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
 
 	// iterate over lines
 	for _, line := range wrapped {
+		top -= line.Height
+
 		// shortcut for empty lines
 		if len(line.Chunks) == 0 {
-			top -= line.Height
 			continue
 		}
 
@@ -109,7 +110,6 @@ func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
 			}
 			left += line.ChunkWidths[j]
 		}
-		top -= line.Height
 	}
 	return nil
 }
@@ -206,6 +206,10 @@ func (q *TextChunkBoxElement) wrapLines() []chunkLine {
 
 				// case 2: current line is empty and current word fits into line
 				if w <= boxWidth {
+					if word == "" {
+						continue
+					}
+
 					currLine.Width += w
 					if currLine.Height < h {
 						currLine.Height = h

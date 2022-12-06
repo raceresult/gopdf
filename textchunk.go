@@ -112,7 +112,8 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) error {
 
 	// underline/strike-through text
 	if q.Underline {
-		page.Path_re(left, top+q.Font.GetUnderlinePosition(q.FontSize), q.getLineWidth(q.Text), q.Font.GetUnderlineThickness(q.FontSize))
+		th := q.Font.GetUnderlineThickness(q.FontSize)
+		page.Path_re(left, top+q.Font.GetUnderlinePosition(q.FontSize)-th, q.getLineWidth(q.Text), th)
 		page.Path_f()
 	}
 	if q.StrikeThrough {
