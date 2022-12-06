@@ -596,6 +596,7 @@ type Metrics struct {
 	Weight             int
 	IsFixedPitch       bool
 	DefaultWidth       int
+	TextHeight         float64
 }
 
 func (f *Font) GetMetrics() Metrics {
@@ -604,6 +605,7 @@ func (f *Font) GetMetrics() Metrics {
 		YMin:               int(f.head.yMin) * 1000 / int(f.head.unitsPerEm),
 		XMax:               int(f.head.xMax) * 1000 / int(f.head.unitsPerEm),
 		YMax:               int(f.head.yMax) * 1000 / int(f.head.unitsPerEm),
+		TextHeight:         ((float64(f.head.yMax) - float64(f.head.yMin)) * 1000) / float64(f.head.unitsPerEm),
 		Ascent:             int(f.hhea.ascender) * 1000 / int(f.head.unitsPerEm),
 		Descent:            int(f.hhea.descender) * 1000 / int(f.head.unitsPerEm),
 		CapHeight:          int(f.hhea.ascender) * 1000 / int(f.head.unitsPerEm),

@@ -1,6 +1,8 @@
 package pdf
 
 import (
+	"sync"
+
 	"github.com/raceresult/gopdf/pdf/unitype"
 	"github.com/raceresult/gopdf/types"
 	"github.com/raceresult/gopdf/types/standardfont/afm"
@@ -8,7 +10,6 @@ import (
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
 	"golang.org/x/text/encoding/unicode"
-	"sync"
 )
 
 type FontHandler interface {
@@ -21,6 +22,7 @@ type FontHandler interface {
 	GetUnderlinePosition(size float64) float64
 	GetTop(fontSize float64) float64
 	GetBottom(fontSize float64) float64
+	GetHeight(fontSize float64) float64
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -53,6 +55,9 @@ func (q *StandardFont) GetTop(fontSize float64) float64 {
 }
 func (q *StandardFont) GetBottom(fontSize float64) float64 {
 	return q.metrics.BBox.LLY.Float64() * fontSize / 1000
+}
+func (q *StandardFont) GetHeight(fontSize float64) float64 {
+	return (q.metrics.BBox.URY - q.metrics.BBox.LLY).Float64() * fontSize / 1000
 }
 func (q *StandardFont) GetUnderlineThickness(fontSize float64) float64 {
 	return q.metrics.Direction[0].UnderlineThickness.Float64() * fontSize / 1000
@@ -95,6 +100,9 @@ func (q *TrueTypeFont) GetTop(fontSize float64) float64 {
 }
 func (q *TrueTypeFont) GetBottom(fontSize float64) float64 {
 	return float64(q.metrics.YMin) * fontSize / 1000
+}
+func (q *TrueTypeFont) GetHeight(fontSize float64) float64 {
+	return float64(q.metrics.YMax-q.metrics.YMin) * fontSize / 1000
 }
 func (q *TrueTypeFont) GetUnderlineThickness(size float64) float64 {
 	return float64(q.metrics.UnderlineThickness) * size / 1000
@@ -146,6 +154,9 @@ func (q *CompositeFont) GetTop(fontSize float64) float64 {
 }
 func (q *CompositeFont) GetBottom(fontSize float64) float64 {
 	return float64(q.metrics.YMin) * fontSize / 1000
+}
+func (q *CompositeFont) GetHeight(fontSize float64) float64 {
+	return float64(q.metrics.TextHeight) * fontSize / 1000
 }
 func (q *CompositeFont) GetUnderlineThickness(size float64) float64 {
 	return float64(q.metrics.UnderlineThickness) * size / 1000
@@ -209,6 +220,9 @@ func (q *CompositeFontOTF) GetTop(fontSize float64) float64 {
 }
 func (q *CompositeFontOTF) GetBottom(fontSize float64) float64 {
 	return float64(-q.bounds.Max.Y.Round()) * fontSize / 1000
+}
+func (q *CompositeFontOTF) GetHeight(fontSize float64) float64 {
+	return float64((q.bounds.Max.Y.Round() - q.bounds.Min.Y.Round())) * fontSize / 1000
 }
 func (q *CompositeFontOTF) GetUnderlineThickness(size float64) float64 {
 	underlineThickness := 100

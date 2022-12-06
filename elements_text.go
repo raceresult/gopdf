@@ -88,7 +88,7 @@ func (q *TextElement) TextHeight() Length {
 
 // FontHeight returns the height of the font (bounding box y min to max)
 func (q *TextElement) FontHeight() Length {
-	return Pt(q.Font.GetTop(q.FontSize) - q.Font.GetBottom(q.FontSize))
+	return Pt(q.Font.GetHeight(q.FontSize))
 }
 
 // getLineWidth returns the width of the given text line consider font, fontsize, text-scaling, char spacing
