@@ -64,42 +64,6 @@ func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
 		page.GraphicsState_gs(n)
 	}
 
-	// auto fit font size?
-	//if q.FontSize == -1 {
-	//	defer func() { q.FontSize = -1 }()
-	//
-	//	// split by line breaks
-	//	lines := strings.Split(strings.ReplaceAll(q.Text, "\r\n", "\n"), "\n")
-	//
-	//	// adapt to height
-	//	h := q.Height.Pt()
-	//	if h > 0 {
-	//		fh := q.FontHeight().Pt() * float64(len(lines))
-	//		q.FontSize *= h / fh * 0.999
-	//	}
-	//
-	//	// adapt to width
-	//	w := q.Width.Pt()
-	//	if w > 0 {
-	//		var maxWidth float64
-	//		for _, line := range lines {
-	//			v := q.Font.GetWidth(line, q.FontSize)
-	//			if q.CharSpacing.Value != 0 {
-	//				v += float64(len([]rune(line))-1) * q.CharSpacing.Pt()
-	//			}
-	//			if q.TextScaling != 0 {
-	//				v *= q.TextScaling / 100
-	//			}
-	//			if v > maxWidth {
-	//				maxWidth = v
-	//			}
-	//		}
-	//		if maxWidth > w {
-	//			q.FontSize *= w / maxWidth * 0.999
-	//		}
-	//	}
-	//}
-
 	// calculate total height
 	var totalHeight float64
 	for _, l := range wrapped {
@@ -311,4 +275,57 @@ func (q *TextChunkBoxElement) TextHeight() Length {
 		h += l.Height
 	}
 	return Pt(h)
+}
+
+// ShrinkToFit reduces the font size so that the entire text fits into the box
+func (q *TextChunkBoxElement) ShrinkToFit() {
+	// wrap lines
+	orgW, orgH := q.Width, q.Height
+	q.Width.Value = 0
+	q.Height.Value = 0
+	lines := q.wrapLines()
+	q.Width, q.Height = orgW, orgH
+
+	// check height
+	f := 1.0
+	h := q.Height.Pt()
+	if h > 0 {
+		// get total height
+		var totalHeight float64
+		for _, l := range lines {
+			totalHeight += l.Height
+		}
+
+		// adapt if exceeds
+		if totalHeight > h {
+			f = h / totalHeight * 0.999
+		}
+	}
+
+	// adapt to width
+	w := q.Width.Pt()
+	if w > 0 {
+		// get max width
+		var maxWidth float64
+		for _, line := range lines {
+			if maxWidth < line.Width {
+				maxWidth = line.Width
+			}
+		}
+
+		// adapt if exceeds
+		if maxWidth > w {
+			f2 := w / maxWidth * 0.999
+			if f2 < f {
+				f = f2
+			}
+		}
+	}
+
+	// adapt
+	if f != 1 {
+		for i := range q.Chunks {
+			q.Chunks[i].FontSize *= f
+		}
+	}
 }

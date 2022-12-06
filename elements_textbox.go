@@ -52,3 +52,10 @@ func (q *TextBoxElement) toChunkBox() *TextChunkBoxElement {
 func (q *TextBoxElement) TextHeight() Length {
 	return q.toChunkBox().TextHeight()
 }
+
+// ShrinkToFit reduces the font size so that the entire text fits into the box
+func (q *TextBoxElement) ShrinkToFit() {
+	elem := q.toChunkBox()
+	elem.ShrinkToFit()
+	q.FontSize = elem.Chunks[0].FontSize
+}
