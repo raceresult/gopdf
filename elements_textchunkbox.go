@@ -188,7 +188,8 @@ func (q *TextChunkBoxElement) wrapLines() []chunkLine {
 						currLine = &chunkLines[len(chunkLines)-1]
 
 					} else {
-						currLine.Width += w + spaceWidth + charSpacing
+						chunkWidth := w + spaceWidth + charSpacing
+						currLine.Width += chunkWidth
 						if currLine.Height < h {
 							currLine.Height = h
 						}
@@ -199,7 +200,7 @@ func (q *TextChunkBoxElement) wrapLines() []chunkLine {
 						c := q.Chunks[i]
 						c.Text = " " + word
 						currLine.Chunks = append(currLine.Chunks, c)
-						currLine.ChunkWidths = append(currLine.ChunkWidths, w)
+						currLine.ChunkWidths = append(currLine.ChunkWidths, chunkWidth)
 						continue
 					}
 				}
