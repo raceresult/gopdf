@@ -180,9 +180,9 @@ func (q Image) ToRawBytes() []byte {
 	return sb.Bytes()
 }
 
-func (q *Image) Read(dict Dictionary) error {
+func (q *Image) Read(dict Dictionary, file Resolver) error {
 	// Type
-	v, ok := dict["Type"]
+	v, ok := dict.GetValue("Type", file)
 	if !ok {
 		return errors.New("XObject missing Type")
 	}
@@ -195,7 +195,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// Subtype
-	v, ok = dict["Subtype"]
+	v, ok = dict.GetValue("Subtype", file)
 	if !ok {
 		return errors.New("XObject field Subtype missing")
 	}
@@ -209,13 +209,13 @@ func (q *Image) Read(dict Dictionary) error {
 
 	// general stream dictionary
 	sd := StreamDictionary{}
-	if err := sd.Read(dict); err != nil {
+	if err := sd.Read(dict, file); err != nil {
 		return err
 	}
 	q.Dictionary = sd
 
 	// Width
-	v, ok = dict["Width"]
+	v, ok = dict.GetValue("Width", file)
 	if !ok {
 		return errors.New("XObject field Width missing")
 	}
@@ -225,7 +225,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// Height
-	v, ok = dict["Height"]
+	v, ok = dict.GetValue("Height", file)
 	if !ok {
 		return errors.New("XObject field Height missing")
 	}
@@ -241,7 +241,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// BitsPerComponent
-	v, ok = dict["BitsPerComponent"]
+	v, ok = dict.GetValue("BitsPerComponent", file)
 	if ok {
 		q.BitsPerComponent, ok = v.(Int)
 		if !ok {
@@ -250,7 +250,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// Intent
-	v, ok = dict["Intent"]
+	v, ok = dict.GetValue("Intent", file)
 	if ok {
 		q.Intent, ok = v.(Name)
 		if !ok {
@@ -259,7 +259,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// ImageMask
-	v, ok = dict["ImageMask"]
+	v, ok = dict.GetValue("ImageMask", file)
 	if ok {
 		q.ImageMask, ok = v.(Boolean)
 		if !ok {
@@ -280,7 +280,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// Decode
-	v, ok = dict["Decode"]
+	v, ok = dict.GetValue("Decode", file)
 	if ok {
 		q.Decode, ok = v.(Array)
 		if !ok {
@@ -289,7 +289,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// Interpolate
-	v, ok = dict["Interpolate"]
+	v, ok = dict.GetValue("Interpolate", file)
 	if ok {
 		q.Interpolate, ok = v.(Boolean)
 		if !ok {
@@ -298,7 +298,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// Alternates
-	v, ok = dict["Alternates"]
+	v, ok = dict.GetValue("Alternates", file)
 	if ok {
 		q.Alternates, ok = v.(Array)
 		if !ok {
@@ -307,7 +307,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// Name
-	v, ok = dict["Name"]
+	v, ok = dict.GetValue("Name", file)
 	if ok {
 		q.Name, ok = v.(Name)
 		if !ok {
@@ -316,7 +316,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// StructParent
-	v, ok = dict["StructParent"]
+	v, ok = dict.GetValue("StructParent", file)
 	if ok {
 		q.StructParent, ok = v.(Int)
 		if !ok {
@@ -325,7 +325,7 @@ func (q *Image) Read(dict Dictionary) error {
 	}
 
 	// ID
-	v, ok = dict["ID"]
+	v, ok = dict.GetValue("ID", file)
 	if ok {
 		q.ID, ok = v.(String)
 		if !ok {

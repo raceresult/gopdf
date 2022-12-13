@@ -42,7 +42,7 @@ func readFile(bts []byte) (*pdffile.File, error) {
 	xref, _, err = readXRef(bts[startXRefVal:]) // parse as xref table
 	if err != nil {
 		var trailer *types.Trailer
-		trailer, xref, _, err = readXRefObj(bts[startXRefVal:]) // parse as xref object
+		trailer, xref, _, err = readXRefObj(bts[startXRefVal:], &dest) // parse as xref object
 		if trailer != nil {
 			dest.ID = trailer.ID
 			dest.Root = trailer.Root
@@ -72,7 +72,7 @@ func readFile(bts []byte) (*pdffile.File, error) {
 			}
 
 		case bytes.HasPrefix(bts, []byte("trailer")):
-			trailer, bts, err = readTrailer(bts)
+			trailer, bts, err = readTrailer(bts, &dest)
 			if err != nil {
 				// if we already had a trailer, it is probably a linearized pdf
 				if dest.Root.Number == 0 {
@@ -104,7 +104,7 @@ func readFile(bts []byte) (*pdffile.File, error) {
 			objectOffsets[offset] = obj
 
 			// unpack object streams
-			items, err := unpackObjectStreams(obj.Data)
+			items, err := unpackObjectStreams(obj.Data, &dest)
 			if err != nil {
 				return nil, err
 			}
@@ -118,7 +118,7 @@ func readFile(bts []byte) (*pdffile.File, error) {
 	return &dest, nil
 }
 
-func readTrailer(bts []byte) (types.Trailer, []byte, error) {
+func readTrailer(bts []byte, file types.Resolver) (types.Trailer, []byte, error) {
 	bts = trimLeftWhiteChars(bts)
 	if !bytes.HasPrefix(bts, []byte("trailer")) {
 		return types.Trailer{}, bts, errors.New("value is not a trailer")
@@ -132,7 +132,7 @@ func readTrailer(bts []byte) (types.Trailer, []byte, error) {
 		return types.Trailer{}, bts, err
 	}
 	var trailer types.Trailer
-	if err := trailer.Read(trailerDict); err != nil {
+	if err := trailer.Read(trailerDict, file); err != nil {
 		return types.Trailer{}, bts, err
 	}
 	return trailer, bts, nil
@@ -157,7 +157,7 @@ func findObject(ref types.Reference, bts []byte, xref pdffile.XRefTable, length 
 }
 
 // unpackObjectStreams returns all objects contained in the given object stream
-func unpackObjectStreams(obj types.Object) ([]types.IndirectObject, error) {
+func unpackObjectStreams(obj types.Object, file types.Resolver) ([]types.IndirectObject, error) {
 	// check if is object stream
 	s, ok := obj.(types.StreamObject)
 	if !ok {
@@ -168,12 +168,12 @@ func unpackObjectStreams(obj types.Object) ([]types.IndirectObject, error) {
 		return nil, nil
 	}
 	var osdict types.ObjectStreamDictionary
-	if err := osdict.Read(dict); err != nil {
+	if err := osdict.Read(dict, file); err != nil {
 		return nil, nil
 	}
 
 	// decode stream
-	bts, err := s.Decode()
+	bts, err := s.Decode(file)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func nextTwoWords(bts []byte) ([]byte, []byte) {
 	return w1, bts[start:]
 }
 
-func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) {
+func readXRefObj(bts []byte, file types.Resolver) (*types.Trailer, pdffile.XRefTable, []byte, error) {
 	// read object
 	var err error
 	var obj types.IndirectObject
@@ -359,12 +359,12 @@ func readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []byte, error) 
 		return nil, nil, nil, errors.New("value is not a n xref table")
 	}
 	var t types.Trailer
-	if err := t.Read(dict); err != nil {
+	if err := t.Read(dict, file); err != nil {
 		return nil, nil, bts, err
 	}
 
 	// get stream data
-	data, err := so.Decode()
+	data, err := so.Decode(file)
 	if err != nil {
 		return &t, nil, bts, err
 	}

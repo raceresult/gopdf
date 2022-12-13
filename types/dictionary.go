@@ -42,3 +42,15 @@ func (q Dictionary) Equal(obj Object) bool {
 	}
 	return true
 }
+
+func (q Dictionary) GetValue(n Name, file Resolver) (Object, bool) {
+	v, ok := q[n]
+	if !ok {
+		return nil, false
+	}
+	v2, err := file.ResolveReference(v)
+	if err != nil {
+		return nil, false
+	}
+	return v2, true
+}

@@ -126,7 +126,7 @@ func (q *StreamObject) getFilters() ([]Filter, error) {
 }
 
 // getDecodeParams returns the FilterParams in DecodeParms
-func (q *StreamObject) getDecodeParams() ([]FilterParameters, error) {
+func (q *StreamObject) getDecodeParams(file Resolver) ([]FilterParameters, error) {
 	// get stream dictionary
 	var sd StreamDictionary
 	switch d := q.Dictionary.(type) {
@@ -134,7 +134,7 @@ func (q *StreamObject) getDecodeParams() ([]FilterParameters, error) {
 		sd = d
 
 	case Dictionary:
-		if err := sd.Read(d); err != nil {
+		if err := sd.Read(d, file); err != nil {
 			return nil, err
 		}
 
@@ -152,7 +152,7 @@ func (q *StreamObject) getDecodeParams() ([]FilterParameters, error) {
 				return nil, errors.New("unexpected value in DecodeParms array")
 			}
 			var fp FilterParameters
-			if err := fp.Read(d); err != nil {
+			if err := fp.Read(d, file); err != nil {
 				return nil, err
 			}
 			fps = append(fps, fp)
@@ -161,7 +161,7 @@ func (q *StreamObject) getDecodeParams() ([]FilterParameters, error) {
 
 	case Dictionary:
 		var fp FilterParameters
-		if err := fp.Read(dp); err != nil {
+		if err := fp.Read(dp, file); err != nil {
 			return nil, err
 		}
 		return []FilterParameters{fp}, nil
@@ -174,13 +174,13 @@ func (q *StreamObject) getDecodeParams() ([]FilterParameters, error) {
 	}
 }
 
-func (q *StreamObject) Decode() ([]byte, error) {
+func (q *StreamObject) Decode(file Resolver) ([]byte, error) {
 	// get filter list and decodeParams list
 	filters, err := q.getFilters()
 	if err != nil {
 		return nil, err
 	}
-	decodeParms, err := q.getDecodeParams()
+	decodeParms, err := q.getDecodeParams(file)
 	if err != nil {
 		return nil, err
 	}

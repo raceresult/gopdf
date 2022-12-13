@@ -34,8 +34,8 @@ func (q ObjectStreamDictionary) ToRawBytes() []byte {
 	return d.ToRawBytes()
 }
 
-func (q *ObjectStreamDictionary) Read(dict Dictionary) error {
-	v, ok := dict["Type"]
+func (q *ObjectStreamDictionary) Read(dict Dictionary, file Resolver) error {
+	v, ok := dict.GetValue("Type", file)
 	if !ok {
 		return errors.New("ObjectStream dictionary missing type")
 	}
@@ -47,11 +47,11 @@ func (q *ObjectStreamDictionary) Read(dict Dictionary) error {
 		return errors.New("ObjectStream dictionary type is not ObjStm")
 	}
 
-	if err := q.StreamDictionary.Read(dict); err != nil {
+	if err := q.StreamDictionary.Read(dict, file); err != nil {
 		return err
 	}
 
-	v, ok = dict["N"]
+	v, ok = dict.GetValue("N", file)
 	if !ok {
 		return errors.New("ObjectStream dictionary field N missing")
 	}
@@ -60,7 +60,7 @@ func (q *ObjectStreamDictionary) Read(dict Dictionary) error {
 		return errors.New("ObjectStream dictionary field N invalid")
 	}
 
-	v, ok = dict["First"]
+	v, ok = dict.GetValue("First", file)
 	if !ok {
 		return errors.New("ObjectStream dictionary field First missing")
 	}

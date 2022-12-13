@@ -35,7 +35,7 @@ type FilterParameters struct {
 	EarlyChange Int
 }
 
-func (q *FilterParameters) Read(dict Dictionary) error {
+func (q *FilterParameters) Read(dict Dictionary, file Resolver) error {
 	// set default values
 	q.Predictor = 1
 	q.Colors = 1
@@ -44,7 +44,7 @@ func (q *FilterParameters) Read(dict Dictionary) error {
 	q.EarlyChange = 1
 
 	// Predictor
-	v, ok := dict["Predictor"]
+	v, ok := dict.GetValue("Predictor", file)
 	if ok {
 		q.Predictor, ok = v.(Int)
 		if !ok {
@@ -53,7 +53,7 @@ func (q *FilterParameters) Read(dict Dictionary) error {
 	}
 
 	// Colors
-	v, ok = dict["Colors"]
+	v, ok = dict.GetValue("Colors", file)
 	if ok {
 		q.Colors, ok = v.(Int)
 		if !ok {
@@ -62,7 +62,7 @@ func (q *FilterParameters) Read(dict Dictionary) error {
 	}
 
 	// BitsPerComponent
-	v, ok = dict["BitsPerComponent"]
+	v, ok = dict.GetValue("BitsPerComponent", file)
 	if ok {
 		q.BitsPerComponent, ok = v.(Int)
 		if !ok {
@@ -71,7 +71,7 @@ func (q *FilterParameters) Read(dict Dictionary) error {
 	}
 
 	// Columns
-	v, ok = dict["Columns"]
+	v, ok = dict.GetValue("Columns", file)
 	if ok {
 		q.Columns, ok = v.(Int)
 		if !ok {
@@ -80,7 +80,7 @@ func (q *FilterParameters) Read(dict Dictionary) error {
 	}
 
 	// EarlyChange
-	v, ok = dict["EarlyChange"]
+	v, ok = dict.GetValue("EarlyChange", file)
 	if ok {
 		q.EarlyChange, ok = v.(Int)
 		if !ok {

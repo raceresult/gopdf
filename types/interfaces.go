@@ -23,3 +23,7 @@ func Equal(obj1, obj2 Object) bool {
 	}
 	return obj1.Equal(obj2)
 }
+
+type Resolver interface {
+	ResolveReference(Object) (Object, error)
+}

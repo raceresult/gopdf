@@ -1,6 +1,8 @@
 package types
 
-import "errors"
+import (
+	"errors"
+)
 
 // PDF Reference 1.4, 3.4 Entries common to all stream dictionaries
 
@@ -107,9 +109,9 @@ func (q StreamDictionary) Copy(copyRef func(reference Reference) Reference) Obje
 	}
 }
 
-func (q *StreamDictionary) Read(dict Dictionary) error {
+func (q *StreamDictionary) Read(dict Dictionary, file Resolver) error {
 	// Size
-	v, ok := dict["Length"]
+	v, ok := dict.GetValue("Length", file)
 	if !ok {
 		return errors.New("stream dictionary missing Length")
 	}
@@ -120,7 +122,7 @@ func (q *StreamDictionary) Read(dict Dictionary) error {
 	q.Length = int(length)
 
 	// Filter
-	v, ok = dict["Filter"]
+	v, ok = dict.GetValue("Filter", file)
 	if ok {
 		filter, ok := v.(Name)
 		if ok {
@@ -145,19 +147,19 @@ func (q *StreamDictionary) Read(dict Dictionary) error {
 	}
 
 	// Root
-	v, ok = dict["DecodeParms"]
+	v, ok = dict.GetValue("DecodeParms", file)
 	if ok {
 		q.DecodeParms = v
 	}
 
 	// Encrypt
-	v, ok = dict["F"]
+	v, ok = dict.GetValue("F", file)
 	if ok {
 		q.F = v
 	}
 
 	// FFilter
-	v, ok = dict["FFilter"]
+	v, ok = dict.GetValue("FFilter", file)
 	if ok {
 		filter, ok := v.(Name)
 		if ok {
@@ -182,7 +184,7 @@ func (q *StreamDictionary) Read(dict Dictionary) error {
 	}
 
 	// Root
-	v, ok = dict["FDecodeParms"]
+	v, ok = dict.GetValue("FDecodeParms", file)
 	if ok {
 		q.FDecodeParms = v
 	}

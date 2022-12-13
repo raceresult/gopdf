@@ -116,7 +116,7 @@ type Page struct {
 
 	// (Optional) An array of annotation dictionaries representing annotations
 	// associated with the page (see Section 8.4, “Annotations”).
-	Annots Array
+	Annots Object
 
 	// (Optional; PDF 1.2) An additional-actions dictionary defining actions to
 	// be performed when the page is opened or closed (see Section 8.5.2, “Trig-
@@ -202,7 +202,7 @@ func (q Page) ToRawBytes() []byte {
 		d["Trans"] = q.Trans
 	}
 
-	if len(q.Annots) != 0 {
+	if q.Annots != nil {
 		d["Annots"] = q.Annots
 	}
 	if q.AA != nil {
@@ -435,10 +435,7 @@ func (q *Page) Read(dict Dictionary) error {
 	// Annots
 	v, ok = dict["Annots"]
 	if ok {
-		q.Annots, ok = v.(Array)
-		if !ok {
-			return errors.New("page field Annots invalid")
-		}
+		q.Annots = v
 	}
 
 	// AA
@@ -518,7 +515,7 @@ func (q Page) Copy(copyRef func(reference Reference) Reference) Object {
 		B:              q.B.Copy(copyRef).(Array),
 		Dur:            q.Dur.Copy(copyRef).(Number),
 		Trans:          Copy(q.Trans, copyRef),
-		Annots:         q.Annots.Copy(copyRef).(Array),
+		Annots:         Copy(q.Annots, copyRef),
 		AA:             Copy(q.AA, copyRef),
 		Metadata:       Copy(q.Metadata, copyRef),
 		PieceInfo:      Copy(q.PieceInfo, copyRef),

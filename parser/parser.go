@@ -41,7 +41,7 @@ func (q *Parser) Info() (types.InformationDictionary, error) {
 	}
 
 	var ID types.InformationDictionary
-	if err := ID.Read(dict); err != nil {
+	if err := ID.Read(dict, q.file); err != nil {
 		return types.InformationDictionary{}, err
 	}
 

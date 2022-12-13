@@ -49,7 +49,7 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 				addContent(v)
 			}
 		case types.StreamObject:
-			decoded, err := item.Decode()
+			decoded, err := item.Decode(sourceFile)
 			if err != nil {
 				return err
 			}

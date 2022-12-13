@@ -59,9 +59,9 @@ func (q *Trailer) ToRawBytes() []byte {
 	return sb.Bytes()
 }
 
-func (q *Trailer) Read(dict Dictionary) error {
+func (q *Trailer) Read(dict Dictionary, file Resolver) error {
 	// Size
-	v, ok := dict["Size"]
+	v, ok := dict.GetValue("Size", file)
 	if !ok {
 		return errors.New("trailer missing Size")
 	}
@@ -72,7 +72,7 @@ func (q *Trailer) Read(dict Dictionary) error {
 	q.Size = int(size)
 
 	// Prev
-	v, ok = dict["Prev"]
+	v, ok = dict.GetValue("Prev", file)
 	if ok {
 		prev, ok := v.(Int)
 		if !ok {
@@ -93,7 +93,7 @@ func (q *Trailer) Read(dict Dictionary) error {
 	q.Root = root
 
 	// Encrypt
-	v, ok = dict["Encrypt"]
+	v, ok = dict.GetValue("Encrypt", file)
 	if ok {
 		q.Encrypt = v
 	}
@@ -109,7 +109,7 @@ func (q *Trailer) Read(dict Dictionary) error {
 	}
 
 	// ID
-	v, ok = dict["ID"]
+	v, ok = dict.GetValue("ID", file)
 	if ok {
 		a, ok := v.(Array)
 		if !ok {

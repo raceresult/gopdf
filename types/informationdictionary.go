@@ -73,8 +73,8 @@ func (q InformationDictionary) ToRawBytes() []byte {
 	return d.ToRawBytes()
 }
 
-func (q *InformationDictionary) Read(dict Dictionary) error {
-	v, ok := dict["Title"]
+func (q *InformationDictionary) Read(dict Dictionary, file Resolver) error {
+	v, ok := dict.GetValue("Title", file)
 	if ok {
 		q.Title, ok = v.(String)
 		if !ok {
@@ -82,7 +82,7 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 		}
 	}
 
-	v, ok = dict["Author"]
+	v, ok = dict.GetValue("Author", file)
 	if ok {
 		q.Author, ok = v.(String)
 		if !ok {
@@ -90,7 +90,7 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 		}
 	}
 
-	v, ok = dict["Subject"]
+	v, ok = dict.GetValue("Subject", file)
 	if ok {
 		q.Subject, ok = v.(String)
 		if !ok {
@@ -98,7 +98,7 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 		}
 	}
 
-	v, ok = dict["Keywords"]
+	v, ok = dict.GetValue("Keywords", file)
 	if ok {
 		q.Keywords, ok = v.(String)
 		if !ok {
@@ -106,7 +106,7 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 		}
 	}
 
-	v, ok = dict["Creator"]
+	v, ok = dict.GetValue("Creator", file)
 	if ok {
 		q.Creator, ok = v.(String)
 		if !ok {
@@ -114,7 +114,7 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 		}
 	}
 
-	v, ok = dict["Producer"]
+	v, ok = dict.GetValue("Producer", file)
 	if ok {
 		q.Producer, ok = v.(String)
 		if !ok {
@@ -122,7 +122,7 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 		}
 	}
 
-	v, ok = dict["CreationDate"]
+	v, ok = dict.GetValue("CreationDate", file)
 	if ok {
 		q.CreationDate, ok = v.(Date)
 		if !ok {
@@ -130,7 +130,7 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 		}
 	}
 
-	v, ok = dict["ModDate"]
+	v, ok = dict.GetValue("ModDate", file)
 	if ok {
 		q.ModDate, ok = v.(Date)
 		if !ok {
@@ -138,7 +138,7 @@ func (q *InformationDictionary) Read(dict Dictionary) error {
 		}
 	}
 
-	v, ok = dict["Trapped"]
+	v, ok = dict.GetValue("Trapped", file)
 	if ok {
 		q.Trapped, ok = v.(Name)
 		if !ok {
