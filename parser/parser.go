@@ -14,13 +14,14 @@ type Parser struct {
 
 // New creates a new Parser object
 func New(bts []byte) (*Parser, error) {
-	f, err := readFile(bts)
-	if err != nil {
+	var f pdffile.File
+	p := Parser{
+		file: &f,
+	}
+	if err := p.read(bts); err != nil {
 		return nil, err
 	}
-	return &Parser{
-		file: f,
-	}, nil
+	return &p, nil
 }
 
 // File returns the parsed File object
