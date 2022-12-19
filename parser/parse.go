@@ -181,6 +181,7 @@ func (q *Parser) unpackObjectStreams(obj types.Object) ([]types.IndirectObject, 
 	var objNos []int
 	var dest []types.IndirectObject
 	for {
+		bts = trimLeftWhiteChars(bts)
 		if len(bts) == 0 {
 			break
 		}
