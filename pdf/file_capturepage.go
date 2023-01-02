@@ -25,6 +25,7 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		}
 
 		obj, _ := sourceFile.GetObject(ref)
+		copiedMap[ref] = types.Reference{} // to avoid endless recursion
 		newRef := q.creator.AddObject(types.Copy(obj, copyRef))
 		copiedMap[ref] = newRef
 		return newRef
