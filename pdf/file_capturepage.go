@@ -44,11 +44,14 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 			if err != nil {
 				return err
 			}
-			addContent(newItem)
+			return addContent(newItem)
 		case types.Array:
 			for _, v := range item {
-				addContent(v)
+				if err := addContent(v); err != nil {
+					return err
+				}
 			}
+			return nil
 		case types.StreamObject:
 			decoded, err := item.Decode(sourceFile)
 			if err != nil {
@@ -56,12 +59,14 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 			}
 			data = append(data, decoded...)
 			data = append(data, '\n')
+			return nil
 		default:
 			return errors.New("content stream has unexpected type")
 		}
-		return nil
 	}
-	addContent(sourcePage.Contents)
+	if err := addContent(sourcePage.Contents); err != nil {
+		return types.Reference{}, err
+	}
 
 	// create new content stream
 	stream, err := types.NewStream(data, types.Filter_FlateDecode)
