@@ -196,6 +196,8 @@ func (q *StreamObject) Decode(file Resolver) ([]byte, error) {
 			}
 
 		case Filter_ASCII85Decode:
+			data = bytes.ReplaceAll(data, []byte{10}, nil)
+			data = bytes.ReplaceAll(data, []byte{13}, nil)
 			data = bytes.TrimSuffix(data, []byte{'~', '>'})
 			r := ascii85.NewDecoder(bytes.NewReader(data))
 			data, err = ioutil.ReadAll(r)
