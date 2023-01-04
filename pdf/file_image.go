@@ -182,6 +182,9 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 			case color.NRGBA:
 				data = append(data, v.R, v.G, v.B)
 				smask = append(smask, v.A)
+			case color.NRGBA64:
+				data = append(data, byte(v.R/256), byte(v.G/256), byte(v.B/256))
+				smask = append(smask, byte(v.A/256))
 			default:
 				r, g, b, a := c.RGBA()
 				data = append(data, byte(r), byte(g), byte(b))
