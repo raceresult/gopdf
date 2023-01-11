@@ -51,6 +51,8 @@ type XRefTableEntry struct {
 	Start      int64
 	Generation int
 	Free       bool
+	StoredInCompressStreamNo int
+	StoredInCompressStreamIndex int
 }
 
 func (q *XRefTableEntry) ToRawBytes() []byte {
