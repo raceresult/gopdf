@@ -258,9 +258,6 @@ func (q *Page) Read(dict Dictionary) error {
 	v, ok = dict["LastModified"]
 	if ok {
 		q.LastModified, ok = v.(Date)
-		if !ok {
-			return errors.New("page field LastModified invalid")
-		}
 	}
 
 	// Resources
