@@ -280,7 +280,9 @@ func (q *Parser) readObject(bts []byte, xref pdffile.XRefTable, length int) (typ
 					return types.IndirectObject{}, bts, errors.New("stream dictionary Length invalid")
 				}
 			}
-
+			if len(bts) <int(lengthVal) {
+				return types.IndirectObject{}, bts, errors.New("stream length invalid")
+			}
 			stream := types.StreamObject{
 				Dictionary: obj,
 				Stream:     bts[:lengthVal],
