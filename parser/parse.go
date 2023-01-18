@@ -141,30 +141,31 @@ func (q *Parser) readTrailer(bts []byte) (types.Trailer, []byte, error) {
 
 func (q *Parser) findObject(ref types.Reference, bts []byte, xref pdffile.XRefTable, length int) (types.Object, error) {
 	for _, x := range xref {
-		if x.Start > ref.Number || x.Start+x.Count-1 < ref.Number {
+		index := ref.Number - x.Start
+		if index < 0 || index >= len(x.Entries) {
 			continue
 		}
-		entry := x.Entries[x.Start+ref.Number-2]
+		entry := x.Entries[index]
 		if entry.Generation != ref.Generation {
 			continue
 		}
-		if entry.StoredInCompressStreamNo >0 {
-			store, err:=q.findObject(types.Reference{Number: entry.StoredInCompressStreamNo}, bts,xref, length)
-			if err!=nil {
-				return nil,err
+		if entry.StoredInCompressStreamNo > 0 {
+			store, err := q.findObject(types.Reference{Number: entry.StoredInCompressStreamNo}, bts, xref, length)
+			if err != nil {
+				return nil, err
 			}
-			items, err:=q.unpackObjectStreams(store)
-			if err!=nil {
-				return nil,err
+			items, err := q.unpackObjectStreams(store)
+			if err != nil {
+				return nil, err
 			}
-			for _, item:= range items {
-				if item.Number==ref.Number && item.Generation==ref.Generation {
+			for _, item := range items {
+				if item.Number == ref.Number && item.Generation == ref.Generation {
 					return item.Data, nil
 				}
 			}
 		} else {
 			start := int(entry.Start) - (length - len(bts))
-			if start < len(bts) {
+			if start >= 0 && start < len(bts) {
 				res, _, err := q.readObject(bts[start:], xref, length)
 				return res.Data, err
 			}
@@ -280,7 +281,7 @@ func (q *Parser) readObject(bts []byte, xref pdffile.XRefTable, length int) (typ
 					return types.IndirectObject{}, bts, errors.New("stream dictionary Length invalid")
 				}
 			}
-			if len(bts) <int(lengthVal) {
+			if len(bts) < int(lengthVal) {
 				return types.IndirectObject{}, bts, errors.New("stream length invalid")
 			}
 			stream := types.StreamObject{
@@ -469,9 +470,9 @@ func (q *Parser) readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []b
 				})
 			case 2:
 				xrefTable[len(xrefTable)-1].Entries = append(xrefTable[len(xrefTable)-1].Entries, pdffile.XRefTableEntry{
-					StoredInCompressStreamNo:      f2,
+					StoredInCompressStreamNo:    f2,
 					StoredInCompressStreamIndex: f3,
-					Free:       false,
+					Free:                        false,
 				})
 			default:
 				return &t, nil, nil, errors.New("invalid entry type in xref stream")
