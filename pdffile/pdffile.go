@@ -78,6 +78,11 @@ func (q *File) GetObject(ref types.Reference) (types.Object, error) {
 	return q.objects[items[ref.Generation]].Data, nil
 }
 
+// GetObjects returns all objects
+func (q *File) GetObjects() []types.IndirectObject {
+	return q.objects
+}
+
 // ResolveReference returns v if it is not a reference, or the referenced object if it is a reference
 func (q *File) ResolveReference(v types.Object) (types.Object, error) {
 	ref, ok := v.(types.Reference)
