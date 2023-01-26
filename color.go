@@ -123,9 +123,9 @@ func ParseColor(s string) (Color, error) {
 		}
 
 	case 3: // r,g,b
-		r, err1 := strconv.Atoi(arr[0])
-		g, err2 := strconv.Atoi(arr[1])
-		b, err3 := strconv.Atoi(arr[2])
+		r, err1 := strconv.Atoi(strings.TrimSpace(arr[0]))
+		g, err2 := strconv.Atoi(strings.TrimSpace(arr[1]))
+		b, err3 := strconv.Atoi(strings.TrimSpace(arr[2]))
 		if err1 == nil && err2 == nil && err3 == nil {
 			if r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
 				return NewColorRGB(r, g, b), nil
@@ -133,10 +133,10 @@ func ParseColor(s string) (Color, error) {
 		}
 
 	case 4: // c,m,y,k
-		c, err1 := strconv.Atoi(arr[0])
-		m, err2 := strconv.Atoi(arr[1])
-		y, err3 := strconv.Atoi(arr[2])
-		k, err4 := strconv.Atoi(arr[3])
+		c, err1 := strconv.Atoi(strings.TrimSpace(arr[0]))
+		m, err2 := strconv.Atoi(strings.TrimSpace(arr[1]))
+		y, err3 := strconv.Atoi(strings.TrimSpace(arr[2]))
+		k, err4 := strconv.Atoi(strings.TrimSpace(arr[3]))
 		if err1 == nil && err2 == nil && err3 == nil && err4 == nil {
 			if c >= 0 && c <= 100 && m >= 0 && m <= 100 && y >= 0 && y <= 100 && k >= 0 && k <= 100 {
 				return NewColorCMYK(c, m, y, k), nil
