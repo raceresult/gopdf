@@ -721,9 +721,8 @@ func readHexString(bts []byte) (types.String, []byte, error) {
 
 	var s []byte
 	for i := 0; i < len(bts); i += 2 {
-		if isWhiteChar(bts[i]) {
+		for i < len(bts)-2 && isWhiteChar(bts[i]) {
 			i++
-			continue
 		}
 
 		if bts[i] == '>' {
