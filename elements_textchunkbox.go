@@ -81,10 +81,6 @@ func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
 		}
 	}
 
-	// begin text
-	page.TextObjects_BT()
-	defer page.TextObjects_ET()
-
 	// iterate over lines
 	for _, line := range wrapped {
 		top -= line.Height

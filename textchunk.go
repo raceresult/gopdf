@@ -97,7 +97,8 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) error {
 		return err
 	}
 
-	// set position
+	// begin text and set position
+	page.TextObjects_BT()
 	var c float64
 	if q.Italic {
 		c = 0.333
@@ -105,10 +106,8 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) error {
 	page.TextPosition_Tm(1, 0, c, 1, left, top)
 
 	// draw text
-	if err := q.setFontAndColor(page); err != nil {
-		return err
-	}
 	page.TextShowing_Tj(reverseRTLString(q.Text))
+	page.TextObjects_ET()
 
 	// underline/strike-through text
 	if q.Underline {

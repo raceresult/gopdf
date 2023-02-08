@@ -52,10 +52,6 @@ func (q *TextElement) Build(page *pdf.Page) error {
 		page.GraphicsState_gs(n)
 	}
 
-	// begin text
-	page.TextObjects_BT()
-	defer page.TextObjects_ET()
-
 	// calculate some values needed below
 	lineHeight := q.lineHeight()
 	top := 0.0
