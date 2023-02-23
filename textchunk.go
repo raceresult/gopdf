@@ -57,14 +57,14 @@ func (q *TextChunk) setFontAndColor(page *pdf.Page) error {
 	} else {
 		page.GraphicsState_w(q.OutlineWidth.Pt())
 		switch {
-		case color != nil && q.OutlineColor != nil:
+		case color != nil && q.OutlineColor != nil && q.OutlineWidth.Value != 0:
 			color.Build(page, false)
 			q.OutlineColor.Build(page, true)
 			page.TextState_Tr(types.RenderingModeFillAndStroke)
 		case color != nil:
 			color.Build(page, false)
 			page.TextState_Tr(types.RenderingModeFill)
-		case q.OutlineColor != nil:
+		case q.OutlineColor != nil && q.OutlineWidth.Value != 0:
 			page.TextState_Tr(types.RenderingModeStroke)
 			q.OutlineColor.Build(page, true)
 		}
