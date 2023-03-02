@@ -57,6 +57,37 @@ func (q *File) NewPage(width, height float64) *Page {
 	return p
 }
 
+
+// NewPage adds and returns a new Page
+func (q *File) CopyPage(sourcePage types.Page, sourceFile *pdffile.File) *Page  {
+	if q.copiedObjects == nil {
+		q.copiedObjects = make(map[*pdffile.File]map[types.Reference]types.Reference)
+	}
+	copiedMap, ok := q.copiedObjects[sourceFile]
+	if !ok {
+		copiedMap = make(map[types.Reference]types.Reference)
+	}
+	defer func() { q.copiedObjects[sourceFile] = copiedMap }()
+	var copyRef func(ref types.Reference) types.Reference
+	copyRef = func(ref types.Reference) types.Reference {
+		if newRef, ok := copiedMap[ref]; ok {
+			return newRef
+		}
+
+		obj, _ := sourceFile.GetObject(ref)
+		copiedMap[ref] = types.Reference{} // to avoid endless recursion
+		newRef := q.creator.AddObject(types.Copy(obj, copyRef))
+		copiedMap[ref] = newRef
+		return newRef
+	}
+
+	p:=&Page{
+		Data: sourcePage.Copy(copyRef).(types.Page),
+	}
+	q.Pages = append(q.Pages, p)
+	return p
+}
+
 // WriteTo writes the parsed to the given writer
 func (q *File) WriteTo(w io.Writer) (int64, error) {
 	// finish fonts

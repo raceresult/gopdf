@@ -161,22 +161,26 @@ func (q *Page) AddCommand(operator string, args ...types.Object) {
 // create is called when building the pdf file. It is supposed to add all objects to the creator and return a
 // reference to the page object
 func (q *Page) create(creator *pdffile.File, compressThreshold int) (types.Reference, error) {
-	// join data
-	data := bytes.Join(q.contents, []byte{'\n'})
+	// Content may already be set if page was copied from other PDF
+	if q.Data.Contents==nil {
+		// join data
+		data := bytes.Join(q.contents, []byte{'\n'})
 
-	// create stream
-	var stream types.StreamObject
-	var err error
-	if len(data) >= compressThreshold {
-		stream, err = types.NewStream(data, types.Filter_FlateDecode)
-	} else {
-		stream, err = types.NewStream(data)
-	}
-	if err != nil {
-		return types.Reference{}, err
+		// create stream
+		var stream types.StreamObject
+		var err error
+		if len(data) >= compressThreshold {
+			stream, err = types.NewStream(data, types.Filter_FlateDecode)
+		} else {
+			stream, err = types.NewStream(data)
+		}
+		if err != nil {
+			return types.Reference{}, err
+		}
+
+		// create page object and return reference to it
+		q.Data.Contents = creator.AddObject(stream)
 	}
 
-	// create page object and return reference to it
-	q.Data.Contents = creator.AddObject(stream)
 	return creator.AddObject(q.Data), nil
 }

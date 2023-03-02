@@ -496,7 +496,7 @@ func (q *Page) Read(dict Dictionary) error {
 
 func (q Page) Copy(copyRef func(reference Reference) Reference) Object {
 	return Page{
-		Parent:         q.Parent.Copy(copyRef).(Reference),
+		// Parent:   -> don't copy this, references all pages and will copy everything. Set later in parent file anyway.
 		LastModified:   q.LastModified.Copy(copyRef).(Date),
 		Resources:      Copy(q.Resources, copyRef),
 		MediaBox:       q.MediaBox.Copy(copyRef).(Rectangle),
