@@ -787,6 +787,9 @@ func readDictionary(bts []byte) (types.Dictionary, []byte, error) {
 		if bytes.HasPrefix(bts, []byte(">>")) {
 			return dest, bts[2:], nil
 		}
+		if bytes.HasPrefix(bts, []byte("%")) {
+			_, bts, _ = readComment(bts)
+		}
 		if len(bts) == 0 {
 			return nil, bts, errors.New("dictionary end not found")
 		}
