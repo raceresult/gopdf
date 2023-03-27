@@ -393,10 +393,17 @@ func (q *Parser) readXRefObj(bts []byte) (*types.Trailer, pdffile.XRefTable, []b
 		return &t, nil, bts, err
 	}
 
+	// get size
+
 	// get index data
-	index, ok := dict["Index"].(types.Array)
-	if !ok {
-		return &t, nil, nil, errors.New("index in xref dictionary not valid")
+	var index types.Array
+	if v, ok:=dict["Index"] ; ok {
+		index, ok = v.(types.Array)
+		if !ok {
+			return &t, nil, nil, errors.New("index in xref dictionary not valid")
+		}
+	} else {
+		index=append(index, types.Int(0), dict["Size"])
 	}
 
 	// get W data
