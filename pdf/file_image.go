@@ -67,6 +67,13 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 		}
 	}
 
+	// is actually grayscale?
+	colorspace := types.ColorSpace_DeviceRGB
+	if data2, isGray := reduceRGBToGray(data); isGray {
+		data = data2
+		colorspace = types.ColorSpace_DeviceGray
+	}
+
 	// create image stream
 	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
@@ -78,7 +85,7 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       types.ColorSpace_DeviceRGB,
+		ColorSpace:       colorspace,
 	}
 
 	// finish
@@ -150,6 +157,14 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 		return nil, errors.New("unsupported color model")
 	}
 
+	// is actually grayscale?
+	if img.ColorSpace == types.ColorSpace_DeviceRGB {
+		if data2, isGray := reduceRGBToGray(data); isGray {
+			data = data2
+			img.ColorSpace = types.ColorSpace_DeviceGray
+		}
+	}
+
 	// create image stream
 	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
@@ -193,6 +208,13 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		}
 	}
 
+	// is actually grayscale?
+	colorspace := types.ColorSpace_DeviceRGB
+	if data2, isGray := reduceRGBToGray(data); isGray {
+		data = data2
+		colorspace = types.ColorSpace_DeviceGray
+	}
+
 	// create image stream
 	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
@@ -204,7 +226,7 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       types.ColorSpace_DeviceRGB,
+		ColorSpace:       colorspace,
 	}
 
 	// create transparency mask
@@ -261,6 +283,13 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 		}
 	}
 
+	// is actually grayscale?
+	colorspace := types.ColorSpace_DeviceRGB
+	if data2, isGray := reduceRGBToGray(data); isGray {
+		data = data2
+		colorspace = types.ColorSpace_DeviceGray
+	}
+
 	// create image stream
 	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
@@ -272,7 +301,7 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       types.ColorSpace_DeviceRGB,
+		ColorSpace:       colorspace,
 	}
 
 	// create transparency mask
@@ -343,6 +372,14 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
 		}
 	}
 
+	// is actually grayscale?
+	if colorSpace == types.ColorSpace_DeviceRGB {
+		if data2, isGray := reduceRGBToGray(data); isGray {
+			data = data2
+			colorSpace = types.ColorSpace_DeviceGray
+		}
+	}
+
 	// create image stream
 	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
@@ -384,4 +421,22 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
 		Reference: q.creator.AddObject(img),
 		Image:     &img,
 	}, nil
+}
+
+func reduceRGBToGray(data []byte) ([]byte, bool) {
+	if len(data)%3 != 0 {
+		return nil, false
+	}
+
+	for i := 0; i < len(data); i += 3 {
+		if data[i] != data[i+1] || data[i] != data[i+2] || data[i+1] != data[i+2] {
+			return nil, false
+		}
+	}
+
+	data2 := make([]byte, 0, len(data)/3)
+	for i := 0; i < len(data); i += 3 {
+		data2 = append(data2, data[i])
+	}
+	return data2, true
 }
