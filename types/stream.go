@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"io/ioutil"
+
+	"github.com/raceresult/gopdf/types/runlength"
 )
 
 // PDF Reference 1.4, 3.2.7 Stream Objects
@@ -67,7 +69,11 @@ func NewStream(data []byte, filters ...Filter) (StreamObject, error) {
 			data = bts.Bytes()
 
 		case Filter_RunLengthDecode:
-			return StreamObject{}, errors.New("filter " + string(filter) + " not implemented")
+			var err error
+			data, err = runlength.Encode(bytes.NewReader(data))
+			if err != nil {
+				return StreamObject{}, err
+			}
 		case Filter_CCITTFaxDecode:
 			return StreamObject{}, errors.New("filter " + string(filter) + " not implemented")
 		case Filter_JBIG2Decode:
@@ -219,7 +225,7 @@ func (q *StreamObject) Decode(file Resolver) ([]byte, error) {
 			}
 
 		case Filter_RunLengthDecode:
-			return nil, errors.New("filter " + string(filter) + " not implemented")
+			return runlength.Decode(bytes.NewReader(data))
 		case Filter_CCITTFaxDecode:
 			return nil, errors.New("filter " + string(filter) + " not implemented")
 		case Filter_JBIG2Decode:

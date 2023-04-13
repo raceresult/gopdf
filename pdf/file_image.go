@@ -97,32 +97,38 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 
 // newImageJPG adds a new jpg image as XObject to the file
 func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
-	// decode image
-	x, err := jpeg.Decode(bytes.NewReader(bts))
-	if err != nil {
-		return nil, err
-	}
-
 	// prepare Image object
 	img := types.Image{
 		Width:  types.Int(conf.Width),
 		Height: types.Int(conf.Height),
 	}
 
+	// for rgb, directly use the image
+	if conf.ColorModel == color.YCbCrModel || conf.ColorModel == color.NRGBAModel {
+		imgStream, err := types.NewStream(bts)
+		if err != nil {
+			return nil, err
+		}
+		img.ColorSpace = types.ColorSpace_DeviceRGB
+		img.BitsPerComponent = 8
+		img.Stream = imgStream.Stream
+		img.Dictionary = imgStream.Dictionary.(types.StreamDictionary)
+		img.Dictionary.Filter = []types.Filter{types.Filter_DCTDecode}
+		return &Image{
+			Reference: q.creator.AddObject(img),
+			Image:     &img,
+		}, nil
+	}
+
+	// decode image
+	x, err := jpeg.Decode(bytes.NewReader(bts))
+	if err != nil {
+		return nil, err
+	}
+
 	// build data
 	var data []byte
 	switch conf.ColorModel {
-	case color.YCbCrModel:
-		img.ColorSpace = types.ColorSpace_DeviceRGB
-		img.BitsPerComponent = 8
-		for i := 0; i < conf.Height; i++ {
-			for j := 0; j < conf.Width; j++ {
-				c := x.At(j, i).(color.YCbCr)
-				r, g, b := color.YCbCrToRGB(c.Y, c.Cb, c.Cr)
-				data = append(data, r, g, b)
-			}
-		}
-
 	case color.CMYKModel:
 		img.ColorSpace = types.ColorSpace_DeviceCMYK
 		img.BitsPerComponent = 8
@@ -143,26 +149,8 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 			}
 		}
 
-	case color.NRGBAModel:
-		img.ColorSpace = types.ColorSpace_DeviceRGB
-		img.BitsPerComponent = 8
-		for i := 0; i < conf.Height; i++ {
-			for j := 0; j < conf.Width; j++ {
-				c := x.At(j, i).(color.NRGBA)
-				data = append(data, c.R, c.G, c.B)
-			}
-		}
-
 	default:
 		return nil, errors.New("unsupported color model")
-	}
-
-	// is actually grayscale?
-	if img.ColorSpace == types.ColorSpace_DeviceRGB {
-		if data2, isGray := reduceRGBToGray(data); isGray {
-			data = data2
-			img.ColorSpace = types.ColorSpace_DeviceGray
-		}
 	}
 
 	// create image stream
