@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/gif"
+	"image/jpeg"
 	"image/png"
 
 	"github.com/raceresult/gopdf/types"
@@ -96,6 +97,12 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 
 // newImageJPG adds a new jpg image as XObject to the file
 func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
+	// decode image
+	x, err := jpeg.Decode(bytes.NewReader(bts))
+	if err != nil {
+		return nil, err
+	}
+
 	// prepare Image object
 	img := types.Image{
 		Width:  types.Int(conf.Width),
@@ -103,35 +110,68 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 	}
 
 	// build data
+	var data []byte
 	switch conf.ColorModel {
 	case color.YCbCrModel:
 		img.ColorSpace = types.ColorSpace_DeviceRGB
 		img.BitsPerComponent = 8
+		for i := 0; i < conf.Height; i++ {
+			for j := 0; j < conf.Width; j++ {
+				c := x.At(j, i).(color.YCbCr)
+				r, g, b := color.YCbCrToRGB(c.Y, c.Cb, c.Cr)
+				data = append(data, r, g, b)
+			}
+		}
 
 	case color.CMYKModel:
 		img.ColorSpace = types.ColorSpace_DeviceCMYK
 		img.BitsPerComponent = 8
+		for i := 0; i < conf.Height; i++ {
+			for j := 0; j < conf.Width; j++ {
+				c := x.At(j, i).(color.CMYK)
+				data = append(data, c.C, c.M, c.Y, c.K)
+			}
+		}
 
 	case color.GrayModel:
 		img.ColorSpace = types.ColorSpace_DeviceGray
 		img.BitsPerComponent = 8
+		for i := 0; i < conf.Height; i++ {
+			for j := 0; j < conf.Width; j++ {
+				c := x.At(j, i).(color.Gray)
+				data = append(data, c.Y)
+			}
+		}
 
 	case color.NRGBAModel:
 		img.ColorSpace = types.ColorSpace_DeviceRGB
 		img.BitsPerComponent = 8
+		for i := 0; i < conf.Height; i++ {
+			for j := 0; j < conf.Width; j++ {
+				c := x.At(j, i).(color.NRGBA)
+				data = append(data, c.R, c.G, c.B)
+			}
+		}
 
 	default:
 		return nil, errors.New("unsupported color model")
 	}
 
+	// is actually grayscale?
+	if img.ColorSpace == types.ColorSpace_DeviceRGB {
+		if data2, isGray := reduceRGBToGray(data); isGray {
+			data = data2
+			img.ColorSpace = types.ColorSpace_DeviceGray
+		}
+	}
+
 	// create image stream
-	imgStream, err := types.NewStream(bts)
+	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
 		return nil, err
 	}
 	img.Stream = imgStream.Stream
 	img.Dictionary = imgStream.Dictionary.(types.StreamDictionary)
-	img.Dictionary.Filter = []types.Filter{types.Filter_DCTDecode}
 
 	// finish
 	return &Image{
