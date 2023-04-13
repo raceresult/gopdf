@@ -2,6 +2,7 @@ package gopdf
 
 import (
 	"errors"
+	"math"
 
 	"github.com/raceresult/gopdf/pdf"
 	"github.com/raceresult/gopdf/types"
@@ -11,6 +12,7 @@ import (
 type ImageElement struct {
 	Img                      *pdf.Image
 	Left, Top, Width, Height Length
+	Rotate                   float64
 	Transparency             float64
 }
 
@@ -36,8 +38,17 @@ func (q *ImageElement) Build(page *pdf.Page) error {
 		page.GraphicsState_gs(n)
 	}
 
+	// set coordinate system
+	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
+	if q.Rotate == 0 {
+		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), y)
+	} else {
+		r := q.Rotate * math.Pi / 180
+		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
+	}
+
 	// draw
-	page.GraphicsState_cm(q.Width.Pt(), 0, 0, q.Height.Pt(), q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt()-q.Height.Pt())
+	page.GraphicsState_cm(q.Width.Pt(), 0, 0, q.Height.Pt(), 0, -q.Height.Pt())
 	page.XObject_Do(q.Img.Reference)
 	return nil
 }

@@ -1,6 +1,8 @@
 package gopdf
 
 import (
+	"math"
+
 	"github.com/raceresult/gopdf/pdf"
 	"github.com/raceresult/gopdf/types"
 )
@@ -12,6 +14,7 @@ type RectElement struct {
 	LineColor                Color
 	FillColor                Color
 	DashPattern              DashPattern
+	Rotate                   float64
 	Transparency             float64
 }
 
@@ -31,10 +34,11 @@ func (q *RectElement) Build(page *pdf.Page) error {
 		return err
 	}
 
+	page.GraphicsState_q()
+	defer page.GraphicsState_Q()
+
 	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
-		page.GraphicsState_q()
-		defer page.GraphicsState_Q()
 		n := page.AddExtGState(types.Dictionary{
 			"ca": types.Number(1 - q.Transparency),
 			"CA": types.Number(1 - q.Transparency),
@@ -42,8 +46,17 @@ func (q *RectElement) Build(page *pdf.Page) error {
 		page.GraphicsState_gs(n)
 	}
 
+	// set coordinate system
+	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
+	if q.Rotate == 0 {
+		page.GraphicsState_cm(1, 0, 0, 1, q.Left.Pt(), y)
+	} else {
+		r := q.Rotate * math.Pi / 180
+		page.GraphicsState_cm(math.Cos(r), math.Sin(r), -math.Sin(r), math.Cos(r), q.Left.Pt(), y)
+	}
+
 	// create rect
-	page.Path_re(q.Left.Pt(), float64(page.Data.MediaBox.URY)-q.Top.Pt()-q.Height.Pt(), q.Width.Pt(), q.Height.Pt())
+	page.Path_re(0, -q.Height.Pt(), q.Width.Pt(), q.Height.Pt())
 
 	// fill or stroke
 	if q.LineColor != nil && q.FillColor != nil {
