@@ -230,7 +230,7 @@ func (q Page) ToRawBytes() []byte {
 	return d.ToRawBytes()
 }
 
-func (q *Page) Read(dict Dictionary) error {
+func (q *Page) Read(dict Dictionary, file Resolver) error {
 	// Type
 	v, ok := dict["Type"]
 	if !ok {
@@ -268,7 +268,7 @@ func (q *Page) Read(dict Dictionary) error {
 	q.Resources = v
 
 	// MediaBox
-	v, ok = dict["MediaBox"]
+	v, ok = dict.GetValue("MediaBox", file)
 	if !ok {
 		return errors.New("page field MediaBox missing")
 	}
@@ -284,7 +284,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// CropBox
-	v, ok = dict["CropBox"]
+	v, ok = dict.GetValue("CropBox", file)
 	if ok {
 		r, ok := v.(Rectangle)
 		if ok {
@@ -303,7 +303,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// BleedBox
-	v, ok = dict["BleedBox"]
+	v, ok = dict.GetValue("BleedBox", file)
 	if ok {
 		r, ok := v.(Rectangle)
 		if ok {
@@ -322,7 +322,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// TrimBox
-	v, ok = dict["TrimBox"]
+	v, ok = dict.GetValue("TrimBox", file)
 	if ok {
 		r, ok := v.(Rectangle)
 		if ok {
@@ -341,7 +341,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// ArtBox
-	v, ok = dict["ArtBox"]
+	v, ok = dict.GetValue("ArtBox", file)
 	if ok {
 		r, ok := v.(Rectangle)
 		if ok {
@@ -372,7 +372,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// Rotate
-	v, ok = dict["Rotate"]
+	v, ok = dict.GetValue("Rotate", file)
 	if ok {
 		q.Rotate, ok = v.(Int)
 		if !ok {
@@ -393,7 +393,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// B
-	v, ok = dict["B"]
+	v, ok = dict.GetValue("B", file)
 	if ok {
 		q.B, ok = v.(Array)
 		if !ok {
@@ -402,7 +402,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// B
-	v, ok = dict["B"]
+	v, ok = dict.GetValue("B", file)
 	if ok {
 		q.B, ok = v.(Array)
 		if !ok {
@@ -411,7 +411,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// Dur
-	v, ok = dict["Dur"]
+	v, ok = dict.GetValue("Dur", file)
 	if ok {
 		q.Dur, ok = v.(Number)
 		if !ok {
@@ -454,7 +454,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// StructParents
-	v, ok = dict["StructParents"]
+	v, ok = dict.GetValue("StructParents", file)
 	if ok {
 		q.StructParents, ok = v.(Int)
 		if !ok {
@@ -463,7 +463,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// ID
-	v, ok = dict["ID"]
+	v, ok = dict.GetValue("ID", file)
 	if ok {
 		q.ID, ok = v.(String)
 		if !ok {
@@ -472,7 +472,7 @@ func (q *Page) Read(dict Dictionary) error {
 	}
 
 	// PZ
-	v, ok = dict["PZ"]
+	v, ok = dict.GetValue("PZ", file)
 	if ok {
 		q.PZ, ok = v.(Number)
 		if !ok {

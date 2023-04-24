@@ -55,7 +55,7 @@ func collectPages(f *pdffile.File, node types.Dictionary) ([]types.Page, error) 
 
 	case "Page":
 		var p types.Page
-		if err := p.Read(node); err != nil {
+		if err := p.Read(node, f); err != nil {
 			return nil, err
 		}
 		res = append(res, p)
