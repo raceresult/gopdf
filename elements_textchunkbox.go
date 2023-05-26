@@ -308,15 +308,27 @@ func (q *TextChunkBoxElement) ShrinkToFit() {
 	if w > 0 {
 		// get max width
 		var maxWidth float64
+		var maxCharSpacing float64
 		for _, line := range lines {
 			if maxWidth < line.Width {
 				maxWidth = line.Width
 			}
+
+			var charSpacing float64
+			for _, c := range line.Chunks {
+				if c.CharSpacing.Value != 0 {
+					charSpacing += c.CharSpacing.Pt() * float64(len([]rune(c.Text)))
+				}
+			}
+			if maxCharSpacing < charSpacing {
+				maxCharSpacing = charSpacing
+			}
+
 		}
 
 		// adapt if exceeds
 		if maxWidth > w {
-			f2 := w / maxWidth * 0.999
+			f2 := (w - maxCharSpacing) / maxWidth * 0.999
 			if f2 < f {
 				f = f2
 			}
