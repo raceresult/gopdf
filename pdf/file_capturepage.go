@@ -3,6 +3,7 @@ package pdf
 import (
 	"bytes"
 	"errors"
+	"strconv"
 
 	"github.com/raceresult/gopdf/pdffile"
 	"github.com/raceresult/gopdf/types"
@@ -42,7 +43,7 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		case types.Reference:
 			newItem, err := sourceFile.GetObject(item)
 			if err != nil {
-				return err
+				return errors.New("error reading object " + strconv.Itoa(item.Number) + "/" + strconv.Itoa(item.Generation) + ": " + err.Error())
 			}
 			return addContent(newItem)
 		case types.Array:
@@ -55,7 +56,7 @@ func (q *File) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) 
 		case types.StreamObject:
 			decoded, err := item.Decode(sourceFile)
 			if err != nil {
-				return err
+				return errors.New("error decoding stream: " + err.Error())
 			}
 			data = append(data, decoded...)
 			data = append(data, '\n')
