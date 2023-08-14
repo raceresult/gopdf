@@ -28,13 +28,18 @@ func (q *Page) AddElement(item ...Element) {
 }
 
 // build is called when the PDF file is created and calls the Build function on all elements
-func (q *Page) build(page *pdf.Page) error {
+func (q *Page) build(page *pdf.Page) ([]string, error) {
 	page.Data.Rotate = types.Int(q.Rotate)
 
+	var warnings []string
 	for _, item := range q.elements {
-		if err := item.Build(page); err != nil {
-			return err
+		w, err := item.Build(page)
+		if err != nil {
+			return nil, err
+		}
+		if w != "" {
+			warnings = append(warnings, w)
 		}
 	}
-	return nil
+	return warnings, nil
 }

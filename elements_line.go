@@ -15,15 +15,15 @@ type LineElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *LineElement) Build(page *pdf.Page) error {
+func (q *LineElement) Build(page *pdf.Page) (string, error) {
 	// color
 	if q.Color == nil {
 		ColorRGBBlack.Build(page, true)
 	} else {
 		q.Color.Build(page, true)
 	}
-	if err := q.DashPattern.Build(page); err != nil {
-		return err
+	if warning, err := q.DashPattern.Build(page); err != nil {
+		return warning, err
 	}
 
 	// line width
@@ -44,5 +44,5 @@ func (q *LineElement) Build(page *pdf.Page) error {
 	page.Path_m(q.X1.Pt(), float64(page.Data.MediaBox.URY)-q.Y1.Pt())
 	page.Path_l(q.X2.Pt(), float64(page.Data.MediaBox.URY)-q.Y2.Pt())
 	page.Path_S()
-	return nil
+	return "", nil
 }

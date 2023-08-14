@@ -19,7 +19,7 @@ type RectElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *RectElement) Build(page *pdf.Page) error {
+func (q *RectElement) Build(page *pdf.Page) (string, error) {
 	// set colors
 	if q.LineColor == nil {
 		page.GraphicsState_w(0)
@@ -30,8 +30,9 @@ func (q *RectElement) Build(page *pdf.Page) error {
 	if q.FillColor != nil {
 		q.FillColor.Build(page, false)
 	}
-	if err := q.DashPattern.Build(page); err != nil {
-		return err
+	warning, err := q.DashPattern.Build(page)
+	if err != nil {
+		return warning, err
 	}
 
 	page.GraphicsState_q()
@@ -66,5 +67,5 @@ func (q *RectElement) Build(page *pdf.Page) error {
 	} else {
 		page.Path_f()
 	}
-	return nil
+	return warning, nil
 }

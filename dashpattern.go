@@ -17,11 +17,11 @@ func NewDashPattern(phase Length, array ...Length) DashPattern {
 }
 
 // Build sets the dash pattern in the graphics state of the given page
-func (q DashPattern) Build(page *pdf.Page) error {
+func (q DashPattern) Build(page *pdf.Page) (string, error) {
 	arr := make([]float64, 0, len(q.Array))
 	for _, v := range q.Array {
 		arr = append(arr, v.Pt())
 	}
 	page.GraphicsState_d(arr, q.Phase.Pt())
-	return nil
+	return "", nil
 }

@@ -17,10 +17,10 @@ type ImageElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *ImageElement) Build(page *pdf.Page) error {
+func (q *ImageElement) Build(page *pdf.Page) (string, error) {
 	// abort if image not set
 	if q.Img == nil {
-		return errors.New("image not set")
+		return "", errors.New("image not set")
 	}
 
 	// graphics state
@@ -50,5 +50,5 @@ func (q *ImageElement) Build(page *pdf.Page) error {
 	// draw
 	page.GraphicsState_cm(q.Width.Pt(), 0, 0, q.Height.Pt(), 0, -q.Height.Pt())
 	page.XObject_Do(q.Img.Reference)
-	return nil
+	return "", nil
 }

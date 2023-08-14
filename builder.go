@@ -3,6 +3,7 @@ package gopdf
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/raceresult/gopdf/pdf"
@@ -53,7 +54,6 @@ func (q *Builder) Build() ([]byte, error) {
 	q.file.Version = q.Version
 	q.file.Info = q.Info
 	q.file.ID = [2]types.String{types.String(q.ID[0]), types.String(q.ID[1])}
-	q.file.CompressStreamsThreshold = q.CompressStreamsThreshold
 
 	// create pages
 	pdfPages := make([]*pdf.Page, 0, len(q.pages))
@@ -74,14 +74,24 @@ func (q *Builder) Build() ([]byte, error) {
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	errs := make([]error, workers)
+	var warnings []string
+	var warningsMux sync.Mutex
 	for i := 0; i < workers; i++ {
 		go func(z int) {
 			defer wg.Done()
 
 			for k := z; k < len(q.pages); k += workers {
-				if err := q.pages[k].build(pdfPages[k]); err != nil {
+				ww, err := q.pages[k].build(pdfPages[k])
+				if err != nil {
 					errs[z] = err
 					return
+				}
+				if len(ww) != 0 {
+					warningsMux.Lock()
+					for _, w := range ww {
+						warnings = append(warnings, "Page "+strconv.Itoa(z+1)+": "+w)
+					}
+					warningsMux.Unlock()
 				}
 			}
 		}(i)
@@ -95,8 +105,21 @@ func (q *Builder) Build() ([]byte, error) {
 		}
 	}
 
+	// warnings
+	if len(warnings) != 0 {
+		if err := q.file.AddMetaData([]byte(strings.Join(warnings, "\n"))); err != nil {
+			return nil, err
+		}
+	}
+
 	// create byte stream
-	return q.file.Write()
+	bts, err := q.file.Write()
+	if err != nil {
+		return nil, err
+	}
+
+	// return without error
+	return bts, nil
 }
 
 // NewPage adds a new page to the pdf
@@ -127,7 +150,7 @@ func (q *Builder) NewPageBefore(size PageSize, beforePageNo int) *Page {
 func (q *Builder) NewFormFromPage(page *Page) (*Form, error) {
 	p := pdf.NewPage(page.Width.Pt(), page.Height.Pt())
 	for _, item := range page.elements {
-		if err := item.Build(p); err != nil {
+		if _, err := item.Build(p); err != nil {
 			return nil, err
 		}
 	}

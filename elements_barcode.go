@@ -79,7 +79,7 @@ type BarcodeElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *BarcodeElement) Build(page *pdf.Page) error {
+func (q *BarcodeElement) Build(page *pdf.Page) (string, error) {
 	// set color
 	if q.Color != nil {
 		q.Color.Build(page, false)
@@ -112,7 +112,7 @@ func (q *BarcodeElement) Build(page *pdf.Page) error {
 	}
 	bars, err := q.encode(width)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// build rectangles
@@ -126,7 +126,7 @@ func (q *BarcodeElement) Build(page *pdf.Page) error {
 		}
 	}
 	page.Path_f()
-	return nil
+	return "", nil
 }
 
 // encode returns a list of x-pos + width representing the bars of the barcode

@@ -57,9 +57,8 @@ func (q *File) NewPage(width, height float64) *Page {
 	return p
 }
 
-
-// NewPage adds and returns a new Page
-func (q *File) CopyPage(sourcePage types.Page, sourceFile *pdffile.File) *Page  {
+// CopyPage adds and returns a new Page
+func (q *File) CopyPage(sourcePage types.Page, sourceFile *pdffile.File) *Page {
 	if q.copiedObjects == nil {
 		q.copiedObjects = make(map[*pdffile.File]map[types.Reference]types.Reference)
 	}
@@ -81,7 +80,7 @@ func (q *File) CopyPage(sourcePage types.Page, sourceFile *pdffile.File) *Page  
 		return newRef
 	}
 
-	p:=&Page{
+	p := &Page{
 		Data: sourcePage.Copy(copyRef).(types.Page),
 	}
 	q.Pages = append(q.Pages, p)
@@ -127,4 +126,14 @@ func (q *File) Write() ([]byte, error) {
 	var bts bytes.Buffer
 	_, err := q.WriteTo(&bts)
 	return bts.Bytes(), err
+}
+
+// AddMetaData adds meta data to the document catalog
+func (q *File) AddMetaData(data []byte) error {
+	st, err := types.NewStream(data)
+	if err != nil {
+		return err
+	}
+	q.catalog.Metadata = q.creator.AddObject(st)
+	return nil
 }

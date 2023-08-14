@@ -43,7 +43,7 @@ func (q *TextChunk) FontHeight() Length {
 	return Pt(q.Font.GetHeight(q.FontSize))
 }
 
-func (q *TextChunk) setFontAndColor(page *pdf.Page) error {
+func (q *TextChunk) setFontAndColor(page *pdf.Page) (string, error) {
 	// set color and rendering mode
 	color := q.Color
 	if color == nil && q.OutlineColor == nil {
@@ -69,8 +69,9 @@ func (q *TextChunk) setFontAndColor(page *pdf.Page) error {
 			q.OutlineColor.Build(page, true)
 		}
 	}
-	if err := q.DashPattern.Build(page); err != nil {
-		return err
+	warning, err := q.DashPattern.Build(page)
+	if err != nil {
+		return warning, err
 	}
 
 	// text scaling / char spacing
@@ -83,18 +84,19 @@ func (q *TextChunk) setFontAndColor(page *pdf.Page) error {
 
 	// set font
 	page.TextState_Tf(q.Font, q.FontSize)
-	return nil
+	return warning, nil
 }
 
-func (q *TextChunk) draw(page *pdf.Page, left, top float64) error {
+func (q *TextChunk) draw(page *pdf.Page, left, top float64) (string, error) {
 	// if no font or text given, ignore chunk
 	if q.Font == nil {
-		return errors.New("no font set")
+		return "", errors.New("no font set")
 	}
 
 	// set format
-	if err := q.setFontAndColor(page); err != nil {
-		return err
+	warning, err := q.setFontAndColor(page)
+	if err != nil {
+		return warning, err
 	}
 
 	// begin text and set position
@@ -123,5 +125,5 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) error {
 		page.Path_f()
 	}
 
-	return nil
+	return warning, nil
 }

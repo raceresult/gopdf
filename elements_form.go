@@ -13,7 +13,7 @@ type Form struct {
 }
 
 // Build adds the element to the content stream
-func (q *Form) Build(page *pdf.Page) error {
+func (q *Form) Build(page *pdf.Page) (string, error) {
 	h := q.Height.Pt()
 	if h == 0 {
 		h = float64(q.BBox.URY)
@@ -32,7 +32,7 @@ func (q *Form) Build(page *pdf.Page) error {
 	} else {
 		page.XObject_Do(q.Form)
 	}
-	return nil
+	return "", nil
 }
 
 // PageSize returns the page size of the captured page

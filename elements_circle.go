@@ -16,7 +16,7 @@ type CircleElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *CircleElement) Build(page *pdf.Page) error {
+func (q *CircleElement) Build(page *pdf.Page) (string, error) {
 	// set colors
 	if q.LineColor == nil {
 		page.GraphicsState_w(0)
@@ -29,8 +29,8 @@ func (q *CircleElement) Build(page *pdf.Page) error {
 	}
 
 	// set dash pattern
-	if err := q.DashPattern.Build(page); err != nil {
-		return err
+	if warning, err := q.DashPattern.Build(page); err != nil {
+		return warning, err
 	}
 
 	// transparency
@@ -58,5 +58,5 @@ func (q *CircleElement) Build(page *pdf.Page) error {
 	} else {
 		page.Path_f()
 	}
-	return nil
+	return "", nil
 }

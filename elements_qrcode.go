@@ -19,7 +19,7 @@ type QRCodeElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *QRCodeElement) Build(page *pdf.Page) error {
+func (q *QRCodeElement) Build(page *pdf.Page) (string, error) {
 	// set color
 	if q.Color != nil {
 		q.Color.Build(page, false)
@@ -30,7 +30,7 @@ func (q *QRCodeElement) Build(page *pdf.Page) error {
 	// create qr code bitmap
 	qr, err := qrcode.New(q.Text, q.RecoveryLevel)
 	if err != nil {
-		return err
+		return "", err
 	}
 	qr.DisableBorder = true
 	bits := qr.Bitmap()
@@ -70,5 +70,5 @@ func (q *QRCodeElement) Build(page *pdf.Page) error {
 		}
 	}
 	page.Path_f()
-	return nil
+	return "", nil
 }

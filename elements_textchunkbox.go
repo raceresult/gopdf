@@ -23,23 +23,25 @@ type TextChunkBoxElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
+func (q *TextChunkBoxElement) Build(page *pdf.Page) (string, error) {
 	// return if no chunks
 	if len(q.Chunks) == 0 {
-		return nil
+		return "", nil
 	}
 
 	// wrap text
-	wrapped := q.wrapLines()
+	wrapped, warning := q.wrapLines()
 	if len(wrapped) == 0 {
-		return nil
+		return warning, nil
 	}
 
 	// set format of first font before saving graphics state
 	if len(wrapped[0].ChunkWidths) != 0 {
-		if err := wrapped[0].Chunks[0].setFontAndColor(page); err != nil {
-			return err
+		warning2, err := wrapped[0].Chunks[0].setFontAndColor(page)
+		if err != nil {
+			return warning, err
 		}
+		warning += warning2
 	}
 
 	// graphics state
@@ -101,13 +103,15 @@ func (q *TextChunkBoxElement) Build(page *pdf.Page) error {
 
 		// iterate over text chunks in this line
 		for j, chunk := range line.Chunks {
-			if err := chunk.draw(page, left, top); err != nil {
-				return err
+			warning2, err := chunk.draw(page, left, top)
+			if err != nil {
+				return "", err
 			}
+			warning += warning2
 			left += line.ChunkWidths[j]
 		}
 	}
-	return nil
+	return warning, nil
 }
 
 type chunkLine struct {
@@ -119,8 +123,9 @@ type chunkLine struct {
 }
 
 // wrapLines returns the wrapped text considering line break, max width and max height
-func (q *TextChunkBoxElement) wrapLines() []chunkLine {
+func (q *TextChunkBoxElement) wrapLines() ([]chunkLine, string) {
 	var chunkLines []chunkLine
+	var warning string
 	var currLine *chunkLine
 	boxWidth := q.Width.Pt()
 
@@ -261,18 +266,25 @@ func (q *TextChunkBoxElement) wrapLines() []chunkLine {
 			h -= l.Height
 			if h < 0 {
 				chunkLines = chunkLines[:i]
+
+				var s string
+				for _, c := range q.Chunks {
+					s += c.Text
+				}
+				warning = "Text \"" + s + "\" truncated"
 				break
 			}
 		}
 	}
 
-	return chunkLines
+	return chunkLines, warning
 }
 
 // TextHeight returns the height of the text, accounting for line breaks and max width
 func (q *TextChunkBoxElement) TextHeight() Length {
 	var h float64
-	for _, l := range q.wrapLines() {
+	lines, _ := q.wrapLines()
+	for _, l := range lines {
 		h += l.Height
 	}
 	return Pt(h)
@@ -284,7 +296,7 @@ func (q *TextChunkBoxElement) ShrinkToFit() {
 	orgW, orgH := q.Width, q.Height
 	q.Width.Value = 0
 	q.Height.Value = 0
-	lines := q.wrapLines()
+	lines, _ := q.wrapLines()
 	q.Width, q.Height = orgW, orgH
 
 	// check height

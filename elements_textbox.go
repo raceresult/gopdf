@@ -13,7 +13,7 @@ type TextBoxElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *TextBoxElement) Build(page *pdf.Page) error {
+func (q *TextBoxElement) Build(page *pdf.Page) (string, error) {
 	return q.toChunkBox().Build(page)
 }
 

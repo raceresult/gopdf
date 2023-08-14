@@ -19,15 +19,16 @@ type TextElement struct {
 }
 
 // Build adds the element to the content stream
-func (q *TextElement) Build(page *pdf.Page) error {
+func (q *TextElement) Build(page *pdf.Page) (string, error) {
 	// if no text given, ignore element
 	if q.Text == "" {
-		return nil
+		return "", nil
 	}
 
 	// set format of first font before saving graphics state
-	if err := q.setFontAndColor(page); err != nil {
-		return err
+	warning, err := q.setFontAndColor(page)
+	if err != nil {
+		return warning, err
 	}
 
 	// graphics state
@@ -66,14 +67,18 @@ func (q *TextElement) Build(page *pdf.Page) error {
 			left -= q.getLineWidth(line)
 		}
 
-		if err := q.draw(page, left, top); err != nil {
-			return err
+		warning2, err := q.draw(page, left, top)
+		if err != nil {
+			return "", err
+		}
+		if warning2 != "" {
+			warning += warning2
 		}
 
 		top -= lineHeight
 	}
 
-	return nil
+	return warning, nil
 }
 
 // TextHeight returns the height of the text, accounting for line breaks
