@@ -103,8 +103,8 @@ func (q *Parser) GetPage(pageNo int) (types.Page, error) {
 	return allPages[pageNo-1], nil
 }
 
-// getCatalog returns the document catalog of the parsed pdf
-func (q *Parser) getCatalog() (*types.DocumentCatalog, error) {
+// GetCatalog returns the document catalog of the parsed pdf
+func (q *Parser) GetCatalog() (*types.DocumentCatalog, error) {
 	catalogObj, err := q.file.GetObject(q.file.Root)
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (q *Parser) getCatalog() (*types.DocumentCatalog, error) {
 
 // getPageTreeRoot returns the page tree root of the parsed pdf
 func (q *Parser) getPageTreeRoot() (types.Dictionary, error) {
-	cat, err := q.getCatalog()
+	cat, err := q.GetCatalog()
 	if err != nil {
 		return nil, err
 	}
