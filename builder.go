@@ -89,7 +89,7 @@ func (q *Builder) Build() ([]byte, error) {
 				if len(ww) != 0 {
 					warningsMux.Lock()
 					for _, w := range ww {
-						warnings = append(warnings, "Page "+strconv.Itoa(z+1)+": "+w)
+						warnings = append(warnings, "Page "+strconv.Itoa(k+1)+": "+w)
 					}
 					warningsMux.Unlock()
 				}
