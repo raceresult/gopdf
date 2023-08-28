@@ -215,7 +215,13 @@ func (q *StreamObject) Decode(file Resolver) ([]byte, error) {
 			return nil, errors.New("filter " + string(filter) + " not implemented")
 
 		case Filter_FlateDecode:
-			r, err := zlib.NewReader(bytes.NewReader(data))
+			// for some reason, sometimes the data is missing at least one byte, although the encoded stream has the
+			// exact length as defined in the stream dictionary. Decoding the flat encoded data then fails, but
+			// other PDF readers accept the file. As a workaround, we add 4 extra zero bytes.
+			c := make([]byte, len(data)+4)
+			copy(c, data)
+
+			r, err := zlib.NewReader(bytes.NewReader(c))
 			if err != nil {
 				return nil, err
 			}
