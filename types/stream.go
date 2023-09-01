@@ -226,7 +226,7 @@ func (q *StreamObject) Decode(file Resolver) ([]byte, error) {
 				return nil, err
 			}
 			data, err = ioutil.ReadAll(r)
-			if err != nil {
+			if err != nil && !errors.Is(err, zlib.ErrChecksum) {
 				return nil, err
 			}
 
