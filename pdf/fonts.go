@@ -130,11 +130,25 @@ func (q *CompositeFont) Reference() types.Reference {
 	return q.reference
 }
 func (q *CompositeFont) Encode(text string) string {
+	var repl bool
 	q.usedRunesMux.Lock()
-	for _, r := range text {
+	runes := []rune(text)
+	for i, r := range runes {
+		if r > 0xFFFF { // temporary fix for Case429060
+			if q.font.LookupRunes([]rune{r})[0] == 0 {
+				r = '?'
+				runes[i] = '?'
+				repl = true
+			}
+		}
+
 		q.usedRunes[r] = struct{}{}
 	}
 	q.usedRunesMux.Unlock()
+
+	if repl {
+		text = string(runes)
+	}
 
 	sn, _ := unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM).NewEncoder().String(text)
 	return sn
