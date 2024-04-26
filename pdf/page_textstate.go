@@ -63,13 +63,13 @@ func (q *Page) TextState_TL(leading float64) {
 // No-Op if identical to value in current text state
 func (q *Page) TextState_Tf(font FontHandler, fontSize float64) {
 	n := q.AddFont(font)
+	q.currFont = font
 	if q.graphicsState.TextState.Tf == n && q.graphicsState.TextState.Tfs == fontSize {
 		return
 	}
 	q.graphicsState.TextState.Tf = n
 	q.graphicsState.TextState.Tfs = fontSize
 
-	q.currFont = font
 	q.AddCommand("Tf", n, types.Number(fontSize))
 }
 

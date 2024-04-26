@@ -107,7 +107,7 @@ func (q *File) NewTrueTypeFont(ttf []byte, encoding types.Encoding, embed bool) 
 }
 
 // NewCompositeFontFromTTF creates a new composite front from the given true type font
-func (q *File) NewCompositeFontFromTTF(ttf []byte) (*CompositeFont, error) {
+func (q *File) NewCompositeFontFromTTF(ttf []byte, fallback FontHandler) (*CompositeFont, error) {
 	// parse font by unitype
 	fnt, err := unitype.Parse(bytes.NewReader(ttf))
 	if err != nil {
@@ -161,10 +161,11 @@ func (q *File) NewCompositeFontFromTTF(ttf []byte) (*CompositeFont, error) {
 
 	// create CompositeFont object
 	fh := &CompositeFont{
-		reference: q.creator.AddObject(f),
-		usedRunes: make(map[rune]struct{}),
-		font:      fnt,
-		metrics:   fnt.GetMetrics(),
+		reference:    q.creator.AddObject(f),
+		usedRunes:    make(map[rune]struct{}),
+		font:         fnt,
+		metrics:      fnt.GetMetrics(),
+		fallbackFont: fallback,
 	}
 	fh.onFinish = func() error {
 		// determine highest rune number

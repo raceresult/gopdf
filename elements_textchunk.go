@@ -28,7 +28,34 @@ func (q *TextChunk) getLineWidth(line string) float64 {
 	if line == "" {
 		return 0
 	}
-	v := q.Font.GetWidth(line, q.FontSize)
+
+	var v float64
+	if fb := q.Font.FallbackFont(); fb != nil {
+		rr := []rune(line)
+		hasGlyph := q.Font.HasGylph(rr)
+		curr := true
+		start := 0
+		for i := range hasGlyph {
+			if i < len(hasGlyph)-1 && hasGlyph[i+1] == curr {
+				continue
+			}
+
+			var w float64
+			part := string(rr[start : i+1])
+			if !curr {
+				w = fb.GetWidth(part, q.FontSize)
+			} else {
+				w = q.Font.GetWidth(part, q.FontSize)
+			}
+			v += w
+			curr = !curr
+			start = i + 1
+		}
+
+	} else {
+		v = q.Font.GetWidth(line, q.FontSize)
+	}
+
 	if q.CharSpacing.Value != 0 {
 		v += float64(len([]rune(line))-1) * q.CharSpacing.Pt()
 	}
@@ -100,16 +127,49 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) (string, error) {
 	}
 
 	// begin text and set position
-	page.TextObjects_BT()
 	var c float64
 	if q.Italic {
 		c = 0.333
 	}
-	page.TextPosition_Tm(1, 0, c, 1, left, top)
 
 	// draw text
-	page.TextShowing_Tj(reverseRTLString(q.Text))
-	page.TextObjects_ET()
+	if fb := q.Font.FallbackFont(); fb != nil || false {
+		rr := []rune(q.Text)
+		hasGlyph := q.Font.HasGylph(rr)
+		curr := true
+		start := 0
+		for i := range hasGlyph {
+			if i < len(hasGlyph)-1 && hasGlyph[i+1] == curr {
+				continue
+			}
+
+			var w float64
+			part := reverseRTLString(string(rr[start : i+1]))
+			if !curr {
+				page.TextState_Tf(fb, q.FontSize)
+				w = fb.GetWidth(part, q.FontSize)
+			} else {
+				if start != 0 {
+					page.TextState_Tf(q.Font, q.FontSize)
+				}
+				w = q.Font.GetWidth(part, q.FontSize)
+			}
+			page.TextObjects_BT()
+			page.TextPosition_Tm(1, 0, c, 1, left, top)
+			page.TextShowing_Tj(part)
+			page.TextObjects_ET()
+
+			left += w
+			curr = !curr
+			start = i + 1
+		}
+
+	} else {
+		page.TextObjects_BT()
+		page.TextPosition_Tm(1, 0, c, 1, left, top)
+		page.TextShowing_Tj(reverseRTLString(q.Text))
+		page.TextObjects_ET()
+	}
 
 	// underline/strike-through text
 	if q.Underline {

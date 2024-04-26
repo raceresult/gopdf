@@ -23,6 +23,8 @@ type FontHandler interface {
 	GetTop(fontSize float64) float64
 	GetBottom(fontSize float64) float64
 	GetHeight(fontSize float64) float64
+	HasGylph(runes []rune) []bool
+	FallbackFont() FontHandler
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -64,6 +66,16 @@ func (q *StandardFont) GetUnderlineThickness(fontSize float64) float64 {
 }
 func (q *StandardFont) GetUnderlinePosition(fontSize float64) float64 {
 	return q.metrics.Direction[0].UnderlinePosition.Float64() * fontSize / 1000
+}
+func (q *StandardFont) HasGylph(runes []rune) []bool {
+	dest := make([]bool, 0, len(runes))
+	for range runes {
+		dest = append(dest, true)
+	}
+	return dest
+}
+func (q *StandardFont) FallbackFont() FontHandler {
+	return nil
 }
 func (q *StandardFont) finish() error {
 	return nil
@@ -110,6 +122,16 @@ func (q *TrueTypeFont) GetUnderlineThickness(size float64) float64 {
 func (q *TrueTypeFont) GetUnderlinePosition(size float64) float64 {
 	return float64(q.metrics.UnderlinePosition) * size / 1000
 }
+func (q *TrueTypeFont) HasGylph(runes []rune) []bool {
+	dest := make([]bool, 0, len(runes))
+	for _, ind := range q.font.LookupRunes(runes) {
+		dest = append(dest, ind > 0)
+	}
+	return dest
+}
+func (q *TrueTypeFont) FallbackFont() FontHandler {
+	return nil
+}
 func (q *TrueTypeFont) finish() error {
 	return nil
 }
@@ -124,6 +146,7 @@ type CompositeFont struct {
 	onFinish     func() error
 	font         *unitype.Font
 	metrics      unitype.Metrics
+	fallbackFont FontHandler
 }
 
 func (q *CompositeFont) Reference() types.Reference {
@@ -177,6 +200,16 @@ func (q *CompositeFont) GetUnderlineThickness(size float64) float64 {
 }
 func (q *CompositeFont) GetUnderlinePosition(size float64) float64 {
 	return float64(q.metrics.UnderlinePosition) * size / 1000
+}
+func (q *CompositeFont) HasGylph(runes []rune) []bool {
+	dest := make([]bool, 0, len(runes))
+	for _, ind := range q.font.LookupRunes(runes) {
+		dest = append(dest, ind > 0)
+	}
+	return dest
+}
+func (q *CompositeFont) FallbackFont() FontHandler {
+	return q.fallbackFont
 }
 func (q *CompositeFont) finish() error {
 	if q.onFinish == nil {
@@ -246,7 +279,17 @@ func (q *CompositeFontOTF) GetUnderlinePosition(size float64) float64 {
 	underlinePosition := -100
 	return float64(underlinePosition) * size / 1000
 }
-
+func (q *CompositeFontOTF) HasGylph(runes []rune) []bool {
+	dest := make([]bool, 0, len(runes))
+	for _, r := range runes {
+		ind, _ := q.font.GlyphIndex(nil, r)
+		dest = append(dest, ind > 0)
+	}
+	return dest
+}
+func (q *CompositeFontOTF) FallbackFont() FontHandler {
+	return nil
+}
 func (q *CompositeFontOTF) finish() error {
 	if q.onFinish == nil {
 		return nil
