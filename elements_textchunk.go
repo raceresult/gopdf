@@ -33,7 +33,7 @@ func (q *TextChunk) getLineWidth(line string) float64 {
 	if fb := q.Font.FallbackFont(); fb != nil {
 		rr := []rune(line)
 		hasGlyph := q.Font.HasGylph(rr)
-		curr := true
+		curr := hasGlyph[0]
 		start := 0
 		for i := range hasGlyph {
 			if i < len(hasGlyph)-1 && hasGlyph[i+1] == curr {
@@ -136,7 +136,7 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) (string, error) {
 	if fb := q.Font.FallbackFont(); fb != nil || false {
 		rr := []rune(q.Text)
 		hasGlyph := q.Font.HasGylph(rr)
-		curr := true
+		curr := hasGlyph[0]
 		start := 0
 		for i := range hasGlyph {
 			if i < len(hasGlyph)-1 && hasGlyph[i+1] == curr {
