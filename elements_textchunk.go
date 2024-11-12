@@ -2,8 +2,8 @@ package gopdf
 
 import (
 	"errors"
-
 	"github.com/raceresult/gopdf/pdf"
+	"github.com/raceresult/gopdf/pdftext"
 	"github.com/raceresult/gopdf/types"
 )
 
@@ -133,7 +133,7 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) (string, error) {
 	}
 
 	// draw text
-	if fb := q.Font.FallbackFont(); fb != nil || false {
+	if fb := q.Font.FallbackFont(); fb != nil {
 		rr := []rune(q.Text)
 		hasGlyph := q.Font.HasGylph(rr)
 		curr := hasGlyph[0]
@@ -144,7 +144,7 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) (string, error) {
 			}
 
 			var w float64
-			part := reverseRTLString(string(rr[start : i+1]))
+			part := pdftext.StringModifications(string(rr[start : i+1]))
 			if !curr {
 				page.TextState_Tf(fb, q.FontSize)
 				w = fb.GetWidth(part, q.FontSize)
@@ -167,7 +167,7 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) (string, error) {
 	} else {
 		page.TextObjects_BT()
 		page.TextPosition_Tm(1, 0, c, 1, left, top)
-		page.TextShowing_Tj(reverseRTLString(q.Text))
+		page.TextShowing_Tj(pdftext.StringModifications(q.Text))
 		page.TextObjects_ET()
 	}
 
