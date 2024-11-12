@@ -1,5 +1,7 @@
 package arabic
 
+// copied from https://github.com/abdullahdiaa/garabic and modified
+
 import (
 	"bytes"
 	"fmt"
@@ -160,28 +162,6 @@ const (
 	AlefWaslah = '\u0671'
 )
 
-// Number groups in Arabic
-var _zeroToNine = []string{
-	"صفر", "واحد", "اثنان", "ثلاثة", "أربعة",
-	"خمسة", "ستة", "سبعة", "ثمانية", "تسعة",
-}
-
-var _elevenToNineteen = []string{
-	"عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر",
-	"خمسة عشر", "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر",
-}
-
-var _tens = []string{
-	"", "", "عشرون", "ثلاثون", "أربعون", "خمسون",
-	"ستون", "سبعون", "ثمانون", "تسعون",
-}
-var _hundreds = []string{
-	"", "مئة", "مئتان", "ثلاثمئة", "أربعمئة", "خمسمئة", "ستمئة", "سبعمئة", "ثمانمئة", "تسعمئة",
-}
-var _scaleNumbers = []string{
-	"", "ألف", "مليون", "مليار",
-}
-
 // RemoveHarakat will remove harakat from arabic text
 func RemoveHarakat(input string) string {
 	input = normalizeTransform(input)
@@ -234,87 +214,6 @@ func deleteRune(runes []rune, i int) []rune {
 	return runes
 }
 
-// SpellNumber will transform a number into a readable arabic version
-func SpellNumber(input int) string {
-
-	var stringOfNum []string
-
-	if input < 0 {
-		stringOfNum = append(stringOfNum, "سالب")
-		input *= -1
-	}
-
-	if input < 10 {
-		stringOfNum = append(stringOfNum, _zeroToNine[input])
-		return strings.TrimSpace(strings.Join(stringOfNum, " "))
-	}
-
-	groups := []int{}
-
-	for input > 0 {
-		groups = append(groups, input%1000)
-		input = input / 1000
-	}
-
-	for i := len(groups) - 1; i >= 0; i-- {
-		//Get each group with its decimal position
-		group := groups[i]
-		if group == 0 {
-			continue
-		}
-
-		// [0 0 x]
-		hundreds := group / 100 % 10
-		// [0 x 0]
-		tens := group / 10 % 10
-		// [x 0 0]
-		zeros := group % 10
-
-		if hundreds > 0 {
-			if i == len(groups)-1 {
-				stringOfNum = append(stringOfNum, _hundreds[hundreds])
-			} else {
-				stringOfNum = append(stringOfNum, "و", _hundreds[hundreds])
-			}
-		}
-
-		//Move to scale number
-		if tens == 0 && zeros == 0 {
-			goto scale
-		}
-
-		switch tens {
-		case 0:
-			if zeros > 1 {
-				stringOfNum = append(stringOfNum, _zeroToNine[zeros])
-			}
-		case 1:
-			stringOfNum = append(stringOfNum, _elevenToNineteen[zeros])
-			break
-		default:
-			if zeros > 0 {
-				word := fmt.Sprintf("و %s و %s", _zeroToNine[zeros], _tens[tens])
-				stringOfNum = append(stringOfNum, word)
-			} else {
-				if len(stringOfNum) > 1 {
-					stringOfNum = append(stringOfNum, "و", _tens[tens])
-				} else {
-					stringOfNum = append(stringOfNum, _tens[tens])
-				}
-			}
-			break
-		}
-
-		// Scale position
-	scale:
-		if mega := _scaleNumbers[i]; mega != "" {
-			stringOfNum = append(stringOfNum, mega)
-		}
-	}
-
-	return strings.TrimSpace(strings.Join(stringOfNum, " "))
-}
-
 // Tashkeel will add matching diacritics to arabic text
 func Tashkeel(input string) string {
 	JarrWords := []string{"من", "الي", "عن", "على", "مذ", "خلا", "عدا", "حاشا"}
@@ -341,6 +240,9 @@ func contains(s []string, str string) bool {
 
 // Shape will reconstruct arabic text to be connected correctly
 func Shape(input string) string {
+	if !IsArabic(input) {
+		return input
+	}
 	var foundArabic bool
 	for _, letter := range input {
 		if IsArabicLetter(letter) {
@@ -507,36 +409,4 @@ func IsArabic(input string) bool {
 		}
 	}
 	return isArabic
-}
-
-// ToArabicDigits will convert english numbers to arabic numbers in text
-func ToArabicDigits(input string) string {
-	return strings.NewReplacer(
-		"0", "٠",
-		"1", "١",
-		"2", "٢",
-		"3", "٣",
-		"4", "٤",
-		"5", "٥",
-		"6", "٦",
-		"7", "٧",
-		"8", "٨",
-		"9", "٩",
-	).Replace(input)
-}
-
-// ToEnglishDigits will convert arabic numbers to english numbers in text
-func ToEnglishDigits(input string) string {
-	return strings.NewReplacer(
-		"٠", "0",
-		"١", "1",
-		"٢", "2",
-		"٣", "3",
-		"٤", "4",
-		"٥", "5",
-		"٦", "6",
-		"٧", "7",
-		"٨", "8",
-		"٩", "9",
-	).Replace(input)
 }
