@@ -1,0 +1,397 @@
+package unitype
+
+import (
+	"errors"
+	"strconv"
+)
+
+// gsubTable
+// https://docs.microsoft.com/en-us/typography/opentype/spec/gsub
+type gsubTable struct {
+	majorVersion            uint16
+	minorVersion            uint16
+	scriptListOffset        uint16
+	featureListOffset       uint16
+	lookupListOffset        uint16
+	featureVariationsOffset uint32
+
+	data []byte
+
+	Gsub4_1 []*Gsub4_1
+}
+
+func (f *font) writeGSUB(w *byteWriter) error {
+	if f.gsub == nil {
+		return nil
+	}
+
+	return w.writeBytes(f.gsub.data)
+}
+
+func (f *font) parseGsub(r *byteReader) (*gsubTable, error) {
+	// seek GSUB table
+	tr, has, err := f.seekToTable(r, "GSUB")
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		// logrus.Debug("gsub table absent")
+		return nil, nil
+	}
+
+	// read header
+	t := &gsubTable{}
+	return t, r.readBytes(&t.data, int(tr.length))
+
+	err = r.read(&t.majorVersion, &t.minorVersion, &t.scriptListOffset, &t.featureListOffset, &t.lookupListOffset)
+	if err != nil {
+		return nil, err
+	}
+	if t.majorVersion != 1 || t.minorVersion > 1 { // newer version not supported
+		// logrus.Debug("gsub version not supported")
+		return nil, nil
+	}
+	if t.minorVersion == 1 {
+		err = r.read(&t.featureVariationsOffset)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// todo: readScriptList
+
+	// todo: readFeatureList
+
+	// readLookupList
+	if err := t.readLookupList(r, int64(tr.offset)+int64(t.lookupListOffset)); err != nil {
+		// ignore parsing errors
+		//return nil, err
+	}
+
+	return t, nil
+}
+
+type LookupFlags uint16
+
+// Bit values for LookupFlag.
+const (
+	// RightToLeft indicates that for GPOS lookup type 3 (cursive
+	// attachment), the last glyph in the sequence (rather than the first) will
+	// be positioned on the baseline.
+	RightToLeft LookupFlags = 0x0001
+
+	// IgnoreBaseGlyphs indicates that the lookup ignores glyphs which
+	// are classified as base glyphs in the GDEF table.
+	IgnoreBaseGlyphs LookupFlags = 0x0002
+
+	// IgnoreLigatures indicates that the lookup ignores glyphs which
+	// are classified as ligatures in the GDEF table.
+	IgnoreLigatures LookupFlags = 0x0004
+
+	// IgnoreMarks indicates that the lookup ignores glyphs which are
+	// classified as marks in the GDEF table.
+	IgnoreMarks LookupFlags = 0x0008
+
+	// UseMarkFilteringSet indicates that the lookup ignores all
+	// glyphs classified as marks in the GDEF table, except for those
+	// in the specified mark filtering set.
+	UseMarkFilteringSet LookupFlags = 0x0010
+
+	// MarkAttachTypeMask, if not zero, skips over all marks that are not
+	// of the specified type.  Mark attachment classes must be defined in the
+	// MarkAttachClass Table in the GDEF table.
+	MarkAttachTypeMask LookupFlags = 0xFF00
+)
+
+// LookupMetaInfo contains information associated with a [LookupTable].
+// Only information which is not specific to a particular subtable is
+// included here.
+type LookupMetaInfo struct {
+	// LookupType identifies the type of the lookups inside a lookup table.
+	// Different numbering schemes are used for GSUB and GPOS tables.
+	LookupType uint16
+
+	// LookupFlags contains flags which modify application of the lookup to a
+	// glyph string.
+	LookupFlags LookupFlags
+
+	// An index into the MarkGlyphSets slice in the corresponding GDEF struct.
+	// This is only used, if the MarkFilteringSet flag is set.  In this case,
+	// all marks not present in the specified mark glyph set are skipped.
+	MarkFilteringSet uint16
+}
+
+// Gsub4_1 is a Ligature Substitution GSUB subtable (type 4, format 1).
+// Lookups of this type replace a sequence of glyphs with a single glyph.
+//
+// The order of entries in Repl defines the preference for using the ligatures,
+// for example "ffl" is only applied if it comes before "ff".
+//
+// https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#41-ligature-substitution-format-1
+type Gsub4_1 struct {
+	Cov  CoverageTable
+	Repl [][]Ligature // indexed by coverage index
+}
+
+// Ligature represents a substitution of a sequence of glyphs into a single glyph
+// in a [Gsub4_1] subtable.
+type Ligature struct {
+	// In is the sequence of input glyphs that is replaced by Out, excluding
+	// the first glyph in the sequence (since this is in Cov).
+	In []GlyphIndex
+
+	// Out is the glyph that replaces the input sequence.
+	Out GlyphIndex
+}
+
+func (t *gsubTable) readLookupList(r *byteReader, pos int64) error {
+	if err := r.SeekTo(pos); err != nil {
+		return err
+	}
+
+	// read lookup offsets
+	lookupCount, err := r.readUint16()
+	if err != nil {
+		return err
+	}
+	if lookupCount == 0 {
+		return nil
+	}
+	var lookupOffsets []uint16
+	if err := r.readSlice(&lookupOffsets, int(lookupCount)); err != nil {
+		return err
+	}
+
+	//res := make(LookupList, len(lookupOffsets))
+
+	numLookups := 0
+	numSubTables := 0
+
+	var subtableOffsets []uint16
+	for _, offs := range lookupOffsets {
+		lookupTablePos := pos + int64(offs)
+		err := r.SeekTo(lookupTablePos)
+		if err != nil {
+			return err
+		}
+		var buf []byte
+		if err := r.readBytes(&buf, 6); err != nil {
+			return err
+		}
+
+		lookupType := uint16(buf[0])<<8 | uint16(buf[1])
+		lookupFlag := LookupFlags(buf[2])<<8 | LookupFlags(buf[3])
+		subTableCount := uint16(buf[4])<<8 | uint16(buf[5])
+		numLookups++
+		numSubTables += int(subTableCount)
+		if numLookups+numSubTables > 6000 {
+			// The condition ensures that we can always store the lookup
+			// data (using extension subtables if necessary), without
+			// exceeding the maximum offset size in the lookup list table.
+			return errors.New("too many lookup (sub-)tables")
+		}
+		subtableOffsets = subtableOffsets[:0]
+		for j := 0; j < int(subTableCount); j++ {
+			subtableOffset, err := r.readUint16()
+			if err != nil {
+				return err
+			}
+			subtableOffsets = append(subtableOffsets, subtableOffset)
+		}
+		var markFilteringSet uint16
+		if lookupFlag&UseMarkFilteringSet != 0 {
+			markFilteringSet, err = r.readUint16()
+			if err != nil {
+				return err
+			}
+		}
+
+		meta := &LookupMetaInfo{
+			LookupType:       lookupType,
+			LookupFlags:      lookupFlag,
+			MarkFilteringSet: markFilteringSet,
+		}
+
+		for _, subtableOffset := range subtableOffsets {
+			if err := t.readGsubSubtable(r, lookupTablePos+int64(subtableOffset), meta.LookupType); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// readGsubSubtable reads a GSUB subtable.
+// This function can be used as the SubtableReader argument to readLookupList().
+func (t *gsubTable) readGsubSubtable(r *byteReader, pos int64, lookupType uint16) error {
+	switch lookupType {
+	case 1: // Single
+		return nil // todo
+	case 2: // Multiple
+		return nil // todo
+	case 3: // Alternate
+		return nil // todo
+	case 4: // Ligature
+		return t.readGsubSubtable4(r, pos)
+	case 5: // contextual substitution
+		return nil // todo
+	case 6: // chained contexts substitution
+		return nil // todo
+	case 7: // substitution extension
+		return nil // todo
+	case 8: // reverse chaining context single
+		return nil // todo
+	default:
+		return errors.New("unknown gsub table format " + strconv.Itoa(int(lookupType)))
+	}
+}
+
+func (t *gsubTable) readGsubSubtable4(r *byteReader, subtablePos int64) error {
+	err := r.SeekTo(subtablePos)
+	if err != nil {
+		return err
+	}
+
+	format, err := r.readUint16()
+	if err != nil {
+		return err
+	}
+	if format != 1 {
+		return errors.New("unknown gsub format for subtable 4")
+	}
+
+	coverageOffset, err := r.readUint16()
+	if err != nil {
+		return err
+	}
+
+	ligatureSetOffsetCount, err := r.readUint16()
+	if err != nil {
+		return err
+	}
+	if ligatureSetOffsetCount == 0 {
+		return nil
+	}
+	var ligatureSetOffsets []uint16
+	if err := r.readSlice(&ligatureSetOffsets, int(ligatureSetOffsetCount)); err != nil {
+		return err
+	}
+
+	cov, err := coverageRead(r, subtablePos+int64(coverageOffset))
+	if err != nil {
+		return err
+	}
+	if len(cov) > len(ligatureSetOffsets) {
+		cov.Prune(len(ligatureSetOffsets))
+	} else {
+		ligatureSetOffsets = ligatureSetOffsets[:len(cov)]
+	}
+
+	repl := make([][]Ligature, len(ligatureSetOffsets))
+	for i, ligatureSetOffset := range ligatureSetOffsets {
+		ligatureSetPos := subtablePos + int64(ligatureSetOffset)
+		if err := r.SeekTo(ligatureSetPos); err != nil {
+			return err
+		}
+		ligatureOffsetCount, err := r.readUint16()
+		if err != nil {
+			return err
+		}
+		var ligatureOffsets []uint16
+		if err := r.readSlice(&ligatureOffsets, int(ligatureOffsetCount)); err != nil {
+			return err
+		}
+
+		repl[i] = make([]Ligature, len(ligatureOffsets))
+		for j, ligatureOffset := range ligatureOffsets {
+			if err := r.SeekTo(ligatureSetPos + int64(ligatureOffset)); err != nil {
+				return err
+			}
+			ligatureGlyph, err := r.readUint16()
+			if err != nil {
+				return err
+			}
+			componentCount, err := r.readUint16()
+			if err != nil {
+				return err
+			}
+			componentGlyphIDs := make([]GlyphIndex, componentCount-1)
+			for k := range componentGlyphIDs {
+				gid, err := r.readUint16()
+				if err != nil {
+					return err
+				}
+				componentGlyphIDs[k] = GlyphIndex(gid)
+			}
+
+			repl[i][j].In = componentGlyphIDs
+			repl[i][j].Out = GlyphIndex(ligatureGlyph)
+		}
+	}
+
+	total := 6 + 2*len(repl)
+	for _, replI := range repl {
+		total += 2 + 2*len(replI)
+		for _, lig := range replI {
+			total += 4 + 2*len(lig.In)
+		}
+	}
+	// Now total is the coverage offset when encoding the subtable without overlapping data.
+	if total > 0xFFFF {
+		return errors.New("GSUB 4.1 too large")
+	}
+
+	t.Gsub4_1 = append(t.Gsub4_1, &Gsub4_1{
+		Cov:  cov,
+		Repl: repl,
+	})
+	return nil
+}
+
+/*
+
+func (f *Font) ApplyGSUB(s string) string {
+	if f.gsub == nil || len(f.gsub.Gsub4_1) == 0 {
+		return s
+	}
+
+	for _, t := range f.gsub.Gsub4_1 {
+		s = f.applyOneGSUB(s, t)
+	}
+	return s
+}
+
+func (f *Font) applyOneGSUB(s string, gsub *Gsub4_1) string {
+	rr := []rune(s)
+	gi := f.LookupRunes(rr)
+	dest := make([]rune, 0, len(rr))
+
+	for i := 0; i < len(rr); i++ {
+		if gi[i] == 0 {
+			dest = append(dest, rr[i])
+			continue
+		}
+		cti, ok := gsub.Cov[gi[i]]
+		if !ok || cti >= len(gsub.Repl) {
+			dest = append(dest, rr[i])
+			continue
+		}
+		for _, rpl := range gsub.Repl[cti] {
+			match := true
+			for j, in := range rpl.In {
+				if i+j+1 >= len(gi) || in != gi[i+j+1] {
+					match = false
+					break
+				}
+			}
+			if match {
+				dest = append(dest, f.LookupGlyps([]GlyphIndex{rpl.Out})...)
+				i += len(rpl.In)
+				break
+			}
+		}
+	}
+	return string(dest)
+}
+ */

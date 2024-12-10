@@ -1,0 +1,197 @@
+package unitype
+
+import (
+	"errors"
+	"fmt"
+)
+
+// CoverageTable represents an OpenType "Coverage Table".
+// A Coverage table defines a unique index value, the Coverage Index, for each covered glyph.
+// The Coverage Indexes are sequential, from 0 to the number of covered glyphs minus 1.
+// The map from glyph ID to Coverage Index must be strictly monotonic.
+type CoverageTable map[GlyphIndex]int
+
+// Contains returns true if the given glyph ID is covered by the table.
+func (table CoverageTable) Contains(gid GlyphIndex) bool {
+	_, ok := table[gid]
+	return ok
+}
+
+// Prune removes all glyphs from the table that have coverage index >= size.
+func (table CoverageTable) Prune(size int) {
+	var gg []GlyphIndex
+	for gid, class := range table {
+		if class >= size {
+			gg = append(gg, gid)
+		}
+	}
+	for _, gid := range gg {
+		delete(table, gid)
+	}
+}
+
+//
+//func (table CoverageTable) ToSet() Set {
+//	set := make(Set, len(table))
+//	for gid := range table {
+//		set[gid] = true
+//	}
+//	return set
+//}
+
+// coverageRead reads a coverage table from the given parser.
+func coverageRead(r *byteReader, pos int64) (CoverageTable, error) {
+	err := r.SeekTo(pos)
+	if err != nil {
+		return nil, err
+	}
+
+	format, err := r.readUint16()
+	if err != nil {
+		return nil, err
+	}
+
+	table := make(CoverageTable)
+
+	switch format {
+	case 1: // Coverage Format 1
+		glyphCount, err := r.readUint16()
+		if err != nil {
+			return nil, err
+		}
+		prev := -1
+		for i := 0; i < int(glyphCount); i++ {
+			gid, err := r.readUint16()
+			if err != nil {
+				return nil, err
+			}
+			if int(gid) <= prev {
+				return nil, errors.New("invalid coverage table (format 1)")
+			}
+			// Some fonts, for example Google's Roboto, list the same
+			// gid twice.  Thus we write "< prev" instead of "<= prev"
+			// in the test above.
+			//
+			// TODO(voss): Here we need to decide which coverage index to use
+			// in these cases.
+			table[GlyphIndex(gid)] = i
+			prev = int(gid)
+		}
+
+	case 2: // Coverage Format 2
+		rangeCount, err := r.readUint16()
+		if err != nil {
+			return nil, err
+		}
+		pos := 0
+		prev := -1
+		for i := 0; i < int(rangeCount); i++ {
+			var buf []byte
+			if err := r.readBytes(&buf, 6); err != nil {
+				return nil, err
+			}
+			startGlyphID := int(buf[0])<<8 | int(buf[1])
+			endGlyphID := int(buf[2])<<8 | int(buf[3])
+			startCoverageIndex := int(buf[4])<<8 | int(buf[5])
+			if startCoverageIndex != pos ||
+				startGlyphID <= prev ||
+				endGlyphID < startGlyphID {
+				return nil, errors.New("invalid coverage table (format 2)")
+			}
+			for gid := startGlyphID; gid <= endGlyphID; gid++ {
+				table[GlyphIndex(gid)] = pos
+				pos++
+			}
+			prev = endGlyphID
+		}
+
+	default:
+		return nil, errors.New(fmt.Sprintf("coverage format %d", format))
+	}
+
+	return table, nil
+}
+
+func (table CoverageTable) encInfo() ([]GlyphIndex, int, int) {
+	rev := make([]GlyphIndex, len(table))
+	for gid, i := range table {
+		rev[i] = gid
+	}
+	for i := 1; i < len(rev); i++ {
+		if rev[i-1] >= rev[i] {
+			//panic("invalid coverage table")
+			return nil, 0, 0
+		}
+	}
+
+	format1Length := 4 + 2*len(table)
+
+	rangeCount := 0
+	prev := 0xFFFF
+	for _, gid := range rev {
+		if int(gid) != prev+1 {
+			rangeCount++
+		}
+		prev = int(gid)
+	}
+	format2Length := 4 + 6*rangeCount
+
+	return rev, format1Length, format2Length
+}
+
+// EncodeLen returns the number of bytes in the binary representation of the
+// coverage table.
+func (table CoverageTable) EncodeLen() int {
+	_, format1Length, format2Length := table.encInfo()
+	if format1Length <= format2Length {
+		return format1Length
+	}
+	return format2Length
+}
+
+// Encode returns the binary representation of the coverage table.
+func (table CoverageTable) Encode() []byte {
+	rev, format1Length, format2Length := table.encInfo()
+
+	if format1Length <= format2Length {
+		buf := make([]byte, format1Length)
+		buf[0] = 0
+		buf[1] = 1
+		buf[2] = byte(len(rev) >> 8)
+		buf[3] = byte(len(rev))
+		for i, gid := range rev {
+			buf[4+2*i] = byte(gid >> 8)
+			buf[4+2*i+1] = byte(gid)
+		}
+		return buf
+	}
+
+	rangeCount := (format2Length - 4) / 6
+
+	buf := make([]byte, 4, format2Length)
+	buf[0] = 0
+	buf[1] = 2
+	buf[2] = byte(rangeCount >> 8)
+	buf[3] = byte(rangeCount)
+	var startGlyphID GlyphIndex
+	var startCoverageIndex int
+	prev := 0xFFFF
+	for i, gid := range rev {
+		if int(gid) != prev+1 {
+			if i > 0 {
+				buf = append(buf,
+					byte(startGlyphID>>8), byte(startGlyphID),
+					byte(prev>>8), byte(prev),
+					byte(startCoverageIndex>>8), byte(startCoverageIndex))
+			}
+			startGlyphID = gid
+			startCoverageIndex = i
+		}
+		prev = int(gid)
+	}
+	buf = append(buf,
+		byte(startGlyphID>>8), byte(startGlyphID),
+		byte(prev>>8), byte(prev),
+		byte(startCoverageIndex>>8), byte(startCoverageIndex))
+	return buf
+}

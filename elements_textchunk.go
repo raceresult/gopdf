@@ -144,7 +144,7 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) (string, error) {
 			}
 
 			var w float64
-			part := pdftext.StringModifications(string(rr[start : i+1]))
+			part := pdftext.StringModifications(string(rr[start:i+1]), q.Font)
 			if !curr {
 				page.TextState_Tf(fb, q.FontSize)
 				w = fb.GetWidth(part, q.FontSize)
@@ -167,7 +167,7 @@ func (q *TextChunk) draw(page *pdf.Page, left, top float64) (string, error) {
 	} else {
 		page.TextObjects_BT()
 		page.TextPosition_Tm(1, 0, c, 1, left, top)
-		page.TextShowing_Tj(pdftext.StringModifications(q.Text))
+		page.TextShowing_Tj(pdftext.StringModifications(q.Text, q.Font))
 		page.TextObjects_ET()
 	}
 

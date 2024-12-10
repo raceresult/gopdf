@@ -5,6 +5,7 @@ package arabic
 import (
 	"bytes"
 	"fmt"
+	"github.com/raceresult/gopdf/pdf"
 	"strings"
 	"unicode"
 
@@ -239,10 +240,7 @@ func contains(s []string, str string) bool {
 }
 
 // Shape will reconstruct arabic text to be connected correctly
-func Shape(input string) string {
-	if !IsArabic(input) {
-		return input
-	}
+func Shape(input string, font pdf.FontHandler) string {
 	var foundArabic bool
 	for _, letter := range input {
 		if IsArabicLetter(letter) {
@@ -284,7 +282,7 @@ func Shape(input string) string {
 	for _, section := range langSections {
 		if IsArabic(section) {
 			for _, word := range strings.Fields(section) {
-				shapedSentence = append(shapedSentence, shapeWord(word))
+				shapedSentence = append(shapedSentence, shapeWord(word, font))
 			}
 		} else {
 			shapedSentence = append(shapedSentence, section)
@@ -299,7 +297,7 @@ func Shape(input string) string {
 }
 
 // shapeWord will reconstruct an arabic word to be connected correctly
-func shapeWord(input string) string {
+func shapeWord(input string, font pdf.FontHandler) string {
 	if !IsArabic(input) {
 		return input
 	}
@@ -320,7 +318,11 @@ func shapeWord(input string) string {
 		//Fix the letter based on bounding letters
 		if _, ok := arabicAlphabetShapes[inputRunes[i]]; ok {
 			adjustedLetter := adjustLetter(letterGroup{backLetter, inputRunes[i], frontLetter})
-			shapedInput.WriteRune(adjustedLetter)
+			if font.HasGylph([]rune{adjustedLetter})[0] {
+				shapedInput.WriteRune(adjustedLetter)
+			} else {
+				shapedInput.WriteRune(inputRunes[i])
+			}
 		} else {
 			shapedInput.WriteRune(inputRunes[i])
 		}
@@ -406,11 +408,10 @@ func IsArabicLetter(ch rune) bool {
 
 // IsArabic checks if the input string contains arabic unicode only
 func IsArabic(input string) bool {
-	var isArabic = true
 	for _, v := range input {
 		if !unicode.IsSpace(v) && !IsArabicLetter(v) {
-			isArabic = false
+			return false
 		}
 	}
-	return isArabic
+	return true
 }
