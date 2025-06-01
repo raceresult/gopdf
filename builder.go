@@ -1,7 +1,9 @@
 package gopdf
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"strconv"
 	"strings"
 	"sync"
@@ -50,6 +52,15 @@ func (q *Builder) AddElement(item ...Element) {
 
 // Build builds the PDF document and returns the file as byte slice
 func (q *Builder) Build() ([]byte, error) {
+	var buf bytes.Buffer
+	if _, err := q.WriteTo(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// WriteTo writes the PDF bytes into the given writer
+func (q *Builder) WriteTo(w io.Writer) (int64, error) {
 	// settings
 	q.file.Version = q.Version
 	q.file.Info = q.Info
@@ -101,25 +112,19 @@ func (q *Builder) Build() ([]byte, error) {
 	wg.Wait()
 	for _, err := range errs {
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 	}
 
 	// warnings
 	if len(warnings) != 0 {
 		if err := q.file.AddMetaData([]byte(strings.Join(warnings, "\n"))); err != nil {
-			return nil, err
+			return 0, err
 		}
 	}
 
 	// create byte stream
-	bts, err := q.file.Write()
-	if err != nil {
-		return nil, err
-	}
-
-	// return without error
-	return bts, nil
+	return q.file.WriteTo(w)
 }
 
 // NewPage adds a new page to the pdf
