@@ -135,7 +135,10 @@ type DocumentCatalog struct {
 	// (Optional; PDF 1.4) An array of output intent dictionaries describing the
 	// color characteristics of output devices on which the document might be
 	// rendered (see “Output Intents” on page 684).
-	OutputIntents Object // seems that it can also be a refernece
+	OutputIntents Object // seems that it can also be a reference
+
+	// Associated Files
+	AF Array
 }
 
 func (q DocumentCatalog) ToRawBytes() []byte {
@@ -200,6 +203,9 @@ func (q DocumentCatalog) ToRawBytes() []byte {
 	}
 	if q.OutputIntents != nil {
 		d["OutputIntents"] = q.OutputIntents
+	}
+	if len(q.AF) != 0 {
+		d["AF"] = q.AF
 	}
 
 	return d.ToRawBytes()
@@ -402,6 +408,7 @@ func (q DocumentCatalog) Copy(copyRef func(reference Reference) Reference) Objec
 		Lang:              q.Lang.Copy(copyRef).(String),
 		SpiderInfo:        Copy(q.SpiderInfo, copyRef),
 		OutputIntents:     Copy(q.OutputIntents, copyRef),
+		AF:                q.AF.Copy(copyRef).(Array),
 	}
 }
 
@@ -468,6 +475,9 @@ func (q DocumentCatalog) Equal(obj Object) bool {
 		return false
 	}
 	if !Equal(q.OutputIntents, a.OutputIntents) {
+		return false
+	}
+	if !Equal(q.AF, a.AF) {
 		return false
 	}
 	return true

@@ -118,7 +118,7 @@ func (q *Builder) WriteTo(w io.Writer) (int64, error) {
 
 	// warnings
 	if len(warnings) != 0 {
-		if err := q.file.AddMetaData([]byte(strings.Join(warnings, "\n"))); err != nil {
+		if err := q.file.AddMetaData([]byte(strings.Join(warnings, "\n")), ""); err != nil {
 			return 0, err
 		}
 	}
@@ -230,4 +230,15 @@ func (q *Builder) NewCompositeFontWithFallback(ttf []byte, fallback pdf.FontHand
 // NewCompositeFontFromOTF adds an otf font as composite font to the pdf, i.e. with Unicode support
 func (q *Builder) NewCompositeFontFromOTF(otf []byte) (*pdf.CompositeFontOTF, error) {
 	return q.file.NewCompositeFontFromOTF(otf)
+}
+
+// AddAssociatedFile adds an associated file to the document catalog
+func (q *Builder) AddAssociatedFile(data []byte, relationship types.Name, desc, uf, f, mimeType string) error {
+	_, err := q.file.AddAssociatedFile(data, relationship, desc, uf, f, mimeType)
+	return err
+}
+
+// AddMetaData adds meta data to the document catalog
+func (q *Builder) AddMetaData(data []byte, subtype types.Name) error {
+	return q.file.AddMetaData(data, subtype)
 }

@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"bytes"
+	"errors"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -129,11 +130,86 @@ func (q *File) Write() ([]byte, error) {
 }
 
 // AddMetaData adds meta data to the document catalog
-func (q *File) AddMetaData(data []byte) error {
+func (q *File) AddMetaData(data []byte, subtype types.Name) error {
 	st, err := types.NewStream(data)
 	if err != nil {
 		return err
 	}
-	q.catalog.Metadata = q.creator.AddObject(st)
+	md := types.MetaData{
+		Dictionary: st.Dictionary.(types.StreamDictionary),
+		Stream:     st.Stream,
+		Subtype:    subtype,
+	}
+	q.catalog.Metadata = q.creator.AddObject(md)
 	return nil
+}
+
+// AddAssociatedFile adds an associated file to the document catalog
+func (q *File) AddAssociatedFile(data []byte, relationship types.Name, desc, uf, f, mimeType string) (types.Reference, error) {
+	// create stream
+	dataStream, err := types.NewStream(data, types.Filter_FlateDecode)
+	if err != nil {
+		return types.Reference{}, err
+	}
+	ef := q.creator.AddObject(types.EmbeddedFile{
+		Stream:     dataStream.Stream,
+		Dictionary: dataStream.Dictionary.(types.StreamDictionary),
+		Params: types.Dictionary{
+			"ModDate": types.Date(time.Now()),
+			"Size":    types.Int(len(data)),
+			//"CheckSum": types.String(),
+		},
+		Subtype: types.Name(mimeType),
+	})
+
+	// add to AssociatedFiles
+	ref := q.creator.AddObject(types.FileSpec{
+		AFRelationship: relationship,
+		Desc:           types.String(desc),
+		UF:             types.String(uf),
+		EF: types.Dictionary{
+			"UF": ef,
+			"F":  ef,
+		},
+		F: types.String(f),
+	})
+	q.catalog.AF = append(q.catalog.AF, ref)
+
+	// add to names
+	if q.catalog.Names == nil {
+		q.catalog.Names = types.Dictionary{}
+	}
+	names, ok := q.catalog.Names.(types.Dictionary)
+	if !ok {
+		return types.Reference{}, errors.New("Names is not a Dictionary")
+	}
+	var efs types.Dictionary
+	iefs, ok := names["EmbeddedFiles"]
+	if !ok {
+		efs = types.Dictionary{}
+		names["EmbeddedFiles"] = efs
+	} else {
+		efs, ok = iefs.(types.Dictionary)
+		if !ok {
+			return types.Reference{}, errors.New("EmbeddedFiles is not a Dictionary")
+		}
+	}
+	var efNames types.Array
+	iefNames, ok := efs["Names"]
+	if !ok {
+		efNames = types.Array{}
+		efs["Names"] = efNames
+	} else {
+		efNames, ok = iefNames.(types.Array)
+		if !ok {
+			return types.Reference{}, errors.New("Names is not an Array")
+		}
+	}
+	efNames = append(efNames, types.String(f), ref)
+	efs["Names"] = efNames
+
+	// PageMode
+	q.catalog.PageMode = "UseAttachments"
+
+	return ref, nil
 }

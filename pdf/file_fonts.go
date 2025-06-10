@@ -3,12 +3,11 @@ package pdf
 import (
 	"bytes"
 
+	"github.com/raceresult/gopdf/pdf/unitype"
+	"github.com/raceresult/gopdf/types"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
-
-	"github.com/raceresult/gopdf/pdf/unitype"
-	"github.com/raceresult/gopdf/types"
 )
 
 // NewStandardFont adds and returns a new standard font (expected to be available on all pdf consuming systems)
