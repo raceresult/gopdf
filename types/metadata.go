@@ -14,7 +14,9 @@ type MetaData struct {
 func (q MetaData) ToRawBytes() []byte {
 	d := q.Dictionary.createDict()
 	d["Type"] = Name("Metadata")
-	d["Subtype"] = q.Subtype
+	if q.Subtype != "" {
+		d["Subtype"] = q.Subtype
+	}
 
 	sb := bytes.Buffer{}
 	sb.Write(d.ToRawBytes())
