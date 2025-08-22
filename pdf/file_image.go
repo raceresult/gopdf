@@ -66,6 +66,7 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 			data = append(data, byte(r), byte(g), byte(b))
 		}
 	}
+	x = nil
 
 	// is actually grayscale?
 	colorspace := types.ColorSpace_DeviceRGB
@@ -195,6 +196,7 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 			}
 		}
 	}
+	x = nil
 
 	// is actually grayscale?
 	colorspace := types.ColorSpace_DeviceRGB
@@ -270,6 +272,7 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 			}
 		}
 	}
+	x = nil
 
 	// is actually grayscale?
 	colorspace := types.ColorSpace_DeviceRGB
@@ -359,6 +362,7 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
 			}
 		}
 	}
+	x = nil
 
 	// is actually grayscale?
 	if colorSpace == types.ColorSpace_DeviceRGB {
