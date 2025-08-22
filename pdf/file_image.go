@@ -8,6 +8,7 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"runtime/debug"
 
 	"github.com/raceresult/gopdf/types"
 	"github.com/raceresult/tiff"
@@ -26,6 +27,11 @@ func (q *File) NewImage(bts []byte) (*Image, error) {
 	im, name, err := image.DecodeConfig(bytes.NewReader(bts))
 	if err != nil {
 		return nil, err
+	}
+
+	// free memory afterwards
+	if im.Width*im.Height > 1024*1024 {
+		defer debug.FreeOSMemory()
 	}
 
 	// continue depending on type
@@ -66,7 +72,12 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 			data = append(data, byte(r), byte(g), byte(b))
 		}
 	}
+
+	// free memory
 	x = nil
+	if conf.Width*conf.Height > 1024*1024 {
+		debug.FreeOSMemory()
+	}
 
 	// is actually grayscale?
 	colorspace := types.ColorSpace_DeviceRGB
@@ -154,6 +165,12 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 		return nil, errors.New("unsupported color model")
 	}
 
+	// free memory
+	x = nil
+	if conf.Width*conf.Height > 1024*1024 {
+		debug.FreeOSMemory()
+	}
+
 	// create image stream
 	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
 	if err != nil {
@@ -196,7 +213,12 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 			}
 		}
 	}
+
+	// free memory
 	x = nil
+	if conf.Width*conf.Height > 1024*1024 {
+		debug.FreeOSMemory()
+	}
 
 	// is actually grayscale?
 	colorspace := types.ColorSpace_DeviceRGB
@@ -272,7 +294,12 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 			}
 		}
 	}
+
+	// free memory
 	x = nil
+	if conf.Width*conf.Height > 1024*1024 {
+		debug.FreeOSMemory()
+	}
 
 	// is actually grayscale?
 	colorspace := types.ColorSpace_DeviceRGB
@@ -362,7 +389,12 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
 			}
 		}
 	}
+
+	// free memory
 	x = nil
+	if conf.Width*conf.Height > 1024*1024 {
+		debug.FreeOSMemory()
+	}
 
 	// is actually grayscale?
 	if colorSpace == types.ColorSpace_DeviceRGB {
