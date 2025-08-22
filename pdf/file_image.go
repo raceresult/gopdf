@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"bytes"
+	"compress/zlib"
 	"errors"
 	"image"
 	"image/color"
@@ -196,10 +197,15 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		return nil, err
 	}
 
+	// prepare zip writer
+	var destData, destMask bytes.Buffer
+	wData := zlib.NewWriter(&destData)
+	wMask := zlib.NewWriter(&destMask)
+
 	// separate colors and transparency mask
-	data := make([]byte, 0, conf.Width*conf.Height*3)
-	smask := make([]byte, 0, conf.Width*conf.Height)
 	for i := 0; i < conf.Height; i++ {
+		data := make([]byte, 0, conf.Width*3)
+		smask := make([]byte, 0, conf.Width)
 		for j := 0; j < conf.Width; j++ {
 			c := x.At(j, i)
 			switch v := c.(type) {
@@ -215,25 +221,29 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 				smask = append(smask, byte(a))
 			}
 		}
+		if _, err := wData.Write(data); err != nil {
+			return nil, err
+		}
+		if _, err := wMask.Write(smask); err != nil {
+			return nil, err
+		}
 	}
 
-	// free memory
-	x = nil
-	if conf.Width*conf.Height > 1024*1024 {
-		debug.FreeOSMemory()
+	// finish zlib writers
+	if err := wData.Close(); err != nil {
+		return nil, err
 	}
-
-	// is actually grayscale?
-	colorspace := types.ColorSpace_DeviceRGB
-	if data2, isGray := reduceRGBToGray(data); isGray {
-		data = data2
-		colorspace = types.ColorSpace_DeviceGray
+	if err := wMask.Close(); err != nil {
+		return nil, err
 	}
 
 	// create image stream
-	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
-	if err != nil {
-		return nil, err
+	imgStream := types.StreamObject{
+		Dictionary: types.StreamDictionary{
+			Filter: []types.Filter{types.Filter_FlateDecode},
+			Length: destData.Len(),
+		},
+		Stream: destData.Bytes(),
 	}
 	img := types.Image{
 		Stream:           imgStream.Stream,
@@ -241,13 +251,16 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       colorspace,
+		ColorSpace:       types.ColorSpace_DeviceRGB,
 	}
 
 	// create transparency mask
-	smaskStream, err := types.NewStream(smask, types.Filter_FlateDecode)
-	if err != nil {
-		return nil, err
+	smaskStream := types.StreamObject{
+		Dictionary: types.StreamDictionary{
+			Filter: []types.Filter{types.Filter_FlateDecode},
+			Length: destMask.Len(),
+		},
+		Stream: destMask.Bytes(),
 	}
 	dict := smaskStream.Dictionary.(types.StreamDictionary)
 	dict.DecodeParms = types.Dictionary{
