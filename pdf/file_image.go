@@ -65,7 +65,7 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 	}
 
 	// build data
-	var data []byte
+	data := make([]byte, 0, conf.Width*conf.Height*3)
 	for i := 0; i < conf.Height; i++ {
 		for j := 0; j < conf.Width; j++ {
 			r, g, b, _ := x.At(j, i).RGBA()
@@ -142,6 +142,7 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 	var data []byte
 	switch conf.ColorModel {
 	case color.CMYKModel:
+		data = make([]byte, 0, conf.Width*conf.Height*4)
 		img.ColorSpace = types.ColorSpace_DeviceCMYK
 		img.BitsPerComponent = 8
 		for i := 0; i < conf.Height; i++ {
@@ -152,6 +153,7 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 		}
 
 	case color.GrayModel:
+		data = make([]byte, 0, conf.Width*conf.Height)
 		img.ColorSpace = types.ColorSpace_DeviceGray
 		img.BitsPerComponent = 8
 		for i := 0; i < conf.Height; i++ {
@@ -195,7 +197,8 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 	}
 
 	// separate colors and transparency mask
-	var data, smask []byte
+	data := make([]byte, 0, conf.Width*conf.Height*3)
+	smask := make([]byte, 0, conf.Width*conf.Height)
 	for i := 0; i < conf.Height; i++ {
 		for j := 0; j < conf.Width; j++ {
 			c := x.At(j, i)
@@ -279,7 +282,8 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 	}
 
 	// separate colors and transparency mask
-	var data, smask []byte
+	data := make([]byte, 0, conf.Width*conf.Height*3)
+	smask := make([]byte, 0, conf.Width*conf.Height)
 	for i := 0; i < conf.Height; i++ {
 		for j := 0; j < conf.Width; j++ {
 			c := x.At(j, i)
