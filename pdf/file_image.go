@@ -16,6 +16,8 @@ import (
 	"golang.org/x/image/bmp"
 )
 
+// todo: writing directly into zlib writer for all types (currently only png)
+
 // Image holds both the Image object and the reference to it
 type Image struct {
 	Reference types.Reference
@@ -197,35 +199,71 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		return nil, err
 	}
 
+	var colorModel types.ColorSpaceFamily
+	if isGrayScales(conf, x) {
+		colorModel = types.ColorSpace_DeviceGray
+	}
+
 	// prepare zip writer
 	var destData, destMask bytes.Buffer
 	wData := zlib.NewWriter(&destData)
 	wMask := zlib.NewWriter(&destMask)
 
 	// separate colors and transparency mask
-	for i := 0; i < conf.Height; i++ {
-		data := make([]byte, 0, conf.Width*3)
-		smask := make([]byte, 0, conf.Width)
-		for j := 0; j < conf.Width; j++ {
-			c := x.At(j, i)
-			switch v := c.(type) {
-			case color.NRGBA:
-				data = append(data, v.R, v.G, v.B)
-				smask = append(smask, v.A)
-			case color.NRGBA64:
-				data = append(data, byte(v.R/256), byte(v.G/256), byte(v.B/256))
-				smask = append(smask, byte(v.A/256))
-			default:
-				r, g, b, a := c.RGBA()
-				data = append(data, byte(r), byte(g), byte(b))
-				smask = append(smask, byte(a))
+	if isGrayScales(conf, x) {
+		colorModel = types.ColorSpace_DeviceGray
+		for i := 0; i < conf.Height; i++ {
+			data := make([]byte, 0, conf.Width)
+			smask := make([]byte, 0, conf.Width)
+			for j := 0; j < conf.Width; j++ {
+				c := x.At(j, i)
+				switch v := c.(type) {
+				case color.NRGBA:
+					data = append(data, v.R)
+					smask = append(smask, v.A)
+				case color.NRGBA64:
+					data = append(data, byte(v.R/256))
+					smask = append(smask, byte(v.A/256))
+				default:
+					r, _, _, a := c.RGBA()
+					data = append(data, byte(r))
+					smask = append(smask, byte(a))
+				}
+			}
+			if _, err := wData.Write(data); err != nil {
+				return nil, err
+			}
+			if _, err := wMask.Write(smask); err != nil {
+				return nil, err
 			}
 		}
-		if _, err := wData.Write(data); err != nil {
-			return nil, err
-		}
-		if _, err := wMask.Write(smask); err != nil {
-			return nil, err
+
+	} else {
+		colorModel = types.ColorSpace_DeviceRGB
+		for i := 0; i < conf.Height; i++ {
+			data := make([]byte, 0, conf.Width*3)
+			smask := make([]byte, 0, conf.Width)
+			for j := 0; j < conf.Width; j++ {
+				c := x.At(j, i)
+				switch v := c.(type) {
+				case color.NRGBA:
+					data = append(data, v.R, v.G, v.B)
+					smask = append(smask, v.A)
+				case color.NRGBA64:
+					data = append(data, byte(v.R/256), byte(v.G/256), byte(v.B/256))
+					smask = append(smask, byte(v.A/256))
+				default:
+					r, g, b, a := c.RGBA()
+					data = append(data, byte(r), byte(g), byte(b))
+					smask = append(smask, byte(a))
+				}
+			}
+			if _, err := wData.Write(data); err != nil {
+				return nil, err
+			}
+			if _, err := wMask.Write(smask); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -251,7 +289,7 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       types.ColorSpace_DeviceRGB,
+		ColorSpace:       colorModel,
 	}
 
 	// create transparency mask
@@ -480,4 +518,28 @@ func reduceRGBToGray(data []byte) ([]byte, bool) {
 		data2 = append(data2, data[i])
 	}
 	return data2, true
+}
+
+func isGrayScales(conf image.Config, img image.Image) bool {
+	for i := 0; i < conf.Height; i++ {
+		for j := 0; j < conf.Width; j++ {
+			c := img.At(j, i)
+			switch v := c.(type) {
+			case color.NRGBA:
+				if v.R != v.G || v.R != v.B || v.G != v.B {
+					return false
+				}
+			case color.NRGBA64:
+				if v.R != v.G || v.R != v.B || v.G != v.B {
+					return false
+				}
+			default:
+				r, g, b, _ := c.RGBA()
+				if r != g || r != b || g != b {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }
