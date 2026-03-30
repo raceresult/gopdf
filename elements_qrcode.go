@@ -20,13 +20,6 @@ type QRCodeElement struct {
 
 // Build adds the element to the content stream
 func (q *QRCodeElement) Build(page *pdf.Page) (string, error) {
-	// set color
-	if q.Color != nil {
-		q.Color.Build(page, false)
-	} else {
-		ColorRGBBlack.Build(page, false)
-	}
-
 	// create qr code bitmap
 	qr, err := qrcode.New(q.Text, q.RecoveryLevel)
 	if err != nil {
@@ -39,6 +32,13 @@ func (q *QRCodeElement) Build(page *pdf.Page) (string, error) {
 	page.GraphicsState_q()
 	defer page.GraphicsState_Q()
 
+	// set color
+	if q.Color != nil {
+		q.Color.Build(page, false)
+	} else {
+		ColorRGBBlack.Build(page, false)
+	}
+
 	// set coordinate system
 	y := float64(page.Data.MediaBox.URY) - q.Top.Pt()
 	if q.Rotate == 0 {
@@ -49,7 +49,7 @@ func (q *QRCodeElement) Build(page *pdf.Page) (string, error) {
 	}
 
 	// set position
-	//page.GraphicsState_cm(1, 0, 0, 1, 0, -q.Size.Pt())
+	// page.GraphicsState_cm(1, 0, 0, 1, 0, -q.Size.Pt())
 
 	// transparency
 	if q.Transparency > 0 && q.Transparency <= 1 {
