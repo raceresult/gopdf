@@ -64,13 +64,8 @@ func build2DCode(
 	if rotate == 0 {
 		page.GraphicsState_cm(1, 0, 0, 1, left.Pt(), y)
 	} else {
-		// Translate to the centre of the symbol on the page
-		cx := left.Pt() + size.Pt()/2
-		cy := y - size.Pt()/2
 		rot := rotate * math.Pi / 180
-		page.GraphicsState_cm(math.Cos(rot), math.Sin(rot), -math.Sin(rot), math.Cos(rot), cx, cy)
-		// Shift origin back to top-left so module drawing coordinates are unchanged
-		page.GraphicsState_cm(1, 0, 0, 1, -size.Pt()/2, size.Pt()/2)
+		page.GraphicsState_cm(math.Cos(rot), math.Sin(rot), -math.Sin(rot), math.Cos(rot), left.Pt(), y)
 	}
 
 	// transparency
