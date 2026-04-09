@@ -26,6 +26,16 @@ type Image struct {
 
 // NewImage adds a new image as XObject to the file and returns the image object and its reference
 func (q *File) NewImage(bts []byte) (*Image, error) {
+	return q.newImage(bts, false)
+}
+
+// NewImageConcurrent adds a new image as XObject to the file and returns the image object and its reference. Can be called multiple times currently.
+func (q *File) NewImageConcurrent(bts []byte) (*Image, error) {
+	return q.newImage(bts, true)
+}
+
+// newImage adds a new image as XObject to the file and returns the image object and its reference
+func (q *File) newImage(bts []byte, theadSafe bool) (*Image, error) {
 	// read config
 	im, name, err := image.DecodeConfig(bytes.NewReader(bts))
 	if err != nil {
@@ -40,19 +50,19 @@ func (q *File) NewImage(bts []byte) (*Image, error) {
 	// continue depending on type
 	switch name {
 	case "bmp":
-		return q.newImageBmp(bts, im)
+		return q.newImageBmp(bts, im, theadSafe)
 
 	case "jpg", "jpeg":
-		return q.newImageJPG(bts, im)
+		return q.newImageJPG(bts, im, theadSafe)
 
 	case "png":
-		return q.newImagePNG(bts, im)
+		return q.newImagePNG(bts, im, theadSafe)
 
 	case "gif":
-		return q.newImageGIF(bts, im)
+		return q.newImageGIF(bts, im, theadSafe)
 
 	case "tiff":
-		return q.newImageTIFF(bts, im)
+		return q.newImageTIFF(bts, im, theadSafe)
 
 	default:
 		return nil, errors.New("unsupported image type " + name)
@@ -60,7 +70,7 @@ func (q *File) NewImage(bts []byte) (*Image, error) {
 }
 
 // newImageBmp adds a new bmp file as XObject to the file
-func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
+func (q *File) newImageBmp(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
 	// decode image
 	x, err := bmp.Decode(bytes.NewReader(bts))
 	if err != nil {
@@ -104,6 +114,10 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 	}
 
 	// finish
+	if theadSafe {
+		q.newImageMux.Lock()
+		defer q.newImageMux.Unlock()
+	}
 	return &Image{
 		Reference: q.creator.AddObject(img),
 		Image:     &img,
@@ -111,7 +125,7 @@ func (q *File) newImageBmp(bts []byte, conf image.Config) (*Image, error) {
 }
 
 // newImageJPG adds a new jpg image as XObject to the file
-func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
+func (q *File) newImageJPG(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
 	// prepare Image object
 	img := types.Image{
 		Width:  types.Int(conf.Width),
@@ -129,6 +143,10 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 		img.Stream = imgStream.Stream
 		img.Dictionary = imgStream.Dictionary.(types.StreamDictionary)
 		img.Dictionary.Filter = []types.Filter{types.Filter_DCTDecode}
+		if theadSafe {
+			q.newImageMux.Lock()
+			defer q.newImageMux.Unlock()
+		}
 		return &Image{
 			Reference: q.creator.AddObject(img),
 			Image:     &img,
@@ -185,6 +203,10 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 	img.Dictionary = imgStream.Dictionary.(types.StreamDictionary)
 
 	// finish
+	if theadSafe {
+		q.newImageMux.Lock()
+		defer q.newImageMux.Unlock()
+	}
 	return &Image{
 		Reference: q.creator.AddObject(img),
 		Image:     &img,
@@ -192,7 +214,7 @@ func (q *File) newImageJPG(bts []byte, conf image.Config) (*Image, error) {
 }
 
 // newImagePNG adds a new png image as XObject to the file
-func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
+func (q *File) newImagePNG(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
 	// decode image
 	x, err := png.Decode(bytes.NewReader(bts))
 	if err != nil {
@@ -315,9 +337,14 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 		ColorSpace:       types.ColorSpace_DeviceGray,
 		BitsPerComponent: types.Int(8),
 	}
+	if theadSafe {
+		q.newImageMux.Lock()
+		defer q.newImageMux.Unlock()
+	}
 	img.SMask = q.creator.AddObject(smaskImg)
 
 	// finish
+	// <<< newImageMux above
 	return &Image{
 		Reference: q.creator.AddObject(img),
 		Image:     &img,
@@ -325,7 +352,7 @@ func (q *File) newImagePNG(bts []byte, conf image.Config) (*Image, error) {
 }
 
 // newImageGIF adds a new gif image as XObject to the file
-func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
+func (q *File) newImageGIF(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
 	// decode image
 	x, err := gif.Decode(bytes.NewReader(bts))
 	if err != nil {
@@ -397,9 +424,14 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 		ColorSpace:       types.ColorSpace_DeviceGray,
 		BitsPerComponent: types.Int(8),
 	}
+	if theadSafe {
+		q.newImageMux.Lock()
+		defer q.newImageMux.Unlock()
+	}
 	img.SMask = q.creator.AddObject(sMaskImg)
 
 	// finish
+	// <<< newImageMux above
 	return &Image{
 		Reference: q.creator.AddObject(img),
 		Image:     &img,
@@ -407,7 +439,7 @@ func (q *File) newImageGIF(bts []byte, conf image.Config) (*Image, error) {
 }
 
 // newImageTIFF adds a new tif image as XObject to the file
-func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
+func (q *File) newImageTIFF(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
 	// decode image
 	x, err := tiff.Decode(bytes.NewReader(bts))
 	if err != nil {
@@ -493,9 +525,14 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config) (*Image, error) {
 		ColorSpace:       types.ColorSpace_DeviceGray,
 		BitsPerComponent: types.Int(8),
 	}
+	if theadSafe {
+		q.newImageMux.Lock()
+		defer q.newImageMux.Unlock()
+	}
 	img.SMask = q.creator.AddObject(sMaskImg)
 
 	// finish
+	// <<< newImageMux above
 	return &Image{
 		Reference: q.creator.AddObject(img),
 		Image:     &img,
