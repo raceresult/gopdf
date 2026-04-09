@@ -18,9 +18,6 @@ type Builder struct {
 	Info types.InformationDictionary
 	ID   [2]string
 
-	// Threshold length for compressing content streams
-	CompressStreamsThreshold int
-
 	// PDF Version number
 	Version float64
 
@@ -36,9 +33,8 @@ type Builder struct {
 // New creates a new Builder object
 func New() *Builder {
 	return &Builder{
-		file:                     pdf.NewFile(),
-		CompressStreamsThreshold: 500,
-		Version:                  pdffile.DefaultVersion,
+		file:    pdf.NewFile(),
+		Version: pdffile.DefaultVersion,
 	}
 }
 
