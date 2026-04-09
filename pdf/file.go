@@ -7,6 +7,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/raceresult/gopdf/pdffile"
@@ -34,6 +35,7 @@ type File struct {
 	pageTree      types.PageTreeNode
 	creator       *pdffile.File
 	copiedObjects map[*pdffile.File]map[types.Reference]types.Reference
+	newImageMux   sync.Mutex
 }
 
 // NewFile creates a new File object
@@ -157,7 +159,7 @@ func (q *File) AddAssociatedFile(data []byte, relationship types.Name, desc, uf,
 		Params: types.Dictionary{
 			"ModDate": types.Date(time.Now()),
 			"Size":    types.Int(len(data)),
-			//"CheckSum": types.String(),
+			// "CheckSum": types.String(),
 		},
 		Subtype: types.Name(mimeType),
 	})

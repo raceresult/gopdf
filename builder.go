@@ -196,6 +196,11 @@ func (q *Builder) NewImage(bts []byte) (*pdf.Image, error) {
 	return q.file.NewImage(bts)
 }
 
+// NewImageConcurrent adds a new image to the PDF file. Can be called multiple times currently.
+func (q *Builder) NewImageConcurrent(bts []byte) (*pdf.Image, error) {
+	return q.file.NewImageConcurrent(bts)
+}
+
 // NewCapturedPage adds a new captured page to the PDF file
 func (q *Builder) NewCapturedPage(sourcePage types.Page, sourceFile *pdffile.File) (*Form, error) {
 	cp, err := q.file.NewCapturedPage(sourcePage, sourceFile)
