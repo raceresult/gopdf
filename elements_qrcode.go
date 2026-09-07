@@ -62,8 +62,8 @@ func (q *QRCodeElement) Build(page *pdf.Page) (string, error) {
 
 	// draw
 	bitSize := q.Size.Pt() / float64(len(bits))
-	for x, row := range bits {
-		for y, value := range row {
+	for y, row := range bits {
+		for x, value := range row {
 			if value {
 				page.Path_re(float64(x)*bitSize, -float64(y+1)*bitSize, bitSize, bitSize)
 			}
