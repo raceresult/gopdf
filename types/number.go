@@ -10,7 +10,7 @@ import (
 type Number float64
 
 func (q Number) ToRawBytes() []byte {
-	s := strconv.FormatFloat(float64(q), 'f', 3, 64)
+	s := strconv.FormatFloat(float64(q), 'f', 6, 64)
 	s = strings.TrimRight(s, "0")
 	s = strings.TrimRight(s, ".")
 	return []byte(s)
