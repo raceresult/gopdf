@@ -234,9 +234,10 @@ func (q *File) newImagePNG(bts []byte, conf image.Config, theadSafe bool) (*Imag
 	// separate colors and transparency mask
 	if isGrayScales(conf, x) {
 		colorModel = types.ColorSpace_DeviceGray
+		var data, smask []byte
 		for i := 0; i < conf.Height; i++ {
-			data := make([]byte, 0, conf.Width)
-			smask := make([]byte, 0, conf.Width)
+			data = make([]byte, 0, conf.Width)
+			smask = make([]byte, 0, conf.Width)
 			for j := 0; j < conf.Width; j++ {
 				c := x.At(j, i)
 				switch v := c.(type) {
@@ -262,9 +263,10 @@ func (q *File) newImagePNG(bts []byte, conf image.Config, theadSafe bool) (*Imag
 
 	} else {
 		colorModel = types.ColorSpace_DeviceRGB
+		var data, smask []byte
 		for i := 0; i < conf.Height; i++ {
-			data := make([]byte, 0, conf.Width*3)
-			smask := make([]byte, 0, conf.Width)
+			data = make([]byte, 0, conf.Width*3)
+			smask = make([]byte, 0, conf.Width)
 			for j := 0; j < conf.Width; j++ {
 				c := x.At(j, i)
 				switch v := c.(type) {
@@ -287,6 +289,12 @@ func (q *File) newImagePNG(bts []byte, conf image.Config, theadSafe bool) (*Imag
 				return nil, err
 			}
 		}
+	}
+
+	// free memory
+	x = nil
+	if conf.Width*conf.Height > 1024*1024 {
+		debug.FreeOSMemory()
 	}
 
 	// finish zlib writers
