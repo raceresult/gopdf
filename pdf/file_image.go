@@ -42,11 +42,6 @@ func (q *File) newImage(bts []byte, theadSafe bool) (*Image, error) {
 		return nil, err
 	}
 
-	// free memory afterwards
-	if im.Width*im.Height > 1024*1024 {
-		defer debug.FreeOSMemory()
-	}
-
 	// continue depending on type
 	switch name {
 	case "bmp":
