@@ -11,12 +11,14 @@ import (
 	"image/png"
 	"runtime/debug"
 
+	"github.com/raceresult/gopdf/pdf/imagecache"
 	"github.com/raceresult/gopdf/types"
 	"github.com/raceresult/tiff"
 	"golang.org/x/image/bmp"
 )
 
-// todo: writing directly into zlib writer for all types (currently only png)
+// using the imageCache, images need to be decoded/encoded only once
+var imageCache = imagecache.New(1024 * 1024 * 100) // 100 MB
 
 // Image holds both the Image object and the reference to it
 type Image struct {
@@ -66,38 +68,72 @@ func (q *File) newImage(bts []byte, theadSafe bool) (*Image, error) {
 
 // newImageBmp adds a new bmp file as XObject to the file
 func (q *File) newImageBmp(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
-	// decode image
-	x, err := bmp.Decode(bytes.NewReader(bts))
+	item, err := imageCache.Process(bts, func(bts []byte) (*imagecache.Item, error) {
+		// decode image
+		x, err := bmp.Decode(bytes.NewReader(bts))
+		if err != nil {
+			return nil, err
+		}
+
+		// build data
+		var colorModel types.ColorSpaceFamily
+		var data []byte
+		var destData bytes.Buffer
+		wData := zlib.NewWriter(&destData)
+		if isGrayScales(conf, x) {
+			colorModel = types.ColorSpace_DeviceGray
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width)
+				for j := 0; j < conf.Width; j++ {
+					r, _, _, _ := x.At(j, i).RGBA()
+					data = append(data, byte(r))
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			colorModel = types.ColorSpace_DeviceRGB
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width*3)
+				for j := 0; j < conf.Width; j++ {
+					r, g, b, _ := x.At(j, i).RGBA()
+					data = append(data, byte(r), byte(g), byte(b))
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		// free memory
+		x = nil
+		if conf.Width*conf.Height > 1024*1024 {
+			debug.FreeOSMemory()
+		}
+
+		// finish zlib writers
+		if err := wData.Close(); err != nil {
+			return nil, err
+		}
+
+		// return item
+		return &imagecache.Item{
+			Data:       destData,
+			ColorModel: colorModel,
+		}, nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	// build data
-	data := make([]byte, 0, conf.Width*conf.Height*3)
-	for i := 0; i < conf.Height; i++ {
-		for j := 0; j < conf.Width; j++ {
-			r, g, b, _ := x.At(j, i).RGBA()
-			data = append(data, byte(r), byte(g), byte(b))
-		}
-	}
-
-	// free memory
-	x = nil
-	if conf.Width*conf.Height > 1024*1024 {
-		debug.FreeOSMemory()
-	}
-
-	// is actually grayscale?
-	colorspace := types.ColorSpace_DeviceRGB
-	if data2, isGray := reduceRGBToGray(data); isGray {
-		data = data2
-		colorspace = types.ColorSpace_DeviceGray
 	}
 
 	// create image stream
-	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
-	if err != nil {
-		return nil, err
+	imgStream := types.StreamObject{
+		Dictionary: types.StreamDictionary{
+			Filter: []types.Filter{types.Filter_FlateDecode},
+			Length: item.Data.Len(),
+		},
+		Stream: item.Data.Bytes(),
 	}
 	img := types.Image{
 		Stream:           imgStream.Stream,
@@ -105,7 +141,7 @@ func (q *File) newImageBmp(bts []byte, conf image.Config, theadSafe bool) (*Imag
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       colorspace,
+		ColorSpace:       item.ColorModel,
 	}
 
 	// finish
@@ -121,22 +157,20 @@ func (q *File) newImageBmp(bts []byte, conf image.Config, theadSafe bool) (*Imag
 
 // newImageJPG adds a new jpg image as XObject to the file
 func (q *File) newImageJPG(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
-	// prepare Image object
-	img := types.Image{
-		Width:  types.Int(conf.Width),
-		Height: types.Int(conf.Height),
-	}
-
 	// for rgb, directly use the image
 	if conf.ColorModel == color.YCbCrModel || conf.ColorModel == color.NRGBAModel {
 		imgStream, err := types.NewStream(bts)
 		if err != nil {
 			return nil, err
 		}
-		img.ColorSpace = types.ColorSpace_DeviceRGB
-		img.BitsPerComponent = 8
-		img.Stream = imgStream.Stream
-		img.Dictionary = imgStream.Dictionary.(types.StreamDictionary)
+		img := types.Image{
+			Width:            types.Int(conf.Width),
+			Height:           types.Int(conf.Height),
+			ColorSpace:       types.ColorSpace_DeviceRGB,
+			BitsPerComponent: 8,
+			Stream:           imgStream.Stream,
+			Dictionary:       imgStream.Dictionary.(types.StreamDictionary),
+		}
 		img.Dictionary.Filter = []types.Filter{types.Filter_DCTDecode}
 		if theadSafe {
 			q.newImageMux.Lock()
@@ -148,54 +182,87 @@ func (q *File) newImageJPG(bts []byte, conf image.Config, theadSafe bool) (*Imag
 		}, nil
 	}
 
-	// decode image
-	x, err := jpeg.Decode(bytes.NewReader(bts))
+	item, err := imageCache.Process(bts, func(bts []byte) (*imagecache.Item, error) {
+		// decode image
+		x, err := jpeg.Decode(bytes.NewReader(bts))
+		if err != nil {
+			return nil, err
+		}
+
+		// build data
+		var colorModel types.ColorSpaceFamily
+		var data []byte
+		var destData bytes.Buffer
+		wData := zlib.NewWriter(&destData)
+		switch conf.ColorModel {
+		case color.CMYKModel:
+			colorModel = types.ColorSpace_DeviceCMYK
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width*4)
+				for j := 0; j < conf.Width; j++ {
+					c := x.At(j, i).(color.CMYK)
+					data = append(data, c.C, c.M, c.Y, c.K)
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+			}
+
+		case color.GrayModel:
+			colorModel = types.ColorSpace_DeviceGray
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width)
+				for j := 0; j < conf.Width; j++ {
+					c := x.At(j, i).(color.Gray)
+					data = append(data, c.Y)
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+			}
+
+		default:
+			return nil, errors.New("unsupported color model")
+		}
+
+		// free memory
+		x = nil
+		if conf.Width*conf.Height > 1024*1024 {
+			debug.FreeOSMemory()
+		}
+
+		// finish zlib writers
+		if err := wData.Close(); err != nil {
+			return nil, err
+		}
+
+		// return item
+		return &imagecache.Item{
+			Data:       destData,
+			Mask:       bytes.Buffer{},
+			ColorModel: colorModel,
+		}, nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	// build data
-	var data []byte
-	switch conf.ColorModel {
-	case color.CMYKModel:
-		data = make([]byte, 0, conf.Width*conf.Height*4)
-		img.ColorSpace = types.ColorSpace_DeviceCMYK
-		img.BitsPerComponent = 8
-		for i := 0; i < conf.Height; i++ {
-			for j := 0; j < conf.Width; j++ {
-				c := x.At(j, i).(color.CMYK)
-				data = append(data, c.C, c.M, c.Y, c.K)
-			}
-		}
-
-	case color.GrayModel:
-		data = make([]byte, 0, conf.Width*conf.Height)
-		img.ColorSpace = types.ColorSpace_DeviceGray
-		img.BitsPerComponent = 8
-		for i := 0; i < conf.Height; i++ {
-			for j := 0; j < conf.Width; j++ {
-				c := x.At(j, i).(color.Gray)
-				data = append(data, c.Y)
-			}
-		}
-
-	default:
-		return nil, errors.New("unsupported color model")
-	}
-
-	// free memory
-	x = nil
-	if conf.Width*conf.Height > 1024*1024 {
-		debug.FreeOSMemory()
 	}
 
 	// create image stream
-	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
-	if err != nil {
-		return nil, err
+	imgStream := types.StreamObject{
+		Dictionary: types.StreamDictionary{
+			Filter: []types.Filter{types.Filter_FlateDecode},
+			Length: item.Data.Len(),
+		},
+		Stream: item.Data.Bytes(),
 	}
-	img.Stream = imgStream.Stream
-	img.Dictionary = imgStream.Dictionary.(types.StreamDictionary)
+	img := types.Image{
+		Width:            types.Int(conf.Width),
+		Height:           types.Int(conf.Height),
+		Stream:           imgStream.Stream,
+		Dictionary:       imgStream.Dictionary.(types.StreamDictionary),
+		ColorSpace:       item.ColorModel,
+		BitsPerComponent: 8,
+	}
 
 	// finish
 	if theadSafe {
@@ -210,93 +277,96 @@ func (q *File) newImageJPG(bts []byte, conf image.Config, theadSafe bool) (*Imag
 
 // newImagePNG adds a new png image as XObject to the file
 func (q *File) newImagePNG(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
-	// decode image
-	x, err := png.Decode(bytes.NewReader(bts))
+	item, err := imageCache.Process(bts, func(bts []byte) (*imagecache.Item, error) {
+		// decode image
+		x, err := png.Decode(bytes.NewReader(bts))
+		if err != nil {
+			return nil, err
+		}
+
+		// build data
+		var colorModel types.ColorSpaceFamily
+		var destData, destMask bytes.Buffer
+		var data, smask []byte
+		wData := zlib.NewWriter(&destData)
+		wMask := zlib.NewWriter(&destMask)
+		if isGrayScales(conf, x) {
+			colorModel = types.ColorSpace_DeviceGray
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width)
+				smask = make([]byte, 0, conf.Width)
+				for j := 0; j < conf.Width; j++ {
+					c := x.At(j, i)
+					switch v := c.(type) {
+					case color.NRGBA:
+						data = append(data, v.R)
+						smask = append(smask, v.A)
+					case color.NRGBA64:
+						data = append(data, byte(v.R/256))
+						smask = append(smask, byte(v.A/256))
+					default:
+						r, _, _, a := c.RGBA()
+						data = append(data, byte(r))
+						smask = append(smask, byte(a))
+					}
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+				if _, err := wMask.Write(smask); err != nil {
+					return nil, err
+				}
+			}
+
+		} else {
+			colorModel = types.ColorSpace_DeviceRGB
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width*3)
+				smask = make([]byte, 0, conf.Width)
+				for j := 0; j < conf.Width; j++ {
+					c := x.At(j, i)
+					switch v := c.(type) {
+					case color.NRGBA:
+						data = append(data, v.R, v.G, v.B)
+						smask = append(smask, v.A)
+					case color.NRGBA64:
+						data = append(data, byte(v.R/256), byte(v.G/256), byte(v.B/256))
+						smask = append(smask, byte(v.A/256))
+					default:
+						r, g, b, a := c.RGBA()
+						data = append(data, byte(r), byte(g), byte(b))
+						smask = append(smask, byte(a))
+					}
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+				if _, err := wMask.Write(smask); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		// free memory
+		x = nil
+		if conf.Width*conf.Height > 1024*1024 {
+			debug.FreeOSMemory()
+		}
+
+		// finish zlib writers
+		if err := wData.Close(); err != nil {
+			return nil, err
+		}
+		if err := wMask.Close(); err != nil {
+			return nil, err
+		}
+		return &imagecache.Item{
+			Data:       destData,
+			Mask:       destMask,
+			ColorModel: colorModel,
+		}, nil
+	})
 	if err != nil {
-		return nil, err
-	}
-
-	var colorModel types.ColorSpaceFamily
-	if isGrayScales(conf, x) {
-		colorModel = types.ColorSpace_DeviceGray
-	}
-
-	// prepare zip writer
-	var destData, destMask bytes.Buffer
-	wData := zlib.NewWriter(&destData)
-	wMask := zlib.NewWriter(&destMask)
-
-	// separate colors and transparency mask
-	if isGrayScales(conf, x) {
-		colorModel = types.ColorSpace_DeviceGray
-		var data, smask []byte
-		for i := 0; i < conf.Height; i++ {
-			data = make([]byte, 0, conf.Width)
-			smask = make([]byte, 0, conf.Width)
-			for j := 0; j < conf.Width; j++ {
-				c := x.At(j, i)
-				switch v := c.(type) {
-				case color.NRGBA:
-					data = append(data, v.R)
-					smask = append(smask, v.A)
-				case color.NRGBA64:
-					data = append(data, byte(v.R/256))
-					smask = append(smask, byte(v.A/256))
-				default:
-					r, _, _, a := c.RGBA()
-					data = append(data, byte(r))
-					smask = append(smask, byte(a))
-				}
-			}
-			if _, err := wData.Write(data); err != nil {
-				return nil, err
-			}
-			if _, err := wMask.Write(smask); err != nil {
-				return nil, err
-			}
-		}
-
-	} else {
-		colorModel = types.ColorSpace_DeviceRGB
-		var data, smask []byte
-		for i := 0; i < conf.Height; i++ {
-			data = make([]byte, 0, conf.Width*3)
-			smask = make([]byte, 0, conf.Width)
-			for j := 0; j < conf.Width; j++ {
-				c := x.At(j, i)
-				switch v := c.(type) {
-				case color.NRGBA:
-					data = append(data, v.R, v.G, v.B)
-					smask = append(smask, v.A)
-				case color.NRGBA64:
-					data = append(data, byte(v.R/256), byte(v.G/256), byte(v.B/256))
-					smask = append(smask, byte(v.A/256))
-				default:
-					r, g, b, a := c.RGBA()
-					data = append(data, byte(r), byte(g), byte(b))
-					smask = append(smask, byte(a))
-				}
-			}
-			if _, err := wData.Write(data); err != nil {
-				return nil, err
-			}
-			if _, err := wMask.Write(smask); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	// free memory
-	x = nil
-	if conf.Width*conf.Height > 1024*1024 {
-		debug.FreeOSMemory()
-	}
-
-	// finish zlib writers
-	if err := wData.Close(); err != nil {
-		return nil, err
-	}
-	if err := wMask.Close(); err != nil {
 		return nil, err
 	}
 
@@ -304,9 +374,9 @@ func (q *File) newImagePNG(bts []byte, conf image.Config, theadSafe bool) (*Imag
 	imgStream := types.StreamObject{
 		Dictionary: types.StreamDictionary{
 			Filter: []types.Filter{types.Filter_FlateDecode},
-			Length: destData.Len(),
+			Length: item.Data.Len(),
 		},
-		Stream: destData.Bytes(),
+		Stream: item.Data.Bytes(),
 	}
 	img := types.Image{
 		Stream:           imgStream.Stream,
@@ -314,16 +384,16 @@ func (q *File) newImagePNG(bts []byte, conf image.Config, theadSafe bool) (*Imag
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       colorModel,
+		ColorSpace:       item.ColorModel,
 	}
 
 	// create transparency mask
 	smaskStream := types.StreamObject{
 		Dictionary: types.StreamDictionary{
 			Filter: []types.Filter{types.Filter_FlateDecode},
-			Length: destMask.Len(),
+			Length: item.Mask.Len(),
 		},
-		Stream: destMask.Bytes(),
+		Stream: item.Mask.Bytes(),
 	}
 	dict := smaskStream.Dictionary.(types.StreamDictionary)
 	dict.DecodeParms = types.Dictionary{
@@ -356,47 +426,101 @@ func (q *File) newImagePNG(bts []byte, conf image.Config, theadSafe bool) (*Imag
 
 // newImageGIF adds a new gif image as XObject to the file
 func (q *File) newImageGIF(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
-	// decode image
-	x, err := gif.Decode(bytes.NewReader(bts))
-	if err != nil {
-		return nil, err
-	}
+	item, err := imageCache.Process(bts, func(bts []byte) (*imagecache.Item, error) {
+		// decode image
+		x, err := gif.Decode(bytes.NewReader(bts))
+		if err != nil {
+			return nil, err
+		}
 
-	// separate colors and transparency mask
-	data := make([]byte, 0, conf.Width*conf.Height*3)
-	smask := make([]byte, 0, conf.Width*conf.Height)
-	for i := 0; i < conf.Height; i++ {
-		for j := 0; j < conf.Width; j++ {
-			c := x.At(j, i)
-			switch v := c.(type) {
-			case color.RGBA:
-				data = append(data, v.R, v.G, v.B)
-				smask = append(smask, v.A)
-			default:
-				r, g, b, a := c.RGBA()
-				data = append(data, byte(r), byte(g), byte(b))
-				smask = append(smask, byte(a))
+		// separate colors and transparency mask
+		var colorModel types.ColorSpaceFamily
+		var data, smask []byte
+		var destData, destMask bytes.Buffer
+		wData := zlib.NewWriter(&destData)
+		wMask := zlib.NewWriter(&destMask)
+		if isGrayScales(conf, x) {
+			colorModel = types.ColorSpace_DeviceGray
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width)
+				smask = make([]byte, 0, conf.Width)
+				for j := 0; j < conf.Width; j++ {
+					c := x.At(j, i)
+					switch v := c.(type) {
+					case color.RGBA:
+						data = append(data, v.R)
+						smask = append(smask, v.A)
+					default:
+						r, _, _, a := c.RGBA()
+						data = append(data, byte(r))
+						smask = append(smask, byte(a))
+					}
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+				if _, err := wMask.Write(smask); err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			colorModel = types.ColorSpace_DeviceRGB
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width*3)
+				smask = make([]byte, 0, conf.Width)
+				for j := 0; j < conf.Width; j++ {
+					c := x.At(j, i)
+					switch v := c.(type) {
+					case color.RGBA:
+						data = append(data, v.R, v.G, v.B)
+						smask = append(smask, v.A)
+					default:
+						r, g, b, a := c.RGBA()
+						data = append(data, byte(r), byte(g), byte(b))
+						smask = append(smask, byte(a))
+					}
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+				if _, err := wMask.Write(smask); err != nil {
+					return nil, err
+				}
 			}
 		}
-	}
 
-	// free memory
-	x = nil
-	if conf.Width*conf.Height > 1024*1024 {
-		debug.FreeOSMemory()
-	}
+		// free memory
+		x = nil
+		if conf.Width*conf.Height > 1024*1024 {
+			debug.FreeOSMemory()
+		}
 
-	// is actually grayscale?
-	colorspace := types.ColorSpace_DeviceRGB
-	if data2, isGray := reduceRGBToGray(data); isGray {
-		data = data2
-		colorspace = types.ColorSpace_DeviceGray
+		// finish zlib writers
+		if err := wData.Close(); err != nil {
+			return nil, err
+		}
+		if err := wMask.Close(); err != nil {
+			return nil, err
+		}
+
+		// return item
+		return &imagecache.Item{
+			Data:       destData,
+			Mask:       destMask,
+			ColorModel: colorModel,
+		}, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// create image stream
-	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
-	if err != nil {
-		return nil, err
+	imgStream := types.StreamObject{
+		Dictionary: types.StreamDictionary{
+			Filter: []types.Filter{types.Filter_FlateDecode},
+			Length: item.Data.Len(),
+		},
+		Stream: item.Data.Bytes(),
 	}
 	img := types.Image{
 		Stream:           imgStream.Stream,
@@ -404,13 +528,16 @@ func (q *File) newImageGIF(bts []byte, conf image.Config, theadSafe bool) (*Imag
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       colorspace,
+		ColorSpace:       item.ColorModel,
 	}
 
 	// create transparency mask
-	smaskStream, err := types.NewStream(smask, types.Filter_FlateDecode)
-	if err != nil {
-		return nil, err
+	smaskStream := types.StreamObject{
+		Dictionary: types.StreamDictionary{
+			Filter: []types.Filter{types.Filter_FlateDecode},
+			Length: item.Mask.Len(),
+		},
+		Stream: item.Mask.Bytes(),
 	}
 	dict := smaskStream.Dictionary.(types.StreamDictionary)
 	dict.DecodeParms = types.Dictionary{
@@ -443,61 +570,117 @@ func (q *File) newImageGIF(bts []byte, conf image.Config, theadSafe bool) (*Imag
 
 // newImageTIFF adds a new tif image as XObject to the file
 func (q *File) newImageTIFF(bts []byte, conf image.Config, theadSafe bool) (*Image, error) {
-	// decode image
-	x, err := tiff.Decode(bytes.NewReader(bts))
-	if err != nil {
-		return nil, err
-	}
+	item, err := imageCache.Process(bts, func(bts []byte) (*imagecache.Item, error) {
+		// decode image
+		x, err := tiff.Decode(bytes.NewReader(bts))
+		if err != nil {
+			return nil, err
+		}
 
-	// separate colors and transparency mask
-	var data, smask []byte
-	colorSpace := types.ColorSpace_DeviceRGB
-	for i := 0; i < conf.Height; i++ {
-		for j := 0; j < conf.Width; j++ {
-			c := x.At(j, i)
-			switch v := c.(type) {
-			case color.RGBA:
-				data = append(data, v.R, v.G, v.B)
-				smask = append(smask, v.A)
-			case color.NRGBA:
-				data = append(data, v.R, v.G, v.B)
-				smask = append(smask, v.A)
-			case color.CMYK:
-				c := x.At(j, i).(color.CMYK)
-				data = append(data, c.C, c.M, c.Y, c.K)
-				smask = append(smask, 255)
-				colorSpace = types.ColorSpace_DeviceCMYK
-			case tiff.CMYKA:
-				c := x.At(j, i).(tiff.CMYKA)
-				data = append(data, c.C, c.M, c.Y, c.K)
-				smask = append(smask, c.A)
-				colorSpace = types.ColorSpace_DeviceCMYK
-			default:
-				r, g, b, a := c.RGBA()
-				data = append(data, byte(r), byte(g), byte(b))
-				smask = append(smask, byte(a))
+		// separate colors and transparency mask
+		var colorModel types.ColorSpaceFamily
+		var data, smask []byte
+		var destData, destMask bytes.Buffer
+		wData := zlib.NewWriter(&destData)
+		wMask := zlib.NewWriter(&destMask)
+		if isGrayScales(conf, x) {
+			colorModel = types.ColorSpace_DeviceGray
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width)
+				smask = make([]byte, 0, conf.Width)
+				for j := 0; j < conf.Width; j++ {
+					c := x.At(j, i)
+					switch v := c.(type) {
+					case color.RGBA:
+						data = append(data, v.R)
+						smask = append(smask, v.A)
+					case color.NRGBA:
+						data = append(data, v.R)
+						smask = append(smask, v.A)
+					default:
+						r, _, _, a := c.RGBA()
+						data = append(data, byte(r))
+						smask = append(smask, byte(a))
+					}
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+				if _, err := wMask.Write(smask); err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			colorModel = types.ColorSpace_DeviceRGB
+			for i := 0; i < conf.Height; i++ {
+				data = make([]byte, 0, conf.Width*4)
+				smask = make([]byte, 0, conf.Width)
+				for j := 0; j < conf.Width; j++ {
+					c := x.At(j, i)
+					switch v := c.(type) {
+					case color.RGBA:
+						data = append(data, v.R, v.G, v.B)
+						smask = append(smask, v.A)
+					case color.NRGBA:
+						data = append(data, v.R, v.G, v.B)
+						smask = append(smask, v.A)
+					case color.CMYK:
+						c := x.At(j, i).(color.CMYK)
+						data = append(data, c.C, c.M, c.Y, c.K)
+						smask = append(smask, 255)
+						colorModel = types.ColorSpace_DeviceCMYK
+					case tiff.CMYKA:
+						c := x.At(j, i).(tiff.CMYKA)
+						data = append(data, c.C, c.M, c.Y, c.K)
+						smask = append(smask, c.A)
+						colorModel = types.ColorSpace_DeviceCMYK
+					default:
+						r, g, b, a := c.RGBA()
+						data = append(data, byte(r), byte(g), byte(b))
+						smask = append(smask, byte(a))
+					}
+				}
+				if _, err := wData.Write(data); err != nil {
+					return nil, err
+				}
+				if _, err := wMask.Write(smask); err != nil {
+					return nil, err
+				}
 			}
 		}
-	}
 
-	// free memory
-	x = nil
-	if conf.Width*conf.Height > 1024*1024 {
-		debug.FreeOSMemory()
-	}
-
-	// is actually grayscale?
-	if colorSpace == types.ColorSpace_DeviceRGB {
-		if data2, isGray := reduceRGBToGray(data); isGray {
-			data = data2
-			colorSpace = types.ColorSpace_DeviceGray
+		// free memory
+		x = nil
+		if conf.Width*conf.Height > 1024*1024 {
+			debug.FreeOSMemory()
 		}
+
+		// finish zlib writers
+		if err := wData.Close(); err != nil {
+			return nil, err
+		}
+		if err := wMask.Close(); err != nil {
+			return nil, err
+		}
+
+		// return item
+		return &imagecache.Item{
+			Data:       destData,
+			Mask:       destMask,
+			ColorModel: colorModel,
+		}, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// create image stream
-	imgStream, err := types.NewStream(data, types.Filter_FlateDecode)
-	if err != nil {
-		return nil, err
+	imgStream := types.StreamObject{
+		Dictionary: types.StreamDictionary{
+			Filter: []types.Filter{types.Filter_FlateDecode},
+			Length: item.Data.Len(),
+		},
+		Stream: item.Data.Bytes(),
 	}
 	img := types.Image{
 		Stream:           imgStream.Stream,
@@ -505,13 +688,16 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config, theadSafe bool) (*Ima
 		Width:            types.Int(conf.Width),
 		Height:           types.Int(conf.Height),
 		BitsPerComponent: types.Int(8),
-		ColorSpace:       colorSpace,
+		ColorSpace:       item.ColorModel,
 	}
 
 	// create transparency mask
-	smaskStream, err := types.NewStream(smask, types.Filter_FlateDecode)
-	if err != nil {
-		return nil, err
+	smaskStream := types.StreamObject{
+		Dictionary: types.StreamDictionary{
+			Filter: []types.Filter{types.Filter_FlateDecode},
+			Length: item.Mask.Len(),
+		},
+		Stream: item.Mask.Bytes(),
 	}
 	dict := smaskStream.Dictionary.(types.StreamDictionary)
 	dict.DecodeParms = types.Dictionary{
@@ -542,24 +728,6 @@ func (q *File) newImageTIFF(bts []byte, conf image.Config, theadSafe bool) (*Ima
 	}, nil
 }
 
-func reduceRGBToGray(data []byte) ([]byte, bool) {
-	if len(data)%3 != 0 {
-		return nil, false
-	}
-
-	for i := 0; i < len(data); i += 3 {
-		if data[i] != data[i+1] || data[i] != data[i+2] || data[i+1] != data[i+2] {
-			return nil, false
-		}
-	}
-
-	data2 := make([]byte, 0, len(data)/3)
-	for i := 0; i < len(data); i += 3 {
-		data2 = append(data2, data[i])
-	}
-	return data2, true
-}
-
 func isGrayScales(conf image.Config, img image.Image) bool {
 	for i := 0; i < conf.Height; i++ {
 		for j := 0; j < conf.Width; j++ {
@@ -573,6 +741,10 @@ func isGrayScales(conf image.Config, img image.Image) bool {
 				if v.R != v.G || v.R != v.B || v.G != v.B {
 					return false
 				}
+			case color.CMYK:
+				return false
+			case tiff.CMYKA:
+				return false
 			default:
 				r, g, b, _ := c.RGBA()
 				if r != g || r != b || g != b {
